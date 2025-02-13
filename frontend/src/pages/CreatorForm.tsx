@@ -13,46 +13,90 @@ const initialFormData = {
 export function CreatorForm() {
   const [searchParams] = useSearchParams();
   const prefilledCampaignName = searchParams.get('campaignName') || '';
+  const prefilledDiscordID = searchParams.get('discordId') || '';
 
+  const getMostRecentCampaignCreator = async (discordId) => {
+    const { data, error } = await supabase
+        .from('campaign_creators')
+        .select('*')
+        .eq('discord_id', discordId)
+        .order('created_at', { ascending: false })
+    
+    // console.log(data)
+
+    if (error) {
+        console.error('Error fetching data:', error);
+        return null;
+    }
+
+    console.log("prefilling with: "+data[0]);
+    
+    return data.length ? data[0] : null;
+  }
   const [formData, setFormData] = useState({
     ...initialFormData,
     campaign_name: prefilledCampaignName,
+    discord_id: prefilledDiscordID
   });
+
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<boolean>(false);
   const [campaignNotAvailable, setCampaignNotAvailable] = useState<boolean>(false);
 
   useEffect(() => {
-    // Fetch campaigns that are 'brief_submitted'
-    const fetchCampaigns = async () => {
+    const fetchData = async () => {
+      let creatorData = {};
+      
+      if (prefilledDiscordID.length !== 0) {
+        const creator = await getMostRecentCampaignCreator(prefilledDiscordID);
+        if (creator) {
+          creatorData = {
+            channel_url: creator.channel_url || '',
+            rate: creator.rate || 0,
+            personal_statement: creator.personal_statement || '',
+          };
+        }
+      }
+  
+      // Fetch campaigns that are 'brief_submitted'
       const { data, error } = await supabase
         .from('campaigns')
         .select('*')
         .eq('status', 'brief_submitted')
         .order('created_at', { ascending: false });
-
+  
       if (error) {
         console.error('Error fetching campaigns:', error);
         setError('Failed to load campaigns.');
         return;
       }
-
+  
       setCampaigns(data || []);
-      
-      // Check if the prefilled campaign name exists in the available campaigns
+  
+      let campaignId = '';
       if (prefilledCampaignName) {
         const campaign = data.find(c => c.name === prefilledCampaignName);
         if (campaign) {
-          setFormData({ ...formData, campaign_id: campaign.id });
+          campaignId = campaign.id;
         } else {
-          setCampaignNotAvailable(true); // Display the banner if the campaign isn't found
+          setCampaignNotAvailable(true);
         }
       }
+  
+      // Merge both prefilling sources into one `setFormData` call
+      setFormData(prevData => ({
+        ...prevData,
+        campaign_name: prefilledCampaignName,
+        campaign_id: campaignId,
+        discord_id: prefilledDiscordID,
+        ...creatorData, // Spread creator data only if available
+      }));
     };
-
-    fetchCampaigns();
-  }, [prefilledCampaignName]);
+  
+    fetchData();
+  }, [prefilledDiscordID, prefilledCampaignName]); // Depend on both prefilled values
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,10 +134,10 @@ export function CreatorForm() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-white mb-6">Express Interest in a Campaign</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6"><br/>Express Interest in a Campaign</h2>
 
       {success ? (
-        <div className="bg-gray-800 p-6 rounded-lg text-green-500">
+        <div className="bg-white-300 p-6 rounded-lg text-green-500">
           <p>Thank you! Your interest in the campaign has been successfully submitted.</p>
           <p>We’ll get back to you shortly!</p>
         </div>
@@ -102,21 +146,21 @@ export function CreatorForm() {
           {error && <div className="text-red-500 mb-4">{error}</div>}
 
           {campaignNotAvailable && (
-            <div className="bg-yellow-500 p-4 mb-4 rounded-md text-black">
+            <div className="bg-yellow-500 p-4 mb-4 rounded-md text-gray-800">
               <p>The campaign you are trying to express interest in is no longer accepting responses.</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="campaign_id" className="block text-sm font-medium text-gray-200">
+              <label htmlFor="campaign_id" className="block text-sm font-medium text-gray-800-200">
                 Select Campaign
               </label>
               <select
                 id="campaign_id"
                 value={formData.campaign_id}
                 onChange={(e) => setFormData({ ...formData, campaign_id: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-700 bg-gray-700 text-white shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 required
               >
                 <option value="">Select a campaign</option>
@@ -129,7 +173,7 @@ export function CreatorForm() {
             </div>
 
             <div>
-              <label htmlFor="channel_url" className="block text-sm font-medium text-gray-200">
+              <label htmlFor="channel_url" className="block text-sm font-medium text-gray-800-200">
                 Channel URL
               </label>
               <input
@@ -139,13 +183,13 @@ export function CreatorForm() {
                 onChange={(e) =>
                   setFormData({ ...formData, channel_url: e.target.value })
                 }
-                className="mt-1 block w-full rounded-md border-gray-700 bg-gray-700 text-white shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="discord_id" className="block text-sm font-medium text-gray-200">
+              <label htmlFor="discord_id" className="block text-sm font-medium text-gray-800-200">
                 Discord ID
               </label>
               <input
@@ -155,14 +199,14 @@ export function CreatorForm() {
                 onChange={(e) =>
                   setFormData({ ...formData, discord_id: e.target.value })
                 }
-                className="mt-1 block w-full rounded-md border-gray-700 bg-gray-700 text-white shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 required
               />
-              <p className="text-gray-400 mt-1">Don't know your Discord User ID? Run /id in the discord server!</p>
+              <p className="text-gray-800-400 mt-1">Don't know your Discord User ID? Run /id in the discord server!</p>
             </div>
 
             <div>
-              <label htmlFor="rate" className="block text-sm font-medium text-gray-200">
+              <label htmlFor="rate" className="block text-sm font-medium text-gray-800-200">
                 Rate (per video)
               </label>
               <input
@@ -172,14 +216,14 @@ export function CreatorForm() {
                 onChange={(e) =>
                   setFormData({ ...formData, rate: parseFloat(e.target.value) })
                 }
-                className="mt-1 block w-full rounded-md border-gray-700 bg-gray-700 text-white shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 required
               />
-              <p className="text-gray-400 mt-1">Rate you are requesting for each video.</p>
+              <p className="text-gray-800-400 mt-1">Rate you are requesting for each video.</p>
             </div>
 
             <div>
-              <label htmlFor="personal_statement" className="block text-sm font-medium text-gray-200">
+              <label htmlFor="personal_statement" className="block text-sm font-medium text-gray-800-200">
                 Personal Statement
               </label>
               <textarea
@@ -188,17 +232,17 @@ export function CreatorForm() {
                 onChange={(e) =>
                   setFormData({ ...formData, personal_statement: e.target.value })
                 }
-                className="mt-1 block w-full rounded-md border-gray-700 bg-gray-700 text-white shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 required
               />
-              <p className="text-gray-400 mt-1">
+              <p className="text-gray-800-400 mt-1">
                 Tell us about yourself and why you are interested in this campaign.
               </p>
             </div>
 
             <button
               type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-800 bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
             >
               Submit Interest
             </button>

@@ -10,9 +10,9 @@ export const Contract = () => {
 
   if (currentCampaign?.status != 'creators_selected' && currentCampaign?.status != 'contract_signed') {
     return (
-      <div className="max-w-screen-xl mx-auto p-4 bg-gray-800 rounded-md">
-        <h2 className="text-2xl font-bold text-white">Contract</h2>
-        <p className="text-white">This feature is not currently available to you<br/>contact support if you think this is a mistake</p>
+      <div className="max-w-screen-xl mx-auto p-4 bg-gray-50 rounded-md">
+        <h2 className="text-2xl font-bold text-black">Contract</h2>
+        <p className="text-black">This feature is not currently available to you<br/>contact support if you think this is a mistake</p>
       </div>
     );
   }
@@ -69,11 +69,11 @@ export const Contract = () => {
     />
     </div>
   :
-    <div className="max-w-screen-xl mx-auto p-4 bg-gray-800 rounded-md">
-      <h2 className="text-2xl font-bold text-white mb-6">Initialize Client Form</h2>
+    <div className="max-w-screen-xl mx-auto p-4 bg-gray-100 rounded-md">
+      <h2 className="text-2xl font-bold text-black mb-6">Initialize Client Form</h2>
       <form onSubmit={handleSubmit} className="mb-6">
         <div className="mb-4">
-          <label className="block text-white mb-2" htmlFor="email">Email</label>
+          <label className="block text-black mb-2" htmlFor="email">Email</label>
           <input
             type="email"
             id="email"
@@ -82,9 +82,9 @@ export const Contract = () => {
             className="w-full p-2 rounded-md"
           />
         </div>
-        <button type="submit" className="bg-blue-500 text-white p-2 rounded-md">Submit</button>
+        <button type="submit" className="bg-blue-500 text-black p-2 rounded-md">Submit</button>
       </form>
-      {error && <div className="text-white">{error}</div>}
+      {error && <div className="text-black">{error}</div>}
     </div>);
 };
 

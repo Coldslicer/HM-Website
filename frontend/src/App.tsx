@@ -10,7 +10,7 @@ import { CreatorForm } from './pages/CreatorForm'
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-900">
+      <div className="min-h-screen bg-gray-100">
         <Navbar />
         <Routes>
           <Route path="/" element={<Hero />} />

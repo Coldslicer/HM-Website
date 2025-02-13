@@ -13,7 +13,6 @@ export function Dashboard() {
     <div className="flex">
       <Sidebar />
       <div className="flex-1 p-8">
-        <CampaignSelector />
         <Routes>
           <Route index element={<Navigate to="brief" replace />} />
           <Route path="brief" element={<BriefForm />} />

@@ -13,12 +13,17 @@ async function fetchMessages(channelId) {
     }
 
     const messages = await channel.messages.fetch({ limit: 50 }); // Fetch the last 50 messages
-    return messages.map((message) => ({
-      id: message.id,
-      content: message.content,
-      author: message.author.username,
-      timestamp: message.createdTimestamp,
-    }));
+return messages
+  .filter((message) => !message.content.toLowerCase().startsWith("[hidden from clients]".toLowerCase()))
+  .map((message) => ({
+    id: message.id,
+    content: message.content,
+    bot: message.author.bot,
+    author: message.author.username,
+    timestamp: message.createdTimestamp,
+  }));
+
+
   } catch (error) {
     console.error('Error fetching messages:', error);
     throw error;

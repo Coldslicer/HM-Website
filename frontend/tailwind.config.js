@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+// tailwind.config.js
+const defaultTheme = require('tailwindcss/defaultTheme');
 export default {
   content: [
     "./index.html",
@@ -8,10 +10,16 @@ export default {
     extend: {
       colors: {
         orange: {
-          500: '#FF4500',
-          600: '#CC3700',
+          500: '#FF6100',
+          600: '#FF9150',
           900: '#661C00',
         },
+        gray: {
+          
+        }
+      },
+      fontFamily: {
+        sans: ['Montserrat', ...defaultTheme.fontFamily.sans], // Set Montserrat as the default sans font
       },
     },
   },

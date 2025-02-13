@@ -60,15 +60,15 @@ export const CreatorTimeline = () => {
     const finalComplete = isCompleted(creator.final);
 
     return (
-      <div key={creator.id} className="bg-gray-700 rounded-lg p-6 mb-8 shadow-md">
-        <h3 className="text-xl font-semibold text-white">{creator.handle}</h3>
+      <div key={creator.id} className="bg-white rounded-lg p-6 mb-6 shadow-md">
+        <h3 className="text-xl font-semibold text-gray-800">{creator.handle}</h3>
 
         {/* Timeline Row */}
         <div className="flex justify-between items-center mt-6">
 
           {/* Contract Signed Box */}
-          <div className={`relative flex flex-col items-center w-1/3 p-4 rounded-md border-4 ${contractComplete ? 'border-green-500' : 'border-gray-500'} bg-gray-800`}>
-            <div className="text-xs text-gray-300">Contract Signed</div>
+          <div className={`relative flex flex-col items-center w-1/3 p-4 rounded-md border-2 ${contractComplete ? 'border-green-500' : 'border-gray-300'} bg-gray-50`}>
+            <div className="text-sm text-gray-600">Contract Signed</div>
             <div
               className={`mt-2 text-center text-sm cursor-pointer ${contractComplete ? 'text-green-500' : 'text-gray-500'}`}
               onClick={() => contractComplete && openPopup(creator.contract_signed)}
@@ -86,12 +86,12 @@ export const CreatorTimeline = () => {
 
           {/* Connector Line from Contract to Draft */}
           <div
-            className={`w-1/2 h-1 ${contractComplete && draftComplete ? 'bg-green-500' : 'bg-gray-500'}`}
+            className={`w-1/2 h-1 ${contractComplete && draftComplete ? 'bg-green-500' : 'bg-gray-300'}`}
           ></div>
 
           {/* Draft Submission Box */}
-          <div className={`relative flex flex-col items-center w-1/3 p-4 rounded-md border-4 ${draftComplete ? 'border-green-500' : 'border-gray-500'} bg-gray-800`}>
-            <div className="text-xs text-gray-300">Draft Submitted</div>
+          <div className={`relative flex flex-col items-center w-1/3 p-4 rounded-md border-2 ${draftComplete ? 'border-green-500' : 'border-gray-300'} bg-gray-50`}>
+            <div className="text-sm text-gray-600">Draft Submitted</div>
             <div
               className={`mt-2 text-center text-sm cursor-pointer ${draftComplete ? 'text-green-500' : 'text-gray-500'}`}
             >
@@ -113,12 +113,12 @@ export const CreatorTimeline = () => {
 
           {/* Connector Line from Draft to Final */}
           <div
-            className={`w-1/2 h-1 ${draftComplete && finalComplete ? 'bg-green-500' : 'bg-gray-500'}`}
+            className={`w-1/2 h-1 ${draftComplete && finalComplete ? 'bg-green-500' : 'bg-gray-300'}`}
           ></div>
 
           {/* Final Submission Box */}
-          <div className={`relative flex flex-col items-center w-1/3 p-4 rounded-md border-4 ${finalComplete ? 'border-green-500' : 'border-gray-500'} bg-gray-800`}>
-            <div className="text-xs text-gray-300">Final Submitted</div>
+          <div className={`relative flex flex-col items-center w-1/3 p-4 rounded-md border-2 ${finalComplete ? 'border-green-500' : 'border-gray-300'} bg-gray-50`}>
+            <div className="text-sm text-gray-600">Final Submitted</div>
             <div
               className={`mt-2 text-center text-sm cursor-pointer ${finalComplete ? 'text-green-500' : 'text-gray-500'}`}
             >
@@ -143,11 +143,11 @@ export const CreatorTimeline = () => {
   };
 
   return (
-    <div className="max-w-screen-xl mx-auto p-6 bg-gray-800 rounded-lg">
-      <h2 className="text-3xl font-bold text-white mb-6">Creator Timeline</h2>
+    <div className="max-w-screen-xl mx-auto p-6 bg-white rounded-lg">
+      <h2 className="text-3xl font-bold text-gray-800 mb-6">Creator Timeline</h2>
 
       {selectedCreators.length === 0 ? (
-        <p className="text-white">No selected creators for this campaign.</p>
+        <p className="text-gray-600">No selected creators for this campaign.</p>
       ) : (
         <div className="space-y-6">
           {selectedCreators.map((creator) => renderTimelineItem(creator))}
@@ -157,9 +157,9 @@ export const CreatorTimeline = () => {
       {/* Popup Modal */}
       {popupContent && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full">
-            <h3 className="text-xl font-semibold text-white mb-4">Step Details</h3>
-            <p className="text-white">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">Step Details</h3>
+            <p className="text-gray-600">
               {isValidUrl(popupContent) ? (
                 <a
                   href={popupContent}
@@ -175,7 +175,7 @@ export const CreatorTimeline = () => {
             </p>
             <button
               onClick={closePopup}
-              className="mt-4 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+              className="mt-4 bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600"
             >
               Close
             </button>

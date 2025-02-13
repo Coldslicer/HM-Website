@@ -182,18 +182,22 @@ discordClient.on('messageReactionAdd', async (reaction, user) => {
     // If the channel is in the 'niches' table
     if (niches && niches.length > 0) {
       // Send the form to the user who reacted
-      const formMessage = 
-      ```
-      Hey there ${user.username}, thank you for your interest! 
-      Sadly custom links aren't available yet
-      Here's your id for the form: ${user.id}
+      // const formMessage = ```
+      // Hey there ${user.username}, thank you for your interest! 
+      // Sadly custom links aren't available yet
+      // Here's your id for the form: ${user.id}
       
-      You can also access this with my /id command, or with discord developer mode enabled```;
+      // You can also access this with my /id command, or with discord developer mode enabled```;
 
       
       // Send the form as a DM to the user who reacted
+      const urlRegex = /(https?:\/\/[^\s)]+)/g; // Regex to match URLs
+      const matches = reaction.message.content.match(urlRegex); // Find all links
+      const message = matches ? `[Here's your custom link!](${matches[matches.length - 1]}&discordId=${user.id})` : "I had trouble generating a custom link. Sorry!"; // Return last link or null if none
+
       const dmChannel = await user.createDM();
-      await dmChannel.send(formMessage);
+      console.log(message)
+      await dmChannel.send(message);
     } else {
       console.log('Channel not found in niches table, skipping send.');
     }

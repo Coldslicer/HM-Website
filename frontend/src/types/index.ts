@@ -1,15 +1,19 @@
-export interface Campaign {
-  id: string
-  name: string
-  start_date: string
-  duration: number
-  deliverable_type: 'short_form' | 'sponsored_segment' | 'full_video'
-  niches: string[]
-  brief_url: string
-  status: 'draft' | 'brief_submitted' | 'creators_selected' | 'contract_signed' | 'completed'
-  client_id: string
-  created_at: string
-}
+export type Campaign = {
+  id: number;
+  client_id: string;
+  company_name: string;
+  website: string;
+  company_description: string;
+  name: string;
+  start_date: string;
+  duration: number;
+  deliverable_type: 'short_form' | 'sponsored_segment' | 'full_video';
+  niches: string[];
+  brief_url: string;
+  status: string;
+  created_at: string;
+};
+
 
 export interface Creator {
   id: string; // Unique identifier for the creator (UUID)

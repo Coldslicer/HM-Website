@@ -10,7 +10,6 @@ export function Messaging() {
   const [channelData, setChannelData] = useState({});
   const [campaignStatus, setCampaignStatus] = useState('');
   const [groupChatChannelId, setGroupChatChannelId] = useState('');
-  const [clientName, setClientName] = useState('');
   const [selectedChannel, setSelectedChannel] = useState('');
   const intervalRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -61,7 +60,7 @@ export function Messaging() {
   }, []);
 
   const fetchMessages = async (channelId) => {
-    if (selectedChannel === '') return;
+    if (!channelId) return;
     try {
       console.log(`Fetching messages for channel ID: ${channelId}`);
       const response = await fetch(`/api/messages/read-messages/${channelId}`, {
@@ -79,28 +78,9 @@ export function Messaging() {
     }
   };
 
-  const fetchChannelData = async (creator_id) => {
-    if (channelData[creator_id]) {
-      return channelData[creator_id];
-    }
-    const { data: data, error } = await supabase
-      .from('channel_data')
-      .select('creator_id, handle')
-      .eq('creator_id', creator_id);
-
-    if (error) {
-      console.error('Error fetching channel data:', error);
-    } else {
-      console.log('Fetched channel data:', data);
-      console.log("error, if present: ", error);
-      channelData[creator_id] = data;
-      return data;
-    }
-  };
-
-  const handleChannelChange = (e) => {
-    setSelectedChannel(e.target.value);
-    fetchMessages(e.target.value);
+  const handleChannelChange = (channelId) => {
+    setSelectedChannel(channelId);
+    fetchMessages(channelId);
   };
 
   const handleSendMessage = async () => {
@@ -129,7 +109,7 @@ export function Messaging() {
 
   const refreshSelected = () => {
     console.log('Refreshing selected channel messages');
-    if (selectedChannel === '') return;
+    if (!selectedChannel) return;
     const container = messagesContainerRef.current;
     if (container) {
       const isAtBottom = container.scrollHeight - container.scrollTop === container.clientHeight;
@@ -137,7 +117,7 @@ export function Messaging() {
       setWasAtBottom(isAtBottom);
     }
     fetchMessages(selectedChannel);
-  }
+  };
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -166,8 +146,8 @@ export function Messaging() {
 
   useEffect(() => {
     console.log('Selected channel:', selectedChannel);
-    if (selectedChannel === '') {
-        setSelectedChannel(groupChatChannelId);
+    if (!selectedChannel && groupChatChannelId) {
+      setSelectedChannel(groupChatChannelId);
     }
 
     // Fetch initial messages for the default or first channel if needed
@@ -182,77 +162,106 @@ export function Messaging() {
     return () => clearInterval(intervalId);
   }, [selectedChannel]);
 
-  const getChannelHandle = (creatorId) => {
-    const channel = fetchChannelData(creatorId);
-    if (!channel) console.log('Channel data not found for creator ID:', creatorId);
-    return channel.handle || 'Unknown';
-  };
-
   if (campaignStatus !== 'contract_signed') {
     return (
-      <div className="max-w-4xl mx-auto p-4 bg-gray-800 rounded-md">
-        <h2 className="text-2xl font-bold text-white mb-6">Messaging</h2>
-        <p className="text-white">You will be able to access messages after signing your contract.</p>
+      <div className="max-w-4xl mx-auto p-4 bg-white rounded-md shadow-md">
+        <h2 className="text-2xl font-bold text-black mb-6">Messaging</h2>
+        <p className="text-gray-700">You will be able to access messages after signing your contract.</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 bg-gray-800 rounded-md flex flex-col h-screen">
-      <h2 className="text-2xl font-bold text-white mb-6">Messaging</h2>
-
-      <div className="mb-4">
-        <label htmlFor="channel" className="text-white">Select Channel</label>
-        <select
-          id="channel"
-          value={selectedChannel}
-          onChange={handleChannelChange}
-          className="w-full px-4 py-2 rounded-md bg-gray-700 text-white"
-        >
-          <option value={''}>-- Select a Channel --</option>
-          <option value={groupChatChannelId}>Announcements (Group Chat)</option>
-          {creators.map((creator) => (
-            <option key={creator.id} value={creator.channel_id}>
-              {
-                creator.channel_url.split('@')[1] || "Unknown"
-              }
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div ref={messagesContainerRef} className="flex-1 p-4 overflow-y-auto bg-gray-900 rounded-md">
-        <div className="space-y-4">
-          {messages.slice().reverse().map((msg) => (
-            <div 
-              key={msg.id} 
-              className={`bg-gray-800 p-3 rounded-md max-w-2/3 ${msg.author === currentCampaign?.companyName ? 'ml-auto text-right' : ''}`}
+    <div className="flex h-[80vh] max-w-6xl mx-auto bg-white rounded-md shadow-md overflow-hidden">
+      {/* Sidebar for Channel Selection */}
+      <div className="w-64 bg-gray-50 border-r border-gray-200 p-4">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Channels</h3>
+        <ul className="space-y-2">
+          <li>
+            <button
+              onClick={() => handleChannelChange(groupChatChannelId)}
+              className={`w-full text-left px-4 py-2 rounded-md ${
+                selectedChannel === groupChatChannelId
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
             >
-              <p className="text-white"><strong>{msg.author}:</strong> {msg.content}</p>
-              <p className="text-gray-400 text-sm">{new Date(msg.timestamp).toLocaleString()}</p>
-            </div>
+              All
+            </button>
+          </li>
+          {creators.map((creator) => (
+            <li key={creator.id}>
+              <button
+                onClick={() => handleChannelChange(creator.channel_id)}
+                className={`w-full text-left px-4 py-2 rounded-md ${
+                  selectedChannel === creator.channel_id
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {creator.channel_url.split('@')[1] || "Unknown"}
+              </button>
+            </li>
           ))}
-          <div ref={messagesEndRef} />
-        </div>
+        </ul>
       </div>
 
-      <div className="mt-4 p-4 bg-gray-700 rounded-md flex items-center">
-        <textarea
-          id="message"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={2}
-          className="w-full px-4 py-2 rounded-md bg-gray-800 text-white mb-2 mr-2"
-          placeholder="Type your message..."
-          disabled={!selectedChannel}
-        />
-        <button
-          onClick={handleSendMessage}
-          className="bg-orange-500 text-white p-2 rounded-md"
-          disabled={!selectedChannel}
+      {/* Main Messaging Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Messages Container */}
+        <div
+          ref={messagesContainerRef}
+          className="flex-1 p-6 overflow-y-auto bg-white"
         >
-          <FaPaperPlane />
-        </button>
+          <div className="space-y-4">
+            {messages.slice().reverse().map((msg) => {
+              const authorName = msg.bot
+                ? currentCampaign?.company_name
+                : msg.author;
+              const displayName = authorName
+                .split(' ')
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+
+              return (
+                <div
+                  key={msg.id}
+                  className={`max-w-[70%] p-4 rounded-lg ${
+                    msg.author === currentCampaign?.company_name
+                      ? 'ml-auto bg-orange-50'
+                      : 'bg-gray-50'
+                  }`}
+                >
+                  <p className="font-semibold text-gray-800">{displayName}</p>
+                  <p className="text-gray-700 mt-1">{msg.content}</p>
+                </div>
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+
+        {/* Message Input Area */}
+        <div className="p-4 border-t border-gray-200">
+          <div className="flex gap-2">
+            <textarea
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={2}
+              className="flex-1 px-4 py-2 rounded-md bg-gray-50 text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              placeholder="Type your message..."
+              disabled={!selectedChannel}
+            />
+            <button
+              onClick={handleSendMessage}
+              className="bg-orange-500 text-white p-3 rounded-md hover:bg-orange-600 transition-colors"
+              disabled={!selectedChannel}
+            >
+              <FaPaperPlane />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

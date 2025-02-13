@@ -103,18 +103,18 @@ export const CreatorSelection: React.FC = () => {
 
   if (currentCampaign?.status === 'draft') {
     return (
-      <div className="max-w-screen-xl mx-auto p-4 bg-gray-800 rounded-md">
-        <h2 className="text-2xl font-bold text-white mb-6">Creator Selection</h2>
-        <div className="text-white">
+      <div className="max-w-screen-xl mx-auto p-4 bg-gray-50 rounded-md">
+        <h2 className="text-2xl font-bold text-black mb-6">Creator Selection</h2>
+        <div className="text-black">
           After submitting your brief, here's where you'll see creators who want to work with you!
         </div>
       </div>
     );
   } else if (creators.length === 0) {
     return (
-      <div className="max-w-screen-xl mx-auto p-4 bg-gray-800 rounded-md">
-        <h2 className="text-2xl font-bold text-white mb-6">Creator Selection</h2>
-        <div className="text-white">
+      <div className="max-w-screen-xl mx-auto p-4 bg-gray-50 rounded-md">
+        <h2 className="text-2xl font-bold text-black mb-6">Creator Selection</h2>
+        <div className="text-black">
           You'll see creators here as they express interest to participate. Please check back later to give creators time to view your brief! We typically get responses within a day.
         </div>
       </div>
@@ -122,13 +122,13 @@ export const CreatorSelection: React.FC = () => {
   }
 
   return (
-    <div className="max-w-screen-xl mx-auto p-4 bg-gray-800 rounded-md">
-      <h2 className="text-2xl font-bold text-white mb-6">Creator Selection</h2>
+    <div className="max-w-screen-xl mx-auto p-4 bg-gray-50 rounded-md">
+      <h2 className="text-2xl font-bold text-black mb-6">Creator Selection</h2>
 
-      <div className="overflow-x-auto bg-gray-700 rounded-md mt-4 text-sm">
-        <table className="min-w-full text-white">
+      <div className="overflow-x-auto bg-white-700 rounded-md mt-4 text-sm">
+        <table className="min-w-full text-black">
           <thead>
-            <tr className="bg-gray-800">
+            <tr className="bg-gray-50">
               <th className="py-3 px-4 text-left w-1/6">Channel Name</th>
               <th className="py-3 px-4 text-left w-1/6">Channel Link</th>
               <th className="py-3 px-4 text-right w-1/6">Rate</th>
@@ -143,7 +143,7 @@ export const CreatorSelection: React.FC = () => {
               <tr
                 key={creator.channel_url}
                 onClick={() => handleSelectCreator(creator)}
-                className={`cursor-pointer ${creator.selected ? 'bg-green-600 hover:bg-green-700' : 'hover:bg-gray-600'} ${currentCampaign?.status === 'brief_submitted' ? '' : 'cursor-not-allowed'}`}
+                className={`cursor-pointer ${creator.selected ? 'bg-green-400 hover:bg-green-300' : 'hover:bg-white-600'} ${currentCampaign?.status === 'brief_submitted' ? '' : 'cursor-not-allowed'}`}
               >
                 <td className="py-3 px-4">{creator.channelTitle || ""}</td>
                 <td className="py-3 px-4">
@@ -172,13 +172,13 @@ export const CreatorSelection: React.FC = () => {
         </table>
       </div>
 
-      <div className="text-white text-right mt-4">
+      <div className="text-black text-right mt-4">
         <p>Total Rate: {totalRate}</p>
       </div>
 
       {currentCampaign?.status === 'brief_submitted' && (
         <div className="flex justify-center mt-4">
-          <button onClick={finalizeCreators} className="bg-orange-500 text-white px-4 py-2 rounded-md">
+          <button onClick={finalizeCreators} className="bg-orange-500 text-black px-4 py-2 rounded-md">
             Finalize Creators
           </button>
         </div>
@@ -187,12 +187,12 @@ export const CreatorSelection: React.FC = () => {
       {/* Popup Modal for Personal Statement */}
       {selectedStatement && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full">
-            <h3 className="text-xl font-semibold text-white mb-4">Personal Statement</h3>
-            <p className="text-white">{selectedStatement}</p>
+          <div className="bg-gray-50 p-6 rounded-lg max-w-md w-full">
+            <h3 className="text-xl font-semibold text-black mb-4">Personal Statement</h3>
+            <p className="text-black">{selectedStatement}</p>
             <button
               onClick={handleClosePopup}
-              className="mt-4 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+              className="mt-4 bg-red-600 text-black px-4 py-2 rounded-md hover:bg-red-700"
             >
               Close
             </button>

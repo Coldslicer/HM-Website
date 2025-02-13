@@ -4,8 +4,10 @@ import { useAuthStore } from '../../store/authStore';
 import { useCampaignStore } from '../../store/campaignStore';
 import { supabase } from '../../lib/supabase';
 
-
 const initialFormData = {
+  company_name: '',
+  website: '',
+  company_description: '',
   name: '',
   start_date: '',
   duration: 1,
@@ -38,8 +40,42 @@ export function BriefForm() {
 
     fetchNiches();
 
+    const fetchMostRecentCampaign = async () => {
+      if (!user) return;
+
+      // Fetch the most recent non-draft campaign for the current client
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select('*')
+        .eq('client_id', user.id)
+        .neq('status', 'draft')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('Error fetching most recent campaign:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const recentCampaign = data[0];
+        // Prefill company information if the current campaign is a draft
+        if (currentCampaign == null || currentCampaign?.status === 'draft') {
+          setFormData((prev) => ({
+            ...prev,
+            company_name: recentCampaign.company_name || '',
+            website: recentCampaign.website || '',
+            company_description: recentCampaign.company_description || '',
+          }));
+        }
+      }
+    };
+
     if (currentCampaign) {
       setFormData({
+        company_name: currentCampaign.company_name,
+        website: currentCampaign.website,
+        company_description: currentCampaign.company_description,
         name: currentCampaign.name,
         start_date: currentCampaign.start_date,
         duration: currentCampaign.duration,
@@ -49,8 +85,9 @@ export function BriefForm() {
       });
     } else {
       setFormData(initialFormData);
+      fetchMostRecentCampaign(); // Prefill company info for new drafts
     }
-  }, [currentCampaign]);
+  }, [currentCampaign, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +126,10 @@ export function BriefForm() {
       const formattedMessage = `
       **Campaign Brief**
         
+      🏢 **Company Name**: ${formData.company_name}
+      🌐 **Website**: ${formData.website}
+      📝 **Company Description**: ${formData.company_description}
+        
       📝 **Campaign Name**: ${formData.name}
       📅 **Start Date**: ${new Date(formData.start_date).toLocaleDateString()}
       ⏳ **Duration**: ${formData.duration} weeks
@@ -101,7 +142,6 @@ export function BriefForm() {
       Alternatively, react with a ✅ to recieve a custom link
       `;
 
-
       // Send to selected niches' webhooks
       const selectedNiches = niches.filter((niche) => formData.niches.includes(niche.name!));
       for (const niche of selectedNiches) {
@@ -113,7 +153,6 @@ export function BriefForm() {
             message: formattedMessage,  // The message you want to send
           }),
         });
-        
       }
 
       // Additionally send to the NULL niche's webhook
@@ -150,39 +189,47 @@ export function BriefForm() {
   if (currentCampaign != null && currentCampaign?.status !== 'draft') {
     return (
       <div className="max-w-2xl mx-auto">
-        <h2 className="text-2xl font-bold text-white mb-6">Campaign Brief</h2>
-        <div className="bg-gray-800 p-6 rounded-lg">
+        <h2 className="text-2xl font-bold text-black mb-6">Campaign Brief</h2>
+        <div className="bg-gray-50 p-6 rounded-lg">
           <dl className="space-y-4">
             <div>
-              <dt className="text-sm font-medium text-gray-400">
-                Campaign Name
-              </dt>
-              <dd className="text-white">{currentCampaign?.name}</dd>
+              <dt className="text-sm font-medium text-black-400">Company Name</dt>
+              <dd className="text-black">{currentCampaign?.company_name}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-400">Start Date</dt>
-              <dd className="text-white">{currentCampaign?.start_date}</dd>
+              <dt className="text-sm font-medium text-black-400">Website</dt>
+              <dd className="text-black">{currentCampaign?.website}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-400">Duration</dt>
-              <dd className="text-white">{currentCampaign?.duration} weeks</dd>
+              <dt className="text-sm font-medium text-black-400">Company Description</dt>
+              <dd className="text-black">{currentCampaign?.company_description}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-400">
-                Deliverable Type
-              </dt>
-              <dd className="text-white">
+              <dt className="text-sm font-medium text-black-400">Campaign Name</dt>
+              <dd className="text-black">{currentCampaign?.name}</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-black-400">Start Date</dt>
+              <dd className="text-black">{currentCampaign?.start_date}</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-black-400">Duration</dt>
+              <dd className="text-black">{currentCampaign?.duration} weeks</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-black-400">Deliverable Type</dt>
+              <dd className="text-black">
                 {currentCampaign?.deliverable_type.replace('_', ' ')}
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-400">Niches</dt>
-              <dd className="text-white">
+              <dt className="text-sm font-medium text-black-400">Niches</dt>
+              <dd className="text-black">
                 {currentCampaign?.niches.join(', ')}
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-400">Brief URL</dt>
+              <dt className="text-sm font-medium text-black-400">Brief URL</dt>
               <dd>
                 <a
                   href={currentCampaign?.brief_url}
@@ -202,12 +249,68 @@ export function BriefForm() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-white mb-6">Campaign Brief</h2>
+      <h2 className="text-2xl font-bold text-black mb-6">Campaign Brief</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label
+            htmlFor="company_name"
+            className="block text-sm font-medium text-black-200"
+          >
+            Company Name
+          </label>
+          <input
+            type="text"
+            id="company_name"
+            value={formData.company_name}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, company_name: e.target.value }))
+            }
+            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="website"
+            className="block text-sm font-medium text-black-200"
+          >
+            Website
+          </label>
+          <input
+            type="url"
+            id="website"
+            value={formData.website}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, website: e.target.value }))
+            }
+            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="company_description"
+            className="block text-sm font-medium text-black-200"
+          >
+            Company Description
+          </label>
+          <textarea
+            id="company_description"
+            value={formData.company_description}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, company_description: e.target.value }))
+            }
+            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label
             htmlFor="name"
-            className="block text-sm font-medium text-gray-200"
+            className="block text-sm font-medium text-black-200"
           >
             Campaign Name<br/>
           </label>
@@ -224,10 +327,10 @@ export function BriefForm() {
                 setError('Campaign name can only contain letters, numbers, and spaces.');
               }
             }}
-            className="mt-1 block w-full rounded-md border-gray-700 bg-gray-700 text-white shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
             required
           />
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-black-400 mt-1">
             Should be something descriptive, only containing letters, numbers, and spaces.
           </p>
           {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
@@ -236,7 +339,7 @@ export function BriefForm() {
         <div>
           <label
             htmlFor="start_date"
-            className="block text-sm font-medium text-gray-200"
+            className="block text-sm font-medium text-black-200"
           >
             Start Date
           </label>
@@ -247,7 +350,7 @@ export function BriefForm() {
             onChange={(e) =>
               setFormData((prev) => ({ ...prev, start_date: e.target.value }))
             }
-            className="mt-1 block w-full rounded-md border-gray-700 bg-gray-700 text-white shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
             required
           />
         </div>
@@ -255,7 +358,7 @@ export function BriefForm() {
         <div>
           <label
             htmlFor="duration"
-            className="block text-sm font-medium text-gray-200"
+            className="block text-sm font-medium text-black-200"
           >
             Duration (weeks)
           </label>
@@ -270,7 +373,7 @@ export function BriefForm() {
                 duration: parseInt(e.target.value),
               }))
             }
-            className="mt-1 block w-full rounded-md border-gray-700 bg-gray-700 text-white shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
             required
           />
         </div>
@@ -278,7 +381,7 @@ export function BriefForm() {
         <div>
           <label
             htmlFor="deliverable_type"
-            className="block text-sm font-medium text-gray-200"
+            className="block text-sm font-medium text-black-200"
           >
             Deliverable Type
           </label>
@@ -291,7 +394,7 @@ export function BriefForm() {
                 deliverable_type: e.target.value as any,
               }))
             }
-            className="mt-1 block w-full rounded-md border-gray-700 bg-gray-700 text-white shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
             required
           >
             <option value="short_form">Short Form</option>
@@ -301,7 +404,7 @@ export function BriefForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-200 mb-2">
+          <label className="block text-sm font-medium text-black-200 mb-2">
             Niches
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -313,7 +416,7 @@ export function BriefForm() {
                   onChange={() => handleNicheToggle(niche.name!)}
                   className="rounded border-gray-700 text-orange-500 focus:ring-orange-500"
                 />
-                <span className="ml-2 text-white">{niche.name}</span>
+                <span className="ml-2 text-black">{niche.name}</span>
               </label>
             ))}
           </div>
@@ -322,7 +425,7 @@ export function BriefForm() {
         <div>
           <label
             htmlFor="brief_url"
-            className="block text-sm font-medium text-gray-200"
+            className="block text-sm font-medium text-black-200"
           >
             Brief URL
           </label>
@@ -333,14 +436,14 @@ export function BriefForm() {
             onChange={(e) =>
               setFormData((prev) => ({ ...prev, brief_url: e.target.value }))
             }
-            className="mt-1 block w-full rounded-md border-gray-700 bg-gray-700 text-white shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
             required
           />
         </div>
 
         <button
           type="submit"
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
         >
           Submit Brief
         </button>

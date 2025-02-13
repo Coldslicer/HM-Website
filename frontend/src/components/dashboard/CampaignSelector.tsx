@@ -1,64 +1,82 @@
-import React from 'react'
-import { useCampaignStore } from '../../store/campaignStore'
-import { supabase } from '../../lib/supabase'
-import { Campaign } from '../../types'
-import { useAuthStore } from '../../store/authStore'
+import React from 'react';
+import { useCampaignStore } from '../../store/campaignStore';
+import { supabase } from '../../lib/supabase';
+import { Campaign } from '../../types';
+import { useAuthStore } from '../../store/authStore';
+import { Plus } from 'lucide-react';
 
-export function CampaignSelector() {
-  const [campaigns, setCampaigns] = React.useState<Campaign[]>([])
-  const { currentCampaign, setCurrentCampaign } = useCampaignStore()
-  const { user } = useAuthStore()
+export function CampaignSelector({ onClose }: { onClose?: () => void }) {
+  const [campaigns, setCampaigns] = React.useState<Campaign[]>([]);
+  const { currentCampaign, setCurrentCampaign } = useCampaignStore();
+  const { user } = useAuthStore();
 
   React.useEffect(() => {
-    if (!user) return
+    if (!user) return;
 
     const fetchCampaigns = async () => {
       const { data, error } = await supabase
         .from('campaigns')
         .select('*')
         .eq('client_id', user.id)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching campaigns:', error)
-        return
+        console.error('Error fetching campaigns:', error);
+        return;
       }
 
-      setCampaigns(data || [])
-      
-      // // Set first campaign as current if none selected
-      // if (!currentCampaign && data && data.length > 0) {
-      //   setCurrentCampaign(data[0])
-      // }
-    }
+      setCampaigns(data || []);
+    };
 
-    fetchCampaigns()
-  }, [user, currentCampaign, setCurrentCampaign])
+    fetchCampaigns();
+  }, [user, currentCampaign, setCurrentCampaign]);
+
+  const handleSelectCampaign = (campaign: Campaign) => {
+    setCurrentCampaign(campaign);
+    if (onClose) onClose(); // Close the popup if `onClose` is provided
+  };
 
   return (
-    <div className="flex items-center space-x-4 mb-6">
-      <select
-        value={currentCampaign?.id || ''}
-        onChange={(e) => {
-          const campaign = campaigns.find(c => c.id === e.target.value)
-          setCurrentCampaign(campaign || null)
-        }}
-        className="bg-gray-700 text-white rounded-md px-3 py-2 flex-1"
-      >
-        <option value="">New Campaign</option>
-        {campaigns.map((campaign) => (
-          <option key={campaign.id} value={campaign.id}>
-            {campaign.name}
-          </option>
-        ))}
-      </select>
-      
+    <div className="w-full max-w-4xl p-8 bg-white rounded-lg shadow-lg"> {/* Wider popup */}
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Select a Campaign</h2>
+
+      {/* Campaign List with Scrollable Container */}
+      <div className="max-h-[400px] overflow-y-auto pr-4"> {/* Added max height and scrolling */}
+        <div className="space-y-3">
+          {campaigns.map((campaign) => (
+            <div
+              key={campaign.id}
+              onClick={() => handleSelectCampaign(campaign)}
+              className={`p-6 rounded-lg cursor-pointer transition-all
+                ${currentCampaign?.id === campaign.id
+                  ? 'bg-orange-50 border-2 border-orange-500'
+                  : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                }`}
+            >
+              <h3 className="text-xl font-semibold text-gray-800"> {/* Larger text */}
+                {campaign.name}
+              </h3>
+              <p className="text-sm text-gray-500 mt-2"> {/* Adjusted spacing */}
+                Created: {new Date(campaign.created_at).toLocaleDateString()}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* New Campaign Button */}
       <button
-        onClick={() => setCurrentCampaign(null)}
-        className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600"
+        onClick={() => {
+          setCurrentCampaign(null);
+          if (onClose) onClose(); // Close the popup if `onClose` is provided
+        }}
+        className="mt-6 w-full py-3 bg-orange-500 hover:bg-orange-600 text-white 
+          rounded-lg font-medium transition-colors flex items-center 
+          justify-center space-x-2"
       >
-        New Campaign
+        <Plus className="w-5 h-5" />
+        <span>New Campaign</span>
       </button>
     </div>
-  )
+  );
 }
