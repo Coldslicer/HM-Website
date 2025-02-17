@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { CampaignSelector } from './CampaignSelector';
-import { Brush, FileText, Users, Send, Clock } from 'lucide-react';
+import { Brush, FileText, Users, Send, Clock, CreditCard } from 'lucide-react'; // Import the CreditCard icon
 import { useCampaignStore } from '../../store/campaignStore'; // Import the campaign store
 
 export function Sidebar() {
@@ -110,6 +110,21 @@ export function Sidebar() {
         >
           <Clock className="h-5 w-5" />
           <span>Creator Timeline</span>
+        </NavLink>
+
+        {/* New Payment Tab */}
+        <NavLink
+          to="/dashboard/payment"
+          className={({ isActive }) =>
+            `flex items-center space-x-2 p-2 rounded-md ${
+              isActive
+                ? 'bg-orange-500 text-white'
+                : 'text-black hover:bg-gray-200'
+            }`
+          }
+        >
+          <CreditCard className="h-5 w-5" /> {/* Payment icon */}
+          <span>Payment</span>
         </NavLink>
       </nav>
     </div>

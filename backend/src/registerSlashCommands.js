@@ -1,5 +1,5 @@
 
-import { discordClient } from "./src/clients.js";
+import { discordClient } from "./util/discordSetup.js";
 import { SlashCommandBuilder } from '@discordjs/builders';
 
 const commands = [

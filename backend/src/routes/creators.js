@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import { supabase } from '../lib/supabase.js';
+import { SUPABASE_CLIENT } from '../util/setup.js';
 import { Console } from 'console';
 
 const router = express.Router();
@@ -88,7 +88,7 @@ async function getVideoData(channelId) {
 router.get('/channel-data', async (req, res) => {
   const { url, id } = req.query;
 
-  const { data, error } = await supabase
+  const { data, error } = await SUPABASE_CLIENT
     .from('channel_data')
     .select('*')
     .eq('creator_id',id)
@@ -126,7 +126,7 @@ router.get('/channel-data', async (req, res) => {
 
     res.json(response);
 
-    const { data, error } = await supabase
+    const { data, error } = await SUPABASE_CLIENT
             .from('channel_data')
             .insert([
               {

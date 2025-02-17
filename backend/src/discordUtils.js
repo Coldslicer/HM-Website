@@ -1,5 +1,5 @@
 // src/discordUtils.js
-import { discordClient } from "./clients.js";
+import { discordClient } from "./util/discordSetup.js";
 
 // Create a private channel for each campaign creator (individual chat)
 async function createPrivateChannelForCampaign(guildId, campaignId, discordIgn, supabase) {

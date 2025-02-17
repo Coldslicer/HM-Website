@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import { supabase } from '../lib/supabase.js';
+import { SUPABASE_CLIENT } from '../util/setup.js';
 
 const router = express.Router();
 const API_KEY = process.env.SUPABASE_API_KEY;
@@ -8,7 +8,7 @@ const API_KEY = process.env.SUPABASE_API_KEY;
 router.get('/client-form', async (req, res) => {
   const { campaign_id, signer_email } = req.query;
 
-  const { data: existingData, error: fetchError } = await supabase
+  const { data: existingData, error: fetchError } = await SUPABASE_CLIENT
       .from("campaigns")
       .select("contract_json")
       .eq("id", campaign_id)
@@ -77,7 +77,7 @@ router.get('/client-form', async (req, res) => {
     res.json({ embed_src: clientEmbedSrc, external_id: external_id });
 
     // Update Supabase with the contract JSON
-    const { data, error } = await supabase
+    const { data, error } = await SUPABASE_CLIENT
       .from("campaigns")
       .update({ contract_json: response.data })
       .eq("id", campaign_id);

@@ -1,0 +1,45 @@
+import React from 'react';
+import { loadStripe } from '@stripe/stripe-js';
+
+// Load your Stripe publishable key
+const stripePromise = loadStripe('pk_test_51QsKUqPs3f7ZnFKcWtUemRUDqHyrUxGVOt2HjzTi616FBskb0TxLzFy4M8Ql8EPiqiW1yWoqOuOOnJUsl1mmPsBW00prSLK3ol');
+
+const Payment: React.FC = () => {
+  const handleClick = async () => {
+    // Step 1: Create a Checkout Session on the server
+    const { id } = await fetch('http://localhost:3000/api/payment/create-checkout-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }).then((res) => res.json());
+
+    // Step 2: Redirect to Stripe Checkout
+    const stripe = await stripePromise;
+
+    if (!stripe) {
+      console.error('Stripe has not loaded.');
+      return;
+    }
+    
+    const { error } = await stripe.redirectToCheckout({ sessionId: id });
+
+    if (error) {
+      console.error(error);
+    }
+  };
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Pay for Dummy Product</h1>
+      <button
+        onClick={handleClick}
+        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+      >
+        Pay $10.00
+      </button>
+    </div>
+  );
+};
+
+export default Payment;

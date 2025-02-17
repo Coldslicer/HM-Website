@@ -1,25 +1,9 @@
-// clients.js
-import { Client, GatewayIntentBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { supabase } from './lib/supabase.js';
+/* ================ [ HELPERS ] ================ */
 
-
-const discordClient = new Client({
-  intents: [
-    //GatewayIntentBits.DirectMessages
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMessageReactions,
-  ],
-});
-
-const STARTUP_CHANNEL_ID = process.env.STARTUP_CHANNEL_ID;
-
+// idk what this does
 async function getCampaignCreatorEntryByChannel(channelId, userId) {
   // Check campaign_creators table for direct match on channel_id
-  let { data: creatorData, error } = await supabase
+  let { data: creatorData, error } = await SUPABASE_CLIENT
       .from('campaign_creators')
       .select('*')
       .eq('channel_id', channelId)
@@ -30,7 +14,7 @@ async function getCampaignCreatorEntryByChannel(channelId, userId) {
   }
 
   // If not found, check the campaigns table for group chat matching
-  let { data: campaignData, error: campaignError } = await supabase
+  let { data: campaignData, error: campaignError } = await SUPABASE_CLIENT
       .from('campaigns')
       .select('*')
       .eq('group_chat_channel_id', channelId)
@@ -38,7 +22,7 @@ async function getCampaignCreatorEntryByChannel(channelId, userId) {
 
   if (campaignData) {
       // If campaign found, search for a matching creator based on discord_id and campaign_id
-      let { data: groupCreatorData, error: groupCreatorError } = await supabase
+      let { data: groupCreatorData, error: groupCreatorError } = await SUPABASE_CLIENT
           .from('campaign_creators')
           .select('*')
           .eq('campaign_id', campaignData.id)
@@ -54,9 +38,33 @@ async function getCampaignCreatorEntryByChannel(channelId, userId) {
   return null;
 }
 
+/* ================ [ DISCORD ] ================ */
 
-// Listen for interactions
-discordClient.on('interactionCreate', async (interaction) => {
+// Imports
+import { ChannelType } from 'discord.js';
+
+// On bot ready
+const ON_READY = async ( DISCORD_CLIENT ) => {
+
+  console.log(`[HM]: Discord bot logged in as ${DISCORD_CLIENT.user.tag}`);
+
+  try {
+    const channel = await DISCORD_CLIENT.channels.fetch(process.env.STARTUP_CHANNEL_ID);
+    if (channel && channel.type === ChannelType.GuildText) {
+      await channel.send('Bot has started up successfully!');
+      console.log('[HM]: Successfully started up discord bot!');
+    } else {
+      console.error('[HM]: Failed to send startup messsage!');
+    }
+  } catch (error) {
+    console.error('[HM]: Failed to start up bot! ' + error);
+  }
+
+};
+
+// On user interaction
+const ON_USER_INTERACTION = async ( SUPABASE_CLIENT, interaction) => {
+
   if (!interaction.isCommand()) return;
   if (interaction.commandName === 'draft' || interaction.commandName === 'final') {
     const userId = interaction.user.id;
@@ -71,7 +79,7 @@ discordClient.on('interactionCreate', async (interaction) => {
         // Dynamically update the column based on the command name ('draft' or 'final')
         const columnToUpdate = interaction.commandName; // 'draft' or 'final'
 
-        let { data, error } = await supabase
+        let { data, error } = await SUPABASE_CLIENT
             .from('campaign_creators')
             .update({ [columnToUpdate]: draftLink }) // Use dynamic column name
             .eq('id', creatorEntry.id);
@@ -102,31 +110,14 @@ discordClient.on('interactionCreate', async (interaction) => {
       ephemeral: true, // This makes it visible only to the user
     });
   }
-});
 
-discordClient.once('ready', async () => {
+};
 
-
-  console.log(`Discord bot logged in as ${discordClient.user.tag}`);
-
-  try {
-    const channel = await discordClient.channels.fetch(STARTUP_CHANNEL_ID);
-    if (channel && channel.type === ChannelType.GuildText) {
-      await channel.send('Bot has started up successfully!');
-      console.log('Startup message sent to the channel');
-    } else {
-      console.error('Error sending startup message');
-    }
-  } catch (error) {
-    console.error('There was an error starting up the bot');
-  }
-});
-
-// Handler for reacting to messages in channels from the niches table
-const reactToMessagesInChannels = async (message) => {
+// On user message
+const ON_USER_MESSAGE = async ( SUPABASE_CLIENT, message ) => {
   try {
     // Step 1: Fetch the 'channel_id' from the 'niches' table
-    const { data: niches, error } = await supabase
+    const { data: niches, error } = await SUPABASE_CLIENT
       .from('niches')
       .select('channel_id')
       .eq('channel_id', message.channel.id);  // Check if the message channel's ID exists in niches
@@ -151,12 +142,9 @@ const reactToMessagesInChannels = async (message) => {
   }
 };
 
+// On user reaction
+const ON_USER_REACTION = async ( SUPABASE_CLIENT, reaction, user ) => {
 
-
-// Listen for new messages in Discord
-discordClient.on('messageCreate', reactToMessagesInChannels);
-
-discordClient.on('messageReactionAdd', async (reaction, user) => {
   console.log('Reaction added:', reaction.emoji.name);
   try {
     // Ensure it's not a bot reaction
@@ -169,7 +157,7 @@ discordClient.on('messageReactionAdd', async (reaction, user) => {
     const channelId = reaction.message.channel.id;
 
     // Fetch the list of channel IDs from the 'niches' table in Supabase
-    const { data: niches, error } = await supabase
+    const { data: niches, error } = await SUPABASE_CLIENT
       .from('niches')
       .select('channel_id')
       .eq('channel_id', channelId);
@@ -193,7 +181,7 @@ discordClient.on('messageReactionAdd', async (reaction, user) => {
       // Send the form as a DM to the user who reacted
       const urlRegex = /(https?:\/\/[^\s)]+)/g; // Regex to match URLs
       const matches = reaction.message.content.match(urlRegex); // Find all links
-      const message = matches ? `[Here's your custom link!](${matches[matches.length - 1]}&discordId=${user.id})` : "I had trouble generating a custom link. Sorry!"; // Return last link or null if none
+      const message = matches ? `[Here's your custom link!](${matches[matches.length - 1]}&discordId=${user.id})` : 'I had trouble generating a custom link. Sorry!'; // Return last link or null if none
 
       const dmChannel = await user.createDM();
       console.log(message)
@@ -204,10 +192,8 @@ discordClient.on('messageReactionAdd', async (reaction, user) => {
   } catch (error) {
     console.error('Error handling reaction:', error);
   }
-});
 
+}
 
-discordClient.login(process.env.DISCORD_TOKEN); 
-
-
-export { discordClient };
+// Export functions
+export { ON_READY, ON_USER_INTERACTION, ON_USER_MESSAGE, ON_USER_REACTION };

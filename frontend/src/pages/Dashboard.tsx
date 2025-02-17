@@ -7,6 +7,7 @@ import { CampaignSelector } from '../components/dashboard/CampaignSelector'
 import { Messaging } from './dashboard/Messaging'
 import { Contract } from './dashboard/Contract'
 import { CreatorTimeline } from './dashboard/Timeline'
+import Payment from './dashboard/Payment'
 
 export function Dashboard() {
   return (
@@ -40,6 +41,12 @@ export function Dashboard() {
             element={
               <CreatorTimeline />
             } 
+          />
+          <Route
+            path="payment"
+            element={
+              <Payment />
+            }
           />
         </Routes>
       </div>

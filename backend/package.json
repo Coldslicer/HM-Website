@@ -19,6 +19,7 @@
     "express": "^4.21.2",
     "fuse.js": "^7.0.0",
     "string-similarity": "^4.0.4",
+    "stripe": "^17.6.0",
     "supabase": "^2.2.1"
   }
 }

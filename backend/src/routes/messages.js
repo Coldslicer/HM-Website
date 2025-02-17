@@ -1,13 +1,13 @@
 // routes/messages.ts
 import express from 'express';
-import { discordClient } from '../clients.js';  // Import the Discord client
+import { DISCORD_CLIENT } from '../util/setup.js';  // Import the Discord client
 import { ChannelType } from 'discord.js';
 
 const router = express.Router();
 
 async function fetchMessages(channelId) {
   try {
-    const channel = await discordClient.channels.fetch(channelId);
+    const channel = await DISCORD_CLIENT.channels.fetch(channelId);
     if (!channel || channel.type !== ChannelType.GuildText) {
       throw new Error('Channel not found or is not a text channel');
     }
@@ -37,7 +37,7 @@ router.post('/send', async (req, res) => {
   }
 
   try {
-    const channel = await discordClient.channels.fetch(channelId);
+    const channel = await DISCORD_CLIENT.channels.fetch(channelId);
     if (!channel || channel.type !== ChannelType.GuildText) {
       throw new Error('Channel not found or is not a text channel');
     }

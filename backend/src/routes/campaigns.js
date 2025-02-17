@@ -1,12 +1,14 @@
-// File: routes/campaigns.ts
+/* ================ [ CAMPAIGNS ] ================ */
+
+// Imports
 import express from 'express';
-import { supabase } from '../lib/supabase.js';  // Import your Supabase client
-import { discordClient } from '../clients.js';  // Import your Discord client
+import { SUPABASE_CLIENT } from '../util/setup.js';  // Import your Supabase client
+import { DISCORD_CLIENT } from '../util/setup.js';  // Import your Discord client
 import { PermissionsBitField } from 'discord.js';
 
 const router = express.Router();
 
-const GUILD_ID = process.env.GUILD_ID; // Use environment variable for the guild ID
+const SERVER_ID = process.env.SERVER_ID; // Use environment variable for the guild ID
 
 router.post('/setup-discord', async (req, res) => {
   const { campaignId } = req.body;
@@ -19,7 +21,7 @@ router.post('/setup-discord', async (req, res) => {
 
   try {
     console.log(`Fetching campaign data for campaign ID: ${campaignId}`);
-    const { data: campaignData, error: campaignError } = await supabase
+    const { data: campaignData, error: campaignError } = await SUPABASE_CLIENT
       .from('campaigns')
       .select('*')  // Select all columns
       .eq('id', campaignId)
@@ -45,7 +47,7 @@ router.post('/setup-discord', async (req, res) => {
     }
 
     // Fetch client data to get company_name
-    const { data: clientData, error: clientError } = await supabase
+    const { data: clientData, error: clientError } = await SUPABASE_CLIENT
       .from('clients')
       .select('company_name')
       .eq('id', client_id)
@@ -60,14 +62,14 @@ router.post('/setup-discord', async (req, res) => {
 
     // Create group chat channel
     console.log('Creating group chat channel with name:', name);
-    const guild = discordClient.guilds.cache.get(GUILD_ID);
+    const guild = DISCORD_CLIENT.guilds.cache.get(SERVER_ID);
     if (!guild) {
       console.error('Guild not found');
       return res.status(500).json({ error: 'Guild not found' });
     }
 
     console.log('Fetching selected creators');
-    const { data: creatorsData, error: creatorsError } = await supabase
+    const { data: creatorsData, error: creatorsError } = await SUPABASE_CLIENT
       .from('campaign_creators')
       .select('id, discord_id, channel_id')
       .eq('campaign_id', campaignId)
@@ -95,7 +97,7 @@ router.post('/setup-discord', async (req, res) => {
             deny: [PermissionsBitField.Flags.ViewChannel], // Deny view channel permission for everyone
           },
             ...(await Promise.all(creatorsData.map(async creator => {
-              const user = await discordClient.users.fetch(creator.discord_id);
+              const user = await DISCORD_CLIENT.users.fetch(creator.discord_id);
               return {
                 id: user.id,
                 allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
@@ -116,7 +118,7 @@ router.post('/setup-discord', async (req, res) => {
     console.log('Group chat channel created:', groupChatChannel.id);
 
     console.log('Storing group chat webhook in Supabase');
-    const { error: updateCampaignError } = await supabase
+    const { error: updateCampaignError } = await SUPABASE_CLIENT
       .from('campaigns')
       .update({ group_chat_channel_id: groupChatChannel.id})
       .eq('id', campaignId);
@@ -131,7 +133,7 @@ router.post('/setup-discord', async (req, res) => {
       let creatorChannel;
       try {
         // Fetch the user object based on their ID
-        const user = await discordClient.users.fetch(creator.discord_id);
+        const user = await DISCORD_CLIENT.users.fetch(creator.discord_id);
         if (!user) {
           console.error(`User not found for ID ${creator.discord_id}`);
         }
@@ -163,7 +165,7 @@ router.post('/setup-discord', async (req, res) => {
       }
 
       console.log('Storing private channel in Supabase for the creator');
-      const { error: updateCreatorError } = await supabase
+      const { error: updateCreatorError } = await SUPABASE_CLIENT
         .from('campaign_creators')
         .update({ channel_id: creatorChannel.id })
         .eq('id', creator.id);
@@ -175,7 +177,7 @@ router.post('/setup-discord', async (req, res) => {
     }
 
     console.log('Updating campaign status to contract_signed');
-    const { error: updateStatusError } = await supabase
+    const { error: updateStatusError } = await SUPABASE_CLIENT
       .from('campaigns')
       .update({ status: 'contract_signed' })
       .eq('id', campaignId);
