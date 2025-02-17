@@ -6,10 +6,14 @@ import { useCampaignStore } from '../../store/campaignStore';
 const stripePromise = loadStripe('pk_test_51QsKUqPs3f7ZnFKcWtUemRUDqHyrUxGVOt2HjzTi616FBskb0TxLzFy4M8Ql8EPiqiW1yWoqOuOOnJUsl1mmPsBW00prSLK3ol');
 
 const Payment: React.FC = () => {
-
   const { currentCampaign } = useCampaignStore();
 
   const handleClick = async () => {
+    if (!currentCampaign) {
+      console.error('No campaign selected.');
+      return;
+    }
+
     // Step 1: Create a Checkout Session on the server
     const { id } = await fetch('http://localhost:3000/api/payment/create-checkout-session', {
       method: 'POST',
@@ -17,7 +21,7 @@ const Payment: React.FC = () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        campaign: {id: currentCampaign?.id }, // Pass the currentCampaign.id here
+        campaign: { id: currentCampaign.id }, // Pass the currentCampaign.id here
       }),
     }).then((res) => res.json());
 
@@ -28,13 +32,23 @@ const Payment: React.FC = () => {
       console.error('Stripe has not loaded.');
       return;
     }
-    
+
     const { error } = await stripe.redirectToCheckout({ sessionId: id });
 
     if (error) {
       console.error(error);
     }
   };
+
+  // Check if the campaign status is "contract_signed"
+  if (currentCampaign?.status !== 'contract_signed') {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Payment Unavailable</h1>
+        <p className="text-red-500">The contract hasn't been signed yet.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
