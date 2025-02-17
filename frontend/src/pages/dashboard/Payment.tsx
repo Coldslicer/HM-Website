@@ -1,10 +1,14 @@
 import React from 'react';
 import { loadStripe } from '@stripe/stripe-js';
+import { useCampaignStore } from '../../store/campaignStore';
 
 // Load your Stripe publishable key
 const stripePromise = loadStripe('pk_test_51QsKUqPs3f7ZnFKcWtUemRUDqHyrUxGVOt2HjzTi616FBskb0TxLzFy4M8Ql8EPiqiW1yWoqOuOOnJUsl1mmPsBW00prSLK3ol');
 
 const Payment: React.FC = () => {
+
+  const { currentCampaign } = useCampaignStore();
+
   const handleClick = async () => {
     // Step 1: Create a Checkout Session on the server
     const { id } = await fetch('http://localhost:3000/api/payment/create-checkout-session', {
@@ -12,6 +16,9 @@ const Payment: React.FC = () => {
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        campaign: {id: currentCampaign?.id }, // Pass the currentCampaign.id here
+      }),
     }).then((res) => res.json());
 
     // Step 2: Redirect to Stripe Checkout

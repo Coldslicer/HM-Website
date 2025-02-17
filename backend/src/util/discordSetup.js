@@ -51,7 +51,7 @@ const ON_READY = async ( DISCORD_CLIENT ) => {
   try {
     const channel = await DISCORD_CLIENT.channels.fetch(process.env.STARTUP_CHANNEL_ID);
     if (channel && channel.type === ChannelType.GuildText) {
-      await channel.send('Bot has started up successfully!');
+      // await channel.send('Bot has started up successfully!');
       console.log('[HM]: Successfully started up discord bot!');
     } else {
       console.error('[HM]: Failed to send startup messsage!');
