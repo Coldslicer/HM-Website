@@ -4,9 +4,9 @@ import { Flame, TrendingUp, Users, Zap } from 'lucide-react'
 
 export function Hero() {
   return (
-    <div className="relative bg-black text-white">
+    <div className="relative bg-white text-black">
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-900 to-black opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-300 to-white opacity-90" />
       </div>
       
       <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
@@ -56,13 +56,13 @@ function Feature({ icon, title, description }: {
   return (
     <div className="flex items-start">
       <div className="flex-shrink-0">
-        <div className="flex items-center justify-center h-12 w-12 rounded-md bg-orange-500 text-white">
+        <div className="flex items-center justify-center h-12 w-12 rounded-md bg-orange-500 text-black">
           {icon}
         </div>
       </div>
       <div className="ml-4">
         <h3 className="text-lg font-medium">{title}</h3>
-        <p className="mt-2 text-base text-gray-300">{description}</p>
+        <p className="mt-2 text-base text-gray-800">{description}</p>
       </div>
     </div>
   )

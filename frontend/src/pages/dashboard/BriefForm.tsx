@@ -9,10 +9,11 @@ const initialFormData = {
   website: '',
   company_description: '',
   name: '',
-  start_date: '',
-  duration: 1,
-  deliverable_type: 'short_form' as const,
+  date: '',
+  per_influencer_budget: [] as string[],
+  desired_pricing_model: [] as string[],
   niches: [] as string[],
+
   brief_url: '',
 };
 
@@ -23,6 +24,7 @@ export function BriefForm() {
 
   const [formData, setFormData] = useState(initialFormData);
   const [niches, setNiches] = useState<{ name: string | null; discord_webhook_url: string }[]>([]);
+  const [roles, setRoles] = useState<{ value: string | null; key: string }[]>([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -39,6 +41,20 @@ export function BriefForm() {
     };
 
     fetchNiches();
+
+    const fetchRoles = async () => {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*');
+      if (error) {
+        console.error('Error fetching roles:', error);
+        return;
+      }
+      console.log('Fetched Roles:', data); // Log fetched data for debugging
+      setRoles(data || []); // Keep all niches, including NULL
+    };
+
+    fetchRoles();
 
     const fetchMostRecentCampaign = async () => {
       if (!user) return;
@@ -77,9 +93,9 @@ export function BriefForm() {
         website: currentCampaign.website,
         company_description: currentCampaign.company_description,
         name: currentCampaign.name,
-        start_date: currentCampaign.start_date,
-        duration: currentCampaign.duration,
-        deliverable_type: currentCampaign.deliverable_type,
+        per_influencer_budget: currentCampaign.per_influencer_budget,
+        desired_pricing_model: currentCampaign.desired_pricing_model,
+        date: currentCampaign.date,
         niches: currentCampaign.niches,
         brief_url: currentCampaign.brief_url,
       });
@@ -123,23 +139,25 @@ export function BriefForm() {
       setCurrentCampaign(campaignInfo);
 
       const baseUrl = window.location.origin; // Dynamically get the base URL
-      const formattedMessage = `
+      var formattedMessage = '';
+      for (const role of roles) {
+        if (formData.per_influencer_budget.includes(role.key)) formattedMessage += role.value+" \n";
+      }
+      formattedMessage += `
       **Campaign Brief**
         
-      🏢 **Company Name**: ${formData.company_name}
+      🏢 **Brand Name**: ${formData.company_name}
       🌐 **Website**: ${formData.website}
-      📝 **Company Description**: ${formData.company_description}
+      📝 **Brand Description**: ${formData.company_description}
         
       📝 **Campaign Name**: ${formData.name}
-      📅 **Start Date**: ${new Date(formData.start_date).toLocaleDateString()}
-      ⏳ **Duration**: ${formData.duration} weeks
-      🎥 **Deliverable Type**: ${formData.deliverable_type.replace('_', ' ').toUpperCase()}
+      📅 **Requested Posting Date**: ${new Date(formData.date).toLocaleDateString()}
       🔗 **Brief URL**: [View Brief](${formData.brief_url})
         
       ---
         
-      🚀 Interested in this campaign? Fill out the [Creator Interest Form](${baseUrl}/creator-form?campaignName=${encodeURIComponent(formData.name)}) to get started!
-      Alternatively, react with a ✅ to recieve a custom link
+      Interested in this campaign? Fill out the [Creator Interest Form](${baseUrl}/creator-form?campaignName=${encodeURIComponent(formData.name)}) to get started!
+      Alternatively, react with a 🚀 to recieve a custom link that prefills certain fields to save time!
       `;
 
       // Send to selected niches' webhooks
@@ -185,6 +203,24 @@ export function BriefForm() {
     }));
   };
 
+  const handleBudgetToggle = (value: 'regular' | 'large') => {
+    setFormData((prev) => ({
+      ...prev,
+      per_influencer_budget: prev.per_influencer_budget.includes(value)
+        ? prev.per_influencer_budget.filter((v) => v !== value) // Remove if already selected
+        : [...prev.per_influencer_budget, value], // Add if not selected
+    }));
+  };
+
+  const handlePricingToggle = (value: 'Flat-rate' | 'CPM (first 30d)' | 'Hybrid') => {
+    setFormData((prev) => ({
+      ...prev,
+      desired_pricing_model: prev.desired_pricing_model.includes(value)
+        ? prev.desired_pricing_model.filter((v) => v !== value) // Remove if already selected
+        : [...prev.desired_pricing_model, value], // Add if not selected
+    }));
+  };
+
   // If brief is already submitted, show read-only view
   if (currentCampaign != null && currentCampaign?.status !== 'draft') {
     return (
@@ -192,8 +228,9 @@ export function BriefForm() {
         <h2 className="text-2xl font-bold text-black mb-6">Campaign Brief</h2>
         <div className="bg-gray-50 p-6 rounded-lg">
           <dl className="space-y-4">
+          <h3 className="text-2x font-bold text-black mb-6">Brand Information</h3>
             <div>
-              <dt className="text-sm font-medium text-black-400">Company Name</dt>
+              <dt className="text-sm font-medium text-black-400">Brand Name</dt>
               <dd className="text-black">{currentCampaign?.company_name}</dd>
             </div>
             <div>
@@ -201,31 +238,29 @@ export function BriefForm() {
               <dd className="text-black">{currentCampaign?.website}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-black-400">Company Description</dt>
+              <dt className="text-sm font-medium text-black-400">Brand Description</dt>
               <dd className="text-black">{currentCampaign?.company_description}</dd>
             </div>
+            <br/>
+            <h3 className="text-2x font-bold text-black mb-6">Campaign Information</h3>
             <div>
               <dt className="text-sm font-medium text-black-400">Campaign Name</dt>
               <dd className="text-black">{currentCampaign?.name}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-black-400">Start Date</dt>
-              <dd className="text-black">{currentCampaign?.start_date}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-black-400">Duration</dt>
-              <dd className="text-black">{currentCampaign?.duration} weeks</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-black-400">Deliverable Type</dt>
-              <dd className="text-black">
-                {currentCampaign?.deliverable_type.replace('_', ' ')}
-              </dd>
+              <dt className="text-sm font-medium text-black-400">Posting Date</dt>
+              <dd className="text-black">{currentCampaign?.date}</dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-black-400">Niches</dt>
               <dd className="text-black">
                 {currentCampaign?.niches.join(', ')}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-black-400">Per-Influencer Budget</dt>
+              <dd className="text-black">
+                {currentCampaign?.per_influencer_budget.join(', ')}
               </dd>
             </div>
             <div>
@@ -251,12 +286,13 @@ export function BriefForm() {
     <div className="max-w-2xl mx-auto">
       <h2 className="text-2xl font-bold text-black mb-6">Campaign Brief</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
+      <h3 className="text-2x font-bold text-black mb-6">Brand Information</h3>
         <div>
           <label
             htmlFor="company_name"
             className="block text-sm font-medium text-black-200"
           >
-            Company Name
+            Brand Name
           </label>
           <input
             type="text"
@@ -294,7 +330,7 @@ export function BriefForm() {
             htmlFor="company_description"
             className="block text-sm font-medium text-black-200"
           >
-            Company Description
+            Brand Description
           </label>
           <textarea
             id="company_description"
@@ -306,6 +342,9 @@ export function BriefForm() {
             required
           />
         </div>
+
+        <br/>
+        <h3 className="text-2x font-bold text-black mb-6">Campaign Information</h3>
 
         <div>
           <label
@@ -338,17 +377,17 @@ export function BriefForm() {
 
         <div>
           <label
-            htmlFor="start_date"
+            htmlFor="date"
             className="block text-sm font-medium text-black-200"
           >
-            Start Date
+            Posting Date
           </label>
           <input
             type="date"
-            id="start_date"
-            value={formData.start_date}
+            id="date"
+            value={formData.date}
             onChange={(e) =>
-              setFormData((prev) => ({ ...prev, start_date: e.target.value }))
+              setFormData((prev) => ({ ...prev, date: e.target.value }))
             }
             className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
             required
@@ -356,71 +395,246 @@ export function BriefForm() {
         </div>
 
         <div>
-          <label
-            htmlFor="duration"
-            className="block text-sm font-medium text-black-200"
-          >
-            Duration (weeks)
-          </label>
-          <input
-            type="number"
-            id="duration"
-            min="1"
-            value={formData.duration}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                duration: parseInt(e.target.value),
-              }))
-            }
-            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            required
-          />
-        </div>
+  <label className="block text-sm font-medium text-black-200 mb-2">
+    Niches
+  </label>
+  <div className="flex flex-wrap gap-2">
+    {niches.filter((niche) => niche.name !== null).map((niche) => (
+      <button
+        key={niche.name}
+        type="button"
+        onClick={() => handleNicheToggle(niche.name!)}
+        className={`px-4 py-2 rounded-full transition-all duration-200 border
+          ${
+            formData.niches.includes(niche.name!)
+              ? 'bg-orange-500 border-orange-500 text-white'
+              : 'bg-white border-gray-300 text-black hover:bg-gray-50'
+          }`}
+      >
+        <span className="text-sm font-medium">{niche.name}</span>
+      </button>
+    ))}
+  </div>
+</div>
 
-        <div>
-          <label
-            htmlFor="deliverable_type"
-            className="block text-sm font-medium text-black-200"
-          >
-            Deliverable Type
-          </label>
-          <select
-            id="deliverable_type"
-            value={formData.deliverable_type}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                deliverable_type: e.target.value as any,
-              }))
-            }
-            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            required
-          >
-            <option value="short_form">Short Form</option>
-            <option value="sponsored_segment">Sponsored Segment</option>
-            <option value="full_video">Full Video</option>
-          </select>
+<div>
+  <label className="block text-sm font-medium text-black-200 mb-2">
+    Influencer Size
+  </label>
+  <div className="grid grid-cols-2 gap-4">
+    {/* Small Influencers Card */}
+    <div
+      onClick={() => handleBudgetToggle('regular')}
+      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
+        ${
+          formData.per_influencer_budget.includes('regular')
+            ? 'border-orange-500 bg-orange-50 shadow-orange-sm'
+            : 'border-gray-200 bg-white hover:border-orange-300'
+        }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-black font-medium">Standard Influencers</span>
+        <div className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
+          ${
+            formData.per_influencer_budget.includes('regular')
+              ? 'bg-orange-500'
+              : 'bg-gray-100 border-2 border-gray-300'
+          }`}
+        >
+          {formData.per_influencer_budget.includes('regular') && (
+            <svg
+              className="w-4 h-4 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          )}
         </div>
+      </div>
+      <p className="text-sm text-gray-600 mt-2">
+        Want to make meaningful impressions on viewers? Click this to choose from our standard influencer options!
+      </p>
+    </div>
 
-        <div>
-          <label className="block text-sm font-medium text-black-200 mb-2">
-            Niches
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {niches.filter((niche) => niche.name !== null).map((niche) => (
-              <label key={niche.name} className="inline-flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.niches.includes(niche.name!)}
-                  onChange={() => handleNicheToggle(niche.name!)}
-                  className="rounded border-gray-700 text-orange-500 focus:ring-orange-500"
-                />
-                <span className="ml-2 text-black">{niche.name}</span>
-              </label>
-            ))}
-          </div>
+    {/* Large Influencers Card */}
+    <div
+      onClick={() => handleBudgetToggle('large')}
+      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
+        ${
+          formData.per_influencer_budget.includes('large')
+            ? 'border-orange-500 bg-orange-50 shadow-orange-sm'
+            : 'border-gray-200 bg-white hover:border-orange-300'
+        }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-black font-medium">Large Influencers</span>
+        <div className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
+          ${
+            formData.per_influencer_budget.includes('large')
+              ? 'bg-orange-500'
+              : 'bg-gray-100 border-2 border-gray-300'
+          }`}
+        >
+          {formData.per_influencer_budget.includes('large') && (
+            <svg
+              className="w-4 h-4 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          )}
         </div>
+      </div>
+      <p className="text-sm text-gray-600 mt-2">
+        Need to bring out the big guns? Click this to reach out to our largest influencers! ($1000+ per influencer)
+      </p>
+    </div>
+  </div>
+</div>
+
+<div>
+  <label className="block text-sm font-medium text-black-200 mb-2">
+    Pricing Model
+  </label>
+  <div className="grid grid-cols-3 gap-4">
+    {/* Flat-rate Card */}
+    <div
+      onClick={() => handlePricingToggle('Flat-rate')}
+      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
+        ${
+          formData.desired_pricing_model.includes('Flat-rate')
+            ? 'border-orange-500 bg-orange-50 shadow-orange-sm'
+            : 'border-gray-200 bg-white hover:border-orange-300'
+        }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-black font-medium">Flat-rate</span>
+        <div className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
+          ${
+            formData.desired_pricing_model.includes('Flat-rate')
+              ? 'bg-orange-500'
+              : 'bg-gray-100 border-2 border-gray-300'
+          }`}
+        >
+          {formData.desired_pricing_model.includes('Flat-rate') && (
+            <svg
+              className="w-4 h-4 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          )}
+        </div>
+      </div>
+      <p className="text-sm text-gray-600 mt-2">
+        Fixed payment for the campaign
+      </p>
+    </div>
+
+    {/* CPM (first 30d) Card */}
+    <div
+      onClick={() => handlePricingToggle('CPM (first 30d)')}
+      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
+        ${
+          formData.desired_pricing_model.includes('CPM (first 30d)')
+            ? 'border-orange-500 bg-orange-50 shadow-orange-sm'
+            : 'border-gray-200 bg-white hover:border-orange-300'
+        }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-black font-medium">CPM (first 30d)</span>
+        <div className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
+          ${
+            formData.desired_pricing_model.includes('CPM (first 30d)')
+              ? 'bg-orange-500'
+              : 'bg-gray-100 border-2 border-gray-300'
+          }`}
+        >
+          {formData.desired_pricing_model.includes('CPM (first 30d)') && (
+            <svg
+              className="w-4 h-4 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          )}
+        </div>
+      </div>
+      <p className="text-sm text-gray-600 mt-2">
+        Cost per thousand views for the first 30 days
+      </p>
+    </div>
+
+    {/* Hybrid Card */}
+    <div
+      onClick={() => handlePricingToggle('Hybrid')}
+      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
+        ${
+          formData.desired_pricing_model.includes('Hybrid')
+            ? 'border-orange-500 bg-orange-50 shadow-orange-sm'
+            : 'border-gray-200 bg-white hover:border-orange-300'
+        }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-black font-medium">Hybrid</span>
+        <div className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
+          ${
+            formData.desired_pricing_model.includes('Hybrid')
+              ? 'bg-orange-500'
+              : 'bg-gray-100 border-2 border-gray-300'
+          }`}
+        >
+          {formData.desired_pricing_model.includes('Hybrid') && (
+            <svg
+              className="w-4 h-4 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          )}
+        </div>
+      </div>
+      <p className="text-sm text-gray-600 mt-2">
+        Combination of flat-rate and CPM pricing
+      </p>
+    </div>
+  </div>
+</div>
 
         <div>
           <label
@@ -451,3 +665,4 @@ export function BriefForm() {
     </div>
   );
 }
+

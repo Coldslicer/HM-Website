@@ -44,7 +44,7 @@ export function Messaging() {
     const fetchCreators = async () => {
       const { data, error } = await supabase
         .from('campaign_creators')
-        .select('id, channel_id, channel_url')
+        .select('id, channel_id, channel_url, channel_name')
         .eq('campaign_id', currentCampaign?.id);
 
       if (error) {
@@ -199,7 +199,7 @@ export function Messaging() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                {creator.channel_url.split('@')[1] || "Unknown"}
+                {creator.channel_name || creator.channel_url.split('@')[1] || "Unknown"}
               </button>
             </li>
           ))}

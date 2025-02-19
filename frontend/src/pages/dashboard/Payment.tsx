@@ -3,7 +3,8 @@ import { loadStripe } from '@stripe/stripe-js';
 import { useCampaignStore } from '../../store/campaignStore';
 
 // Load your Stripe publishable key
-const stripePromise = loadStripe('pk_test_51QsKUqPs3f7ZnFKcWtUemRUDqHyrUxGVOt2HjzTi616FBskb0TxLzFy4M8Ql8EPiqiW1yWoqOuOOnJUsl1mmPsBW00prSLK3ol');
+const stripePromise = loadStripe(import.meta.env.STRIPE_PUBLIC_KEY);
+  // 'pk_test_51QsKUqPs3f7ZnFKcWtUemRUDqHyrUxGVOt2HjzTi616FBskb0TxLzFy4M8Ql8EPiqiW1yWoqOuOOnJUsl1mmPsBW00prSLK3ol');
 
 const Payment: React.FC = () => {
   const { currentCampaign } = useCampaignStore();

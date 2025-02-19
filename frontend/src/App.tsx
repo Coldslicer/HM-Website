@@ -6,7 +6,6 @@ import { Login } from './pages/Login'
 import { Signup } from './pages/Signup'
 import { Dashboard } from './pages/Dashboard'
 import { CreatorForm } from './pages/CreatorForm'
-import Payment from './pages/dashboard/Payment'
 
 function App() {
   return (

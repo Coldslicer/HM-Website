@@ -5,10 +5,11 @@ export type Campaign = {
   website: string;
   company_description: string;
   name: string;
-  start_date: string;
+  date: string;
   duration: number;
-  deliverable_type: 'short_form' | 'sponsored_segment' | 'full_video';
   niches: string[];
+  per_influencer_budget: string[];
+  desired_pricing_model: string[];
   brief_url: string;
   status: string;
   created_at: string;

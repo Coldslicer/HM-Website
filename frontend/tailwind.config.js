@@ -10,6 +10,7 @@ export default {
     extend: {
       colors: {
         orange: {
+          400: '#EF5100',
           500: '#FF6100',
           600: '#FF9150',
           900: '#661C00',

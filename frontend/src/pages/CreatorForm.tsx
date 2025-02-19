@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 const initialFormData = {
   campaign_id: '',
   channel_url: '',
+  channel_name: '',
   discord_id: '',
   rate: 0,
   personal_statement: '',
@@ -53,6 +54,7 @@ export function CreatorForm() {
         if (creator) {
           creatorData = {
             channel_url: creator.channel_url || '',
+            creator_name: creator.creator_name || '',
             rate: creator.rate || 0,
             personal_statement: creator.personal_statement || '',
           };
@@ -173,6 +175,22 @@ export function CreatorForm() {
             </div>
 
             <div>
+              <label htmlFor="channel_name" className="block text-sm font-medium text-gray-800-200">
+                Channel Name
+              </label>
+              <input
+                type="text"
+                id="channel_name"
+                value={formData.channel_name}
+                onChange={(e) =>
+                  setFormData({ ...formData, channel_name: e.target.value })
+                }
+                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                required
+              />
+            </div>
+
+            <div>
               <label htmlFor="channel_url" className="block text-sm font-medium text-gray-800-200">
                 Channel URL
               </label>
@@ -239,6 +257,41 @@ export function CreatorForm() {
                 Tell us about yourself and why you are interested in this campaign.
               </p>
             </div>
+
+            <div className="mt-6">
+  <div className="flex items-start">
+    {/* Checkbox */}
+    <div className="flex items-center h-5">
+      <input
+        type="checkbox"
+        id="agree_to_terms"
+        // checked={agreeToTerms}
+        // onChange={(e) => setAgreeToTerms(e.target.checked)}
+        className="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
+        required
+      />
+    </div>
+
+    {/* Label and Terms List */}
+    <div className="ml-3">
+      <label htmlFor="agree_to_terms" className="block text-sm font-medium text-gray-700">
+        I agree to these terms:
+      </label>
+      <ul className="mt-2 text-sm text-gray-600 space-y-1">
+        <li>
+          • I agree that if I am selected for this sponsorship, I will follow through with the listed rates and deliverables to the best of my ability.
+        </li>
+        <li>
+          • I agree that this sponsorship is not guaranteed and depends upon selection by the brand.
+        </li>
+        <li>
+          • Hotslicer Media applies our agency cut by adding 20% to your listed rate.
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 
             <button
               type="submit"

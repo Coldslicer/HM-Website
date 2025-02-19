@@ -18,7 +18,7 @@ export const CreatorSelection: React.FC = () => {
   const fetchCreators = async () => {
     const { data: creatorsData } = await supabase
       .from('campaign_creators')
-      .select('id, channel_url, rate, selected, personal_statement') // Added personal_statement
+      .select('id, channel_url, channel_name, rate, selected, personal_statement') // Added personal_statement
       .eq('campaign_id', currentCampaign?.id);
 
     const creatorsWithChannelData = await Promise.all(
@@ -145,7 +145,7 @@ export const CreatorSelection: React.FC = () => {
                 onClick={() => handleSelectCreator(creator)}
                 className={`cursor-pointer ${creator.selected ? 'bg-green-400 hover:bg-green-300' : 'hover:bg-white-600'} ${currentCampaign?.status === 'brief_submitted' ? '' : 'cursor-not-allowed'}`}
               >
-                <td className="py-3 px-4">{creator.channelTitle || ""}</td>
+                <td className="py-3 px-4">{creator.channel_name || creator.channelTitle || ""}</td>
                 <td className="py-3 px-4">
                   <a href={creator.channel_url} target="_blank" rel="noopener noreferrer" className="text-blue-400">
                     LINK
