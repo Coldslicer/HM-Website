@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import logo from "../assets/LOGONAVBAR.png"
+import logo from "../../assets/logo-navbar.png"
 import { useAuthStore } from '../store/authStore'
 
 export function Navbar() {
