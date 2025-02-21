@@ -10,7 +10,6 @@ import "./assets/favicon_io-2/favicon-32x32.png"
 import "./assets/favicon_io-2/favicon.ico"
 import "./assets/favicon_io-2/site.webmanifest"
 
-
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
