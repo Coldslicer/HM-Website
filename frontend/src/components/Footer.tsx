@@ -1,7 +1,7 @@
 /* ================ [ IMPORTS ] ================ */
 
 // React components
-import React from "react";
+import React, { useState } from "react";
 
 // Icons
 import { Instagram, Twitter, Linkedin } from "lucide-react";
@@ -10,6 +10,27 @@ import { Instagram, Twitter, Linkedin } from "lucide-react";
 
 // Footer component
 function Footer() {
+  // Track clicks on logo
+  const [clickCount, setClickCount] = useState(0);
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+
+  // Detect clicks on logo
+  const handleLogoClick = () => {
+    setClickCount((prevCount) => prevCount + 1);
+
+    if (timeoutId !== null) clearTimeout(timeoutId);
+
+    const newTimeoutId = setTimeout(() => {
+      setClickCount(0);
+    }, 1000);
+
+    setTimeoutId(newTimeoutId);
+
+    if (clickCount + 1 >= 5) {
+      window.location.href = "/home";
+    }
+  };
+
   return (
     <footer className="bg-gray-50 pt-16 pb-8">
       <div className="container mx-auto px-4">
@@ -22,6 +43,7 @@ function Footer() {
               height={60}
               className="mb-4"
               loading="lazy"
+              onClick={handleLogoClick}
             />
           </div>
           <div>
@@ -99,6 +121,7 @@ function Footer() {
     </footer>
   );
 }
+
 
 /* ================ [ EXPORTS ] ================ */
 

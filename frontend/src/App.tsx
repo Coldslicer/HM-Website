@@ -2,7 +2,7 @@
 
 // React components
 import React from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 
 // Custom components
 import { Navbar } from './components/Navbar'
@@ -18,23 +18,26 @@ import BetaTest from './pages/BetaTest'
 
 // App component
 function App() {
+
+  // Conditionally show navbar
+  const location = useLocation();
+  const navbarPaths = ['/home', '/login', '/signup', '/dashboard', '/creator-form'];
+  const showNavbar = navbarPaths.some((path) => location.pathname.startsWith(path));
+
   return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-gray-100">
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/beta" element={<BetaTest />} />
-        </Routes>
-        {/* <Navbar />
-        <Routes>
-          <Route path="/" element={<Hero />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/dashboard/*" element={<Dashboard />} />
-          <Route path="/creator-form" element={<CreatorForm />} />
-        </Routes> */}
-      </div>
-    </BrowserRouter>
+    <div className="min-h-screen bg-gray-100">
+      {showNavbar && <Navbar />}
+
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/beta" element={<BetaTest />} />
+        <Route path="/home" element={<Hero />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/dashboard/*" element={<Dashboard />} />
+        <Route path="/creator-form" element={<CreatorForm />} />
+      </Routes>
+    </div>
   )
 }
 
