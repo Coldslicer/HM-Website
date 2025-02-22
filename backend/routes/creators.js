@@ -1,7 +1,6 @@
 import express from 'express';
 import axios from 'axios';
 import { SUPABASE_CLIENT } from '../util/setup.js';
-import { Console } from 'console';
 
 const router = express.Router();
 

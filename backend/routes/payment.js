@@ -5,13 +5,13 @@ import express from 'express';
 import Stripe from 'stripe';
 
 // Router
-const router = express.Router();
+const ROUTER = express.Router();
 
 // Initialize stripe
 const STRIPE = new Stripe(process.env.STRIPE_KEY);
 
 // Post checkout session
-router.post('/create-checkout-session', async (req, res) => {
+ROUTER.post('/create-checkout-session', async (req, res) => {
   const { campaign } = req.body;
 
   try {
@@ -86,7 +86,7 @@ async function getAllCheckoutSessions() {
   }
 }
 
-router.get('/success', async (req, res) => {
+ROUTER.get('/success', async (req, res) => {
   const { session_id } = req.query;
 
   if (!session_id) {
@@ -135,12 +135,11 @@ router.get('/success', async (req, res) => {
   }
 });
 
-router.get('/cancel', (req, res) => {
+ROUTER.get('/cancel', (req, res) => {
   res.send('<h1>Payment Canceled</h1>');
 });
 
 // Call the function to log all sessions and their metadata
 getAllCheckoutSessions();
 
-
-export default router;
+export default ROUTER;

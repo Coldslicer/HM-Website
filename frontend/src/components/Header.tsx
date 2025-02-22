@@ -13,6 +13,30 @@ import { Input } from "./ui/Input";
 // Header component
 function Header() {
   const [email, setEmail] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch("http://localhost:3000/api/testers/submit-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+  
+      if (response.ok) {
+        console.log("Email submitted successfully");
+      } else {
+        console.error("Failed to submit email");
+      }
+    } catch (error) {
+      console.error("Error submitting email:", error);
+    }
+      
+    setIsDialogOpen(false);
+    setEmail("");
+  };
 
   return (
     <header className="fixed top-0 w-full bg-white/80 backdrop-blur-sm z-50 border-b">
@@ -34,7 +58,7 @@ function Header() {
             Beta Tester
           </a>
         </nav>
-        <Dialog>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-[#FF6100] hover:bg-[#FF6100]/90">Join Waitlist</Button>
           </DialogTrigger>
@@ -49,7 +73,12 @@ function Header() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <Button className="bg-[#FF6100] hover:bg-[#FF6100]/90 w-full">Submit</Button>
+              <Button
+                className="bg-[#FF6100] hover:bg-[#FF6100]/90 w-full"
+                onClick={handleSubmit}
+              >
+                Submit
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

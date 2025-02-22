@@ -51,10 +51,33 @@ function TesterApplication() {
   };
 
   // Handle form submission
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (isStepValid()) {
-      // Handle form submission
-      console.log("Form submitted:", formData);
+      try {
+        const response = await fetch("http://localhost:3000/api/testers/submit-tester-application", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            discord_id: formData.discordTag,
+            company_name: formData.companyName,
+            statement: formData.interest,
+            agreed: formData.agreement === "yes",
+          }),
+        });
+
+        if (response.ok) {
+          console.log("Tester application submitted successfully");
+        } else {
+          console.error("Failed to submit tester application");
+        }
+      } catch (error) {
+        console.error("Error submitting tester application:", error);
+      }
+
+      // Close the dialog
       setIsDialogOpen(false);
     }
   };
