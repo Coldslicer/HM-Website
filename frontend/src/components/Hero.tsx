@@ -1,69 +1,48 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import { Flame, TrendingUp, Users, Zap } from 'lucide-react'
+/* ================ [ IMPORTS ] ================ */
 
-export function Hero() {
+// React components
+import React, { useState } from "react";
+
+// UI components
+import { Button } from "./ui/Button";
+import { Input } from "./ui/Input";
+
+/* ================ [ COMPONENT ] ================ */
+
+// Hero component
+function Hero() {
+  const [email, setEmail] = useState("");
+
   return (
-    <div className="relative bg-white text-black">
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-300 to-white opacity-90" />
-      </div>
-      
-      <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-          Connect with Top Gaming Influencers
+    <section className="pt-32 pb-16 px-4">
+      <div className="container mx-auto max-w-6xl text-center">
+        <h1 className="text-[2.55rem] md:text-[3.825rem] font-bold mb-6 font-montserrat">
+          Influencer Casting Calls
         </h1>
-        <p className="mt-6 text-xl max-w-3xl">
-          Hotslicer Media connects brands with authentic gaming influencers 
-          to create impactful sponsorship campaigns that resonate with your target audience.
+        <h2 className="text-[2.3rem] md:text-[3.45rem] leading-tight font-bold mb-8 font-montserrat">
+          <span className="text-[#FF6100]">Powered</span> by{" "}
+          <span className="text-[#7289DA]">Discord</span>
+        </h2>
+        <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-12 font-montserrat">
+          Launch your influencer marketing campaign in 24 hours
         </p>
-        <div className="mt-10">
-          <Link
-            to="/login"
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-black bg-orange-500 hover:bg-orange-600"
-          >
-            Start Your Campaign
-          </Link>
-        </div>
-        
-        <div className="mt-20 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          <Feature
-            icon={<Users className="h-6 w-6" />}
-            title="Curated Creator Network"
-            description="Access our network of pre-vetted gaming influencers with engaged audiences."
+        <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
+          <Input
+            placeholder="Enter your email..."
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="h-12 font-montserrat"
           />
-          <Feature
-            icon={<TrendingUp className="h-6 w-6" />}
-            title="Campaign Analytics"
-            description="Track your campaign performance with detailed analytics and insights."
-          />
-          <Feature
-            icon={<Zap className="h-6 w-6" />}
-            title="Streamlined Process"
-            description="From brief to execution, manage your entire campaign in one place."
-          />
+          <Button className="bg-[#FF6100] hover:bg-[#FF6100]/90 h-12 px-8 font-montserrat font-bold">
+            Join Waitlist
+          </Button>
         </div>
       </div>
-    </div>
-  )
+    </section>
+  );
 }
 
-function Feature({ icon, title, description }: {
-  icon: React.ReactNode
-  title: string
-  description: string
-}) {
-  return (
-    <div className="flex items-start">
-      <div className="flex-shrink-0">
-        <div className="flex items-center justify-center h-12 w-12 rounded-md bg-orange-500 text-black">
-          {icon}
-        </div>
-      </div>
-      <div className="ml-4">
-        <h3 className="text-lg font-medium">{title}</h3>
-        <p className="mt-2 text-base text-gray-800">{description}</p>
-      </div>
-    </div>
-  )
-}
+/* ================ [ EXPORTS ] ================ */
+
+export { Hero };
