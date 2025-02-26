@@ -5,6 +5,7 @@ import { FaPaperPlane } from 'react-icons/fa';
 
 export function Messaging() {
   const [creators, setCreators] = useState([]);
+  const [currentCreatorId, setCurrentCreatorId] = useState('');
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [channelData, setChannelData] = useState({});
@@ -78,21 +79,25 @@ export function Messaging() {
     }
   };
 
+  const handleCreatorChange = (creator) => {
+    handleChannelChange(creator.channel_id);
+    setCurrentCreatorId(creator.id);
+  }
   const handleChannelChange = (channelId) => {
     setSelectedChannel(channelId);
     fetchMessages(channelId);
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (isGroupChat: boolean) => {
     if (!selectedChannel || !message.trim()) return;
 
     try {
-      const response = await fetch('/api/messages/send', {
+      const response = await fetch('/api/messages/sendDM', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ channelId: selectedChannel, message: message }),
+        body: JSON.stringify({ id: (isGroupChat ? currentCampaign?.id : currentCreatorId), message: message, isGroup: {isGroupChat} }),
       });
 
       if (response.ok) {
@@ -192,7 +197,9 @@ export function Messaging() {
           {creators.map((creator) => (
             <li key={creator.id}>
               <button
-                onClick={() => handleChannelChange(creator.channel_id)}
+                onClick={() => {
+                  handleCreatorChange(creator)
+                }}
                 className={`w-full text-left px-4 py-2 rounded-md ${
                   selectedChannel === creator.channel_id
                     ? 'bg-orange-500 text-white'
@@ -254,7 +261,7 @@ export function Messaging() {
               disabled={!selectedChannel}
             />
             <button
-              onClick={handleSendMessage}
+              onClick={async() => {handleSendMessage(selectedChannel == groupChatChannelId)}}
               className="bg-orange-500 text-white p-3 rounded-md hover:bg-orange-600 transition-colors"
               disabled={!selectedChannel}
             >

@@ -1,6 +1,6 @@
 // routes/messages.ts
 import express from 'express';
-import { DISCORD_CLIENT } from '../util/setup.js';  // Import the Discord client
+import { DISCORD_CLIENT, SUPABASE_CLIENT } from '../util/setup.js'; 
 import { ChannelType } from 'discord.js';
 
 const router = express.Router();
@@ -29,6 +29,75 @@ return messages
     throw error;
   }
 }
+
+router.post('/sendDM', async (req, res) => {
+  const { message, id, isGroup } = req.body;
+  let channelId, webhookUrl;
+
+  // Fetch channel_id and webhook_url from Supabase
+  let data, error;
+  if (isGroup) {
+    ({ data, error } = await SUPABASE_CLIENT
+      .from("campaigns")
+      .select("group_chat_channel_id, webhook_url")
+      .eq('id', id)); // Fix: Add column name
+    channelId = data.group_chat_channel_id;
+  } else {
+    ({ data, error } = await SUPABASE_CLIENT
+      .from("campaign_creators")
+      .select("channel_id, webhook_url")
+      .eq('id', id)); // Fix: Add column name
+    channelId = data.channel_id;
+  }
+
+  console.log("recieved channel data: "+data);
+
+  if (error) {
+    console.log("Error fetching creator DM information:", error);
+    return res.status(500).json({ error: 'Error fetching creator DM info' });
+  }
+
+  if (!data) {
+    console.log("No data found for the given ID");
+    return res.status(404).json({ error: 'No data found for the given ID' });
+  }
+
+  webhookUrl = data.webhook_url;
+
+  if (webhookUrl) {
+    try {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: message }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send message: ${response.statusText}`);
+      }
+
+      console.log('Message sent successfully!');
+      res.status(200).json({ message: 'Message sent successfully via webhook' }); // Add response
+    } catch (error) {
+      console.error('Error sending webhook message:', error.message);
+      res.status(500).json({ error: error.message }); // Add error response
+    }
+  } else {
+    try {
+      const channel = await DISCORD_CLIENT.channels.fetch(channelId);
+      if (!channel || channel.type !== ChannelType.GuildText) {
+        throw new Error('Channel not found or is not a text channel');
+      }
+
+      await channel.send(message);
+      console.log('A message sent successfully to channel:', channelId);
+      res.status(200).json({ message: 'Message sent successfully' });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      res.status(500).json({ error: error.message }); // Ensure response is sent
+    }
+  }
+});
 
 router.post('/send', async (req, res) => {
   const { channelId, message } = req.body;
