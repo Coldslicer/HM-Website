@@ -2,7 +2,7 @@
 
 // Imports
 import express from "express";
-import { SUPABASE_CLIENT } from "../util/setup.js"; // Import Supabase client
+import { SUPABASE_CLIENT } from "../util/setup.js";
 
 // Router
 const ROUTER = express.Router();
@@ -37,10 +37,10 @@ ROUTER.post("/submit-email", async (req, res) => {
 
 // Post submit tester application
 ROUTER.post("/submit-tester-application", async (req, res) => {
-  const { email, discord_id, company_name, statement, agreed } = req.body;
+  const { name, channel_name, channel_link, deliverables, deliverables_rate, agreed } = req.body;
 
   // Validate required fields
-  if (!email || !discord_id || !company_name || !statement || agreed === undefined) {
+  if (!name || !channel_name || !channel_link || !deliverables || !deliverables_rate || agreed === undefined) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
@@ -48,14 +48,14 @@ ROUTER.post("/submit-tester-application", async (req, res) => {
     // Insert data into Supabase `tester_applications` table
     const { data, error } = await SUPABASE_CLIENT
       .from("tester_applications")
-      .insert([{ email, discord_id, company_name, statement, agreed }]);
+      .insert([{ name, channel_name, channel_link, deliverables, deliverables_rate, agreed }]);
 
     if (error) {
       console.error("Supabase error:", error);
       return res.status(500).json({ error: "Failed to submit tester application" });
     }
 
-    console.log("Tester application submitted:", email);
+    console.log("Tester application submitted:", name);
     res.status(200).json({ message: "Tester application submitted successfully" });
   } catch (error) {
     console.error("Server error:", error);
