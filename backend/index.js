@@ -16,7 +16,6 @@ import messagesRouter from './routes/messages.js';
 import creatorsRouter from './routes/creators.js';
 import contractsRouter from './routes/contracts.js';
 import paymentRouter from './routes/payment.js';
-import testersRouter from './routes/testers.js';
 
 // Initialize the Express app
 const APP = express();
@@ -91,7 +90,6 @@ APP.use('/api/contracts', contractsRouter); // Route for contracts
 APP.use('/api/messages', messagesRouter); // Route for messaging
 APP.use('/api/creators', creatorsRouter); // Route for creator data
 APP.use('/api/payment', paymentRouter); // Route for payment
-APP.use('/api/testers', testersRouter); // Route for testers
 
 // Start Express server
 APP.listen(PORT, () => {
