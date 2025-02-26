@@ -8,8 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/Dialog";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 import { Label } from "./ui/Label";
+import { Textarea } from "./ui/Textarea";
 import { RadioGroup, RadioGroupItem } from "./ui/RadioGroup";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/Select";
 
 /* ================ [ COMPONENT ] ================ */
 
@@ -18,11 +18,10 @@ function TesterApplication() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    name: "",
-    channelName: "",
-    channelLink: "",
-    deliverables: "",
-    deliverablesRate: "",
+    email: "",
+    discordTag: "",
+    companyName: "",
+    interest: "",
     agreement: "",
   });
 
@@ -30,16 +29,14 @@ function TesterApplication() {
   const isStepValid = () => {
     switch (step) {
       case 1:
-        return formData.name.trim() !== "";
+        return formData.email.includes("@") && formData.email.includes(".");
       case 2:
-        return formData.channelName.trim() !== "";
+        return formData.discordTag.trim() !== "";
       case 3:
-        return formData.channelLink.trim() !== "";
+        return formData.companyName.trim() !== "";
       case 4:
-        return formData.deliverables.trim() !== "";
+        return formData.interest.trim() !== "";
       case 5:
-        return formData.deliverablesRate.trim() !== "";
-      case 6:
         return formData.agreement === "yes";
       default:
         return false;
@@ -48,7 +45,7 @@ function TesterApplication() {
 
   // Handle next step
   const handleNext = () => {
-    if (isStepValid() && step < 6) {
+    if (isStepValid() && step < 5) {
       setStep(step + 1);
     }
   };
@@ -63,11 +60,10 @@ function TesterApplication() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            name: formData.name,
-            channel_name: formData.channelName,
-            channel_link: formData.channelLink,
-            deliverables: formData.deliverables,
-            deliverables_rate: formData.deliverablesRate,
+            email: formData.email,
+            discord_id: formData.discordTag,
+            company_name: formData.companyName,
+            statement: formData.interest,
             agreed: formData.agreement === "yes",
           }),
         });
@@ -99,11 +95,12 @@ function TesterApplication() {
       case 1:
         return (
           <div className="grid gap-4">
-            <Label htmlFor="name">Name (First, Last) - Ex. Shreyan Phadke</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
             />
           </div>
@@ -111,11 +108,11 @@ function TesterApplication() {
       case 2:
         return (
           <div className="grid gap-4">
-            <Label htmlFor="channelName">Your Channel Name - Ex. Hotslicer</Label>
+            <Label htmlFor="discordTag">Discord Tag</Label>
             <Input
-              id="channelName"
-              value={formData.channelName}
-              onChange={(e) => setFormData({ ...formData, channelName: e.target.value })}
+              id="discordTag"
+              value={formData.discordTag}
+              onChange={(e) => setFormData({ ...formData, discordTag: e.target.value })}
               required
             />
           </div>
@@ -123,11 +120,11 @@ function TesterApplication() {
       case 3:
         return (
           <div className="grid gap-4">
-            <Label htmlFor="channelLink">Your Channel Link - https://www.youtube.com/@Hotslicer</Label>
+            <Label htmlFor="companyName">Company Name</Label>
             <Input
-              id="channelLink"
-              value={formData.channelLink}
-              onChange={(e) => setFormData({ ...formData, channelLink: e.target.value })}
+              id="companyName"
+              value={formData.companyName}
+              onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
               required
             />
           </div>
@@ -135,43 +132,19 @@ function TesterApplication() {
       case 4:
         return (
           <div className="grid gap-4">
-            <Label htmlFor="deliverables">Deliverables (Available options are listed on discord)</Label>
-            <Select
-              value={formData.deliverables}
-              onValueChange={(value) => setFormData({ ...formData, deliverables: value })}
+            <Label htmlFor="interest">Why are you interested in beta testing?</Label>
+            <Textarea
+              id="interest"
+              value={formData.interest}
+              onChange={(e) => setFormData({ ...formData, interest: e.target.value })}
               required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a deliverable" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Longform Integration (30s)">Longform Integration (30s)</SelectItem>
-                <SelectItem value="Longform Integration (60s)">Longform Integration (60s)</SelectItem>
-                <SelectItem value="Shortform Video">Shortform Video</SelectItem>
-                <SelectItem value="Dedicated Longform">Dedicated Longform</SelectItem>
-              </SelectContent>
-            </Select>
+            />
           </div>
         );
       case 5:
         return (
           <div className="grid gap-4">
-            <Label htmlFor="deliverablesRate">Deliverables Rate - Ex. $X, $XCPM, or $X + $XCPM</Label>
-            <Input
-              id="deliverablesRate"
-              value={formData.deliverablesRate}
-              onChange={(e) => setFormData({ ...formData, deliverablesRate: e.target.value })}
-              required
-            />
-            <p className="text-sm text-gray-500">
-              You can put whatever rate you want, but if it's too high clients may not select you.
-            </p>
-          </div>
-        );
-      case 6:
-        return (
-          <div className="grid gap-4">
-            <Label>I agree to the following terms</Label>
+            <Label>I agree to be an active contributor, point out bugs, and recommend features to our team</Label>
             <RadioGroup
               value={formData.agreement}
               onValueChange={(value) => setFormData({ ...formData, agreement: value })}
@@ -181,12 +154,11 @@ function TesterApplication() {
                 <RadioGroupItem value="yes" id="yes" />
                 <Label htmlFor="yes">Yes</Label>
               </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="no" id="no" />
+                <Label htmlFor="no">No</Label>
+              </div>
             </RadioGroup>
-            <p className="text-sm text-gray-500">
-              1. I will follow through with the listed rates and deliverables to the best of my ability<br />
-              2. I understand that this sponsorship is not guaranteed and is up to the brands.<br />
-              3) Hotslicer Media will take 15% cut from the sponsorship
-            </p>
           </div>
         );
     }
@@ -227,15 +199,15 @@ function TesterApplication() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Beta Tester Application</DialogTitle>
-            <div className="text-sm text-gray-500">Step {step} of 6</div>
+            <div className="text-sm text-gray-500">Step {step} of 5</div>
           </DialogHeader>
           <div className="py-4">{renderStep()}</div>
           <div className="flex justify-between mt-4">
             <Button variant="outline" onClick={handlePrevious} disabled={step === 1}>
               Previous
             </Button>
-            <Button onClick={step === 6 ? handleSubmit : handleNext} disabled={!isStepValid()}>
-              {step === 6 ? "Submit" : "Next"}
+            <Button onClick={step === 5 ? handleSubmit : handleNext} disabled={!isStepValid()}>
+              {step === 5 ? "Submit" : "Next"}
             </Button>
           </div>
         </DialogContent>
