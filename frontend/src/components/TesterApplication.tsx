@@ -11,7 +11,7 @@ import { Label } from "./ui/Label";
 import { Textarea } from "./ui/Textarea";
 import { RadioGroup, RadioGroupItem } from "./ui/RadioGroup";
 
-// Tempo supabase
+// Supabase client
 import { supabase } from '../lib/supabase';
 
 /* ================ [ COMPONENT ] ================ */
@@ -57,27 +57,29 @@ function TesterApplication() {
   const handleSubmit = async () => {
     if (isStepValid()) {
       try {
-        const response = await fetch("/api/testers/submit-tester-application", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: formData.email,
-            discord_id: formData.discordTag,
-            company_name: formData.companyName,
-            statement: formData.interest,
-            agreed: formData.agreement === "yes",
-          }),
-        });
+        // Insert data into Supabase `tester_applications` table
+        const { data, error } = await supabase
+          .from("tester_applications")
+          .insert([
+            {
+              email: formData.email,
+              discord_id: formData.discordTag,
+              company_name: formData.companyName,
+              statement: formData.interest,
+              agreed: formData.agreement === "yes",
+            },
+          ]);
 
-        if (response.ok) {
-          console.log("Tester application submitted successfully");
+        if (error) {
+          console.error("Supabase error:", error);
+          alert("Failed to submit tester application");
         } else {
-          console.error("Failed to submit tester application");
+          console.log("Tester application submitted:", formData.email);
+          alert("Tester application submitted successfully");
         }
       } catch (error) {
         console.error("Error submitting tester application:", error);
+        alert("Error submitting tester application");
       }
 
       // Close the dialog

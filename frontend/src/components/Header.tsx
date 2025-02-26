@@ -8,6 +8,9 @@ import { Button } from "./ui/Button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/Dialog";
 import { Input } from "./ui/Input";
 
+// Supabase client
+import { supabase } from '../lib/supabase'; // Import Supabase client
+
 /* ================ [ COMPONENT ] ================ */
 
 // Header component
@@ -16,24 +19,31 @@ function Header() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleSubmit = async () => {
+    // Validate email
+    if (!email || !email.includes("@") || !email.includes(".")) {
+      alert("Please enter a valid email address.");
+      return;
+    }
+
     try {
-      const response = await fetch("/api/testers/submit-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-  
-      if (response.ok) {
-        console.log("Email submitted successfully");
+      // Insert email into Supabase `waitlist_users` table
+      const { data, error } = await supabase
+        .from("waitlist_users")
+        .insert([{ email }]);
+
+      if (error) {
+        console.error("Supabase error:", error);
+        alert("Failed to submit email. Please try again.");
       } else {
-        console.error("Failed to submit email");
+        console.log("Email added to waitlist:", email);
+        alert("Email submitted successfully!");
       }
     } catch (error) {
       console.error("Error submitting email:", error);
+      alert("An error occurred. Please try again.");
     }
-      
+
+    // Close the dialog and reset the email field
     setIsDialogOpen(false);
     setEmail("");
   };
