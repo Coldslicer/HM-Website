@@ -17,7 +17,7 @@ function Header() {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/testers/submit-email", {
+      const response = await fetch("/api/testers/submit-email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

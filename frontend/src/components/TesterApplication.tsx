@@ -11,6 +11,9 @@ import { Label } from "./ui/Label";
 import { Textarea } from "./ui/Textarea";
 import { RadioGroup, RadioGroupItem } from "./ui/RadioGroup";
 
+// Tempo supabase
+import { supabase } from '../lib/supabase';
+
 /* ================ [ COMPONENT ] ================ */
 
 // Tester application component
@@ -54,7 +57,7 @@ function TesterApplication() {
   const handleSubmit = async () => {
     if (isStepValid()) {
       try {
-        const response = await fetch("http://localhost:3000/api/testers/submit-tester-application", {
+        const response = await fetch("/api/testers/submit-tester-application", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
