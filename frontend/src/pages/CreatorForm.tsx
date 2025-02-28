@@ -4,11 +4,13 @@ import { useSearchParams } from 'react-router-dom';
 
 const initialFormData = {
   campaign_id: '',
-  channel_url: '',
-  channel_name: '',
-  discord_id: '',
-  rate: 0,
-  personal_statement: '',
+  name: '', // First and Last Name
+  channel_name: '', // Channel Name
+  channel_url: '', // Channel Link
+  deliverables: '', // Deliverables (multiple choice)
+  deliverables_rate: '', // Deliverables Rate
+  agreement: false, // Agreement to terms
+  discord_id: '', // Discord ID
 };
 
 export function CreatorForm() {
@@ -18,26 +20,23 @@ export function CreatorForm() {
 
   const getMostRecentCampaignCreator = async (discordId) => {
     const { data, error } = await supabase
-        .from('campaign_creators')
-        .select('*')
-        .eq('discord_id', discordId)
-        .order('created_at', { ascending: false })
-    
-    // console.log(data)
+      .from('creator_applications') // Updated table name
+      .select('*')
+      .eq('discord_id', discordId)
+      .order('created_at', { ascending: false });
 
     if (error) {
-        console.error('Error fetching data:', error);
-        return null;
+      console.error('Error fetching data:', error);
+      return null;
     }
 
-    console.log("prefilling with: "+data[0]);
-    
     return data.length ? data[0] : null;
-  }
+  };
+
   const [formData, setFormData] = useState({
     ...initialFormData,
     campaign_name: prefilledCampaignName,
-    discord_id: prefilledDiscordID
+    discord_id: prefilledDiscordID,
   });
 
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -48,46 +47,47 @@ export function CreatorForm() {
   useEffect(() => {
     const fetchData = async () => {
       let creatorData = {};
-      
+
       if (prefilledDiscordID.length !== 0) {
         const creator = await getMostRecentCampaignCreator(prefilledDiscordID);
         if (creator) {
           creatorData = {
+            name: creator.name || '',
+            channel_name: creator.channel_name || '',
             channel_url: creator.channel_url || '',
-            creator_name: creator.creator_name || '',
-            rate: creator.rate || 0,
-            personal_statement: creator.personal_statement || '',
+            deliverables: creator.deliverables || '',
+            deliverables_rate: creator.deliverables_rate || '',
           };
         }
       }
-  
+
       // Fetch campaigns that are 'brief_submitted'
       const { data, error } = await supabase
         .from('campaigns')
         .select('*')
         .eq('status', 'brief_submitted')
         .order('created_at', { ascending: false });
-  
+
       if (error) {
         console.error('Error fetching campaigns:', error);
         setError('Failed to load campaigns.');
         return;
       }
-  
+
       setCampaigns(data || []);
-  
+
       let campaignId = '';
       if (prefilledCampaignName) {
-        const campaign = data.find(c => c.name === prefilledCampaignName);
+        const campaign = data.find((c) => c.name === prefilledCampaignName);
         if (campaign) {
           campaignId = campaign.id;
         } else {
           setCampaignNotAvailable(true);
         }
       }
-  
+
       // Merge both prefilling sources into one `setFormData` call
-      setFormData(prevData => ({
+      setFormData((prevData) => ({
         ...prevData,
         campaign_name: prefilledCampaignName,
         campaign_id: campaignId,
@@ -95,10 +95,9 @@ export function CreatorForm() {
         ...creatorData, // Spread creator data only if available
       }));
     };
-  
+
     fetchData();
-  }, [prefilledDiscordID, prefilledCampaignName]); // Depend on both prefilled values
-  
+  }, [prefilledDiscordID, prefilledCampaignName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,16 +108,25 @@ export function CreatorForm() {
       return;
     }
 
+    // Ensure agreement is checked
+    if (!formData.agreement) {
+      setError('You must agree to the terms to submit the form.');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
-        .from('campaign_creators')
+        .from('creator_applications') // Insert into the new table
         .insert([
           {
             campaign_id: formData.campaign_id,
+            name: formData.name,
+            channel_name: formData.channel_name,
             channel_url: formData.channel_url,
+            deliverables: formData.deliverables,
+            deliverables_rate: formData.deliverables_rate,
             discord_id: formData.discord_id,
-            rate: formData.rate,
-            personal_statement: formData.personal_statement,
+            agreed: formData.agreement,
           },
         ])
         .select()
@@ -136,7 +144,10 @@ export function CreatorForm() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6"><br/>Express Interest in a Campaign</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        <br />
+        Express Interest in a Campaign
+      </h2>
 
       {success ? (
         <div className="bg-white-300 p-6 rounded-lg text-green-500">
@@ -175,16 +186,28 @@ export function CreatorForm() {
             </div>
 
             <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-800-200">
+                Name (First, Last) - Ex. Shreyan Phadke
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                required
+              />
+            </div>
+
+            <div>
               <label htmlFor="channel_name" className="block text-sm font-medium text-gray-800-200">
-                Channel Name
+                Your Channel Name - Ex. Hotslicer
               </label>
               <input
                 type="text"
                 id="channel_name"
                 value={formData.channel_name}
-                onChange={(e) =>
-                  setFormData({ ...formData, channel_name: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, channel_name: e.target.value })}
                 className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 required
               />
@@ -192,15 +215,13 @@ export function CreatorForm() {
 
             <div>
               <label htmlFor="channel_url" className="block text-sm font-medium text-gray-800-200">
-                Channel URL
+                Your Channel Link - https://www.youtube.com/@Hotslicer
               </label>
               <input
                 type="url"
                 id="channel_url"
                 value={formData.channel_url}
-                onChange={(e) =>
-                  setFormData({ ...formData, channel_url: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, channel_url: e.target.value })}
                 className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 required
               />
@@ -208,90 +229,84 @@ export function CreatorForm() {
 
             <div>
               <label htmlFor="discord_id" className="block text-sm font-medium text-gray-800-200">
-                Discord ID
+                Discord ID - Ex. hotslicer
               </label>
               <input
                 type="text"
                 id="discord_id"
                 value={formData.discord_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, discord_id: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, discord_id: e.target.value })}
                 className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 required
               />
-              <p className="text-gray-800-400 mt-1">Don't know your Discord User ID? Run /id in the discord server!</p>
             </div>
 
             <div>
-              <label htmlFor="rate" className="block text-sm font-medium text-gray-800-200">
-                Rate (per video)
+              <label htmlFor="deliverables" className="block text-sm font-medium text-gray-800-200">
+                Deliverables (Available options are listed on Discord)
+              </label>
+              <select
+                id="deliverables"
+                value={formData.deliverables}
+                onChange={(e) => setFormData({ ...formData, deliverables: e.target.value })}
+                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                required
+              >
+                <option value="">Select a deliverable</option>
+                <option value="Longform Integration (30s)">Longform Integration (30s)</option>
+                <option value="Longform Integration (60s)">Longform Integration (60s)</option>
+                <option value="Shortform Video">Shortform Video</option>
+                <option value="Dedicated Longform">Dedicated Longform</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="deliverables_rate" className="block text-sm font-medium text-gray-800-200">
+                Deliverables Rate - Ex. $X, $XCPM, or $X + $XCPM
               </label>
               <input
-                type="number"
-                id="rate"
-                value={formData.rate}
-                onChange={(e) =>
-                  setFormData({ ...formData, rate: parseFloat(e.target.value) })
-                }
-                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                required
-              />
-              <p className="text-gray-800-400 mt-1">Rate you are requesting for each video.</p>
-            </div>
-
-            <div>
-              <label htmlFor="personal_statement" className="block text-sm font-medium text-gray-800-200">
-                Personal Statement
-              </label>
-              <textarea
-                id="personal_statement"
-                value={formData.personal_statement}
-                onChange={(e) =>
-                  setFormData({ ...formData, personal_statement: e.target.value })
-                }
+                type="text"
+                id="deliverables_rate"
+                value={formData.deliverables_rate}
+                onChange={(e) => setFormData({ ...formData, deliverables_rate: e.target.value })}
                 className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 required
               />
               <p className="text-gray-800-400 mt-1">
-                Tell us about yourself and why you are interested in this campaign.
+                You can put whatever rate you want, but if it's too high, clients may not select you.
               </p>
             </div>
 
             <div className="mt-6">
-  <div className="flex items-start">
-    {/* Checkbox */}
-    <div className="flex items-center h-5">
-      <input
-        type="checkbox"
-        id="agree_to_terms"
-        // checked={agreeToTerms}
-        // onChange={(e) => setAgreeToTerms(e.target.checked)}
-        className="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
-        required
-      />
-    </div>
-
-    {/* Label and Terms List */}
-    <div className="ml-3">
-      <label htmlFor="agree_to_terms" className="block text-sm font-medium text-gray-700">
-        I agree to these terms:
-      </label>
-      <ul className="mt-2 text-sm text-gray-600 space-y-1">
-        <li>
-          • I agree that if I am selected for this sponsorship, I will follow through with the listed rates and deliverables to the best of my ability.
-        </li>
-        <li>
-          • I agree that this sponsorship is not guaranteed and depends upon selection by the brand.
-        </li>
-        <li>
-          • Hotslicer Media applies our agency cut by adding 20% to your listed rate.
-        </li>
-      </ul>
-    </div>
-  </div>
-</div>
-
+              <div className="flex items-start">
+                <div className="flex items-center h-5">
+                  <input
+                    type="checkbox"
+                    id="agreement"
+                    checked={formData.agreement}
+                    onChange={(e) => setFormData({ ...formData, agreement: e.target.checked })}
+                    className="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
+                    required
+                  />
+                </div>
+                <div className="ml-3">
+                  <label htmlFor="agreement" className="block text-sm font-medium text-gray-700">
+                    I agree to these terms:
+                  </label>
+                  <ul className="mt-2 text-sm text-gray-600 space-y-1">
+                    <li>
+                      • I will follow through with the listed rates and deliverables to the best of my ability.
+                    </li>
+                    <li>
+                      • I understand that this sponsorship is not guaranteed and is up to the brands.
+                    </li>
+                    <li>
+                      • Hotslicer Media will take a 15% cut from the sponsorship.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
 
             <button
               type="submit"
