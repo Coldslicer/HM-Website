@@ -117,10 +117,15 @@ router.post('/setup-discord', async (req, res) => {
 
     console.log('Group chat channel created:', groupChatChannel.id);
 
+    const groupChatChannelWebhook = await groupChatChannel.createWebhook(name, {
+      avatar: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png',
+      reason: 'Webhook for group chat notifications',
+    });
+
     console.log('Storing group chat webhook in Supabase');
     const { error: updateCampaignError } = await SUPABASE_CLIENT
       .from('campaigns')
-      .update({ group_chat_channel_id: groupChatChannel.id})
+      .update({ group_chat_channel_id: groupChatChannel.id, webhook_url: groupChatChannelWebhook.url})
       .eq('id', campaignId);
 
     if (updateCampaignError) {
@@ -131,6 +136,7 @@ router.post('/setup-discord', async (req, res) => {
     for (const creator of creatorsData) {
       console.log(`Creating private channel for creator: ${creator.discord_id}`);
       let creatorChannel;
+      let creatorWebhook;
       try {
         // Fetch the user object based on their ID
         const user = await DISCORD_CLIENT.users.fetch(creator.discord_id);
@@ -154,6 +160,10 @@ router.post('/setup-discord', async (req, res) => {
             },
           ]
         });
+        creatorWebhook = await creatorChannel.createWebhook(name, {
+          avatar: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png',
+          reason: 'Webhook for creator notifications',
+        });
       } catch (error) {
         console.error(`Error creating channel for creator ${creator.discord_id}:`, error);
         return res.status(500).json({ error: `Error creating channel for creator ${creator.discord_id}` });
@@ -167,7 +177,7 @@ router.post('/setup-discord', async (req, res) => {
       console.log('Storing private channel in Supabase for the creator');
       const { error: updateCreatorError } = await SUPABASE_CLIENT
         .from('campaign_creators')
-        .update({ channel_id: creatorChannel.id })
+        .update({ channel_id: creatorChannel.id, webhook_url: creatorWebhook.url })
         .eq('id', creator.id);
 
       if (updateCreatorError) {

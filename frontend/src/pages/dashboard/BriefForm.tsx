@@ -12,6 +12,7 @@ const initialFormData = {
   date: '',
   per_influencer_budget: [] as string[],
   desired_pricing_model: [] as string[],
+  sponsorship_format: [] as string[],
   niches: [] as string[],
 
   brief_url: '',
@@ -94,6 +95,7 @@ export function BriefForm() {
         company_description: currentCampaign.company_description,
         name: currentCampaign.name,
         per_influencer_budget: currentCampaign.per_influencer_budget,
+        sponsorship_format: currentCampaign.sponsorship_format,
         desired_pricing_model: currentCampaign.desired_pricing_model,
         date: currentCampaign.date,
         niches: currentCampaign.niches,
@@ -143,22 +145,39 @@ export function BriefForm() {
       for (const role of roles) {
         if (formData.per_influencer_budget.includes(role.key)) formattedMessage += role.value+" \n";
       }
-      formattedMessage += `
-      **Campaign Brief**
-        
-      🏢 **Brand Name**: ${formData.company_name}
-      🌐 **Website**: ${formData.website}
-      📝 **Brand Description**: ${formData.company_description}
-        
-      📝 **Campaign Name**: ${formData.name}
-      📅 **Requested Posting Date**: ${new Date(formData.date).toLocaleDateString()}
-      🔗 **Brief URL**: [View Brief](${formData.brief_url})
-        
-      ---
-        
-      Interested in this campaign? Fill out the [Creator Interest Form](${baseUrl}/creator-form?campaignName=${encodeURIComponent(formData.name)}) to get started!
-      Alternatively, react with a 🚀 to recieve a custom link that prefills certain fields to save time!
-      `;
+      formattedMessage += 
+`
+
+# Sponsorship Offer from **${formData.company_name}**
+
+
+- ${formData.company_description}
+
+- ${formData.website.startsWith("https://") ? `[WEBSITE LINK](${formData.website})` : formData.website}
+
+## Key Campaign Details
+
+
+**Brief**
+- ${formData.brief_url.startsWith("https://") ? `[BRIEF LINK](${formData.brief_url})` : formData.brief_url}
+
+**Deliberable Type Options**
+${formData.sponsorship_format
+  .map((format) => `- ${format}`)
+  .join("\n")}
+
+**Payment Format Options**
+${formData.desired_pricing_model
+  .map((model) => `- ${model}`)
+  .join("\n")}
+
+**Timeline**
+- All sponsored videos will be posted on ${formData.date}
+
+
+## **To Declare Your Commitment React Below and [FILL OUT THIS FORM](${baseUrl})** 
+### **OR** React to this message to get a customized link with QoL features such as prefill
+`;
 
       // Send to selected niches' webhooks
       const selectedNiches = niches.filter((niche) => formData.niches.includes(niche.name!));
@@ -218,6 +237,15 @@ export function BriefForm() {
       desired_pricing_model: prev.desired_pricing_model.includes(value)
         ? prev.desired_pricing_model.filter((v) => v !== value) // Remove if already selected
         : [...prev.desired_pricing_model, value], // Add if not selected
+    }));
+  };
+
+  const handleSponsorshipFormatToggle = (value: '30s' | '60s' | 'Shortform' | 'Dedicated') => {
+    setFormData((prev) => ({
+      ...prev,
+      sponsorship_format: prev.sponsorship_format.includes(value)
+        ? prev.sponsorship_format.filter((v) => v !== value) // Remove if already selected
+        : [...prev.sponsorship_format, value], // Add if not selected
     }));
   };
 
@@ -631,6 +659,176 @@ export function BriefForm() {
       </div>
       <p className="text-sm text-gray-600 mt-2">
         Combination of flat-rate and CPM pricing
+      </p>
+    </div>
+  </div>
+</div>
+
+<div>
+  <label className="block text-sm font-medium text-black-200 mb-2">
+    Sponsorship Types
+  </label>
+  <div className="grid grid-cols-4 gap-4">
+    {/* 30 s */}
+    <div
+      onClick={() => handleSponsorshipFormatToggle('30s')}
+      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
+        ${
+          formData.sponsorship_format.includes('30s')
+            ? 'border-orange-500 bg-orange-50 shadow-orange-sm'
+            : 'border-gray-200 bg-white hover:border-orange-300'
+        }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-black font-medium">30s Integration</span>
+        <div className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
+          ${
+            formData.sponsorship_format.includes('30s')
+              ? 'bg-orange-500'
+              : 'bg-gray-100 border-2 border-gray-300'
+          }`}
+        >
+          {formData.sponsorship_format.includes('30s') && (
+            <svg
+              className="w-4 h-4 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          )}
+        </div>
+      </div>
+      <p className="text-sm text-gray-600 mt-2">
+        30 second sponsored segment in a long form video
+      </p>
+    </div>
+
+    {/* 60 s*/}
+    <div
+      onClick={() => handleSponsorshipFormatToggle('60s')}
+      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
+        ${
+          formData.sponsorship_format.includes('60s')
+            ? 'border-orange-500 bg-orange-50 shadow-orange-sm'
+            : 'border-gray-200 bg-white hover:border-orange-300'
+        }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-black font-medium">60s Integration</span>
+        <div className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
+          ${
+            formData.sponsorship_format.includes('60s')
+              ? 'bg-orange-500'
+              : 'bg-gray-100 border-2 border-gray-300'
+          }`}
+        >
+          {formData.sponsorship_format.includes('60s') && (
+            <svg
+              className="w-4 h-4 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          )}
+        </div>
+      </div>
+      <p className="text-sm text-gray-600 mt-2">
+      60 second sponsored segment in a long form video
+      </p>
+    </div>
+
+    {/*Shortform */}
+    <div
+      onClick={() => handleSponsorshipFormatToggle('Shortform')}
+      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
+        ${
+          formData.sponsorship_format.includes('Shortform')
+            ? 'border-orange-500 bg-orange-50 shadow-orange-sm'
+            : 'border-gray-200 bg-white hover:border-orange-300'
+        }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-black font-medium">Shortform</span>
+        <div className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
+          ${
+            formData.sponsorship_format.includes('Shortform')
+              ? 'bg-orange-500'
+              : 'bg-gray-100 border-2 border-gray-300'
+          }`}
+        >
+          {formData.sponsorship_format.includes('Shortform') && (
+            <svg
+              className="w-4 h-4 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          )}
+        </div>
+      </div>
+      <p className="text-sm text-gray-600 mt-2">
+        A short-form (scrolling) format video about your product or service
+      </p>
+    </div>
+    {/*Dedicated */}
+    <div
+      onClick={() => handleSponsorshipFormatToggle('Dedicated')}
+      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
+        ${
+          formData.sponsorship_format.includes('Dedicated')
+            ? 'border-orange-500 bg-orange-50 shadow-orange-sm'
+            : 'border-gray-200 bg-white hover:border-orange-300'
+        }`}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-black font-medium">Dedicated Video</span>
+        <div className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
+          ${
+            formData.sponsorship_format.includes('Dedicated')
+              ? 'bg-orange-500'
+              : 'bg-gray-100 border-2 border-gray-300'
+          }`}
+        >
+          {formData.sponsorship_format.includes('Dedicated') && (
+            <svg
+              className="w-4 h-4 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          )}
+        </div>
+      </div>
+      <p className="text-sm text-gray-600 mt-2">
+        A full length video about your product or service!
       </p>
     </div>
   </div>

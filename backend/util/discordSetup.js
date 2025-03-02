@@ -116,6 +116,8 @@ const ON_USER_INTERACTION = async ( SUPABASE_CLIENT, interaction) => {
 // On user message
 const ON_USER_MESSAGE = async ( SUPABASE_CLIENT, message ) => {
   try {
+    if (!message.bot) return;
+
     // Step 1: Fetch the 'channel_id' from the 'niches' table
     const { data: niches, error } = await SUPABASE_CLIENT
       .from('niches')
