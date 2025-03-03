@@ -8,9 +8,11 @@ const initialFormData = {
   channel_name: '', // Channel Name
   channel_url: '', // Channel Link
   deliverables: '', // Deliverables (multiple choice)
-  deliverables_rate: '', // Deliverables Rate
-  agreement: false, // Agreement to terms
-  discord_id: '', // Discord ID
+  rate: '', // Flat rate (numeric)
+  rate_cpm: '', // CPM rate (numeric)
+  personal_statement: '', // Personal Statement (text)
+  selected: false, // Selected (bool)
+  discord_id: '', // Discord ID (text)
 };
 
 export function CreatorForm() {
@@ -20,7 +22,7 @@ export function CreatorForm() {
 
   const getMostRecentCampaignCreator = async (discordId) => {
     const { data, error } = await supabase
-      .from('creator_applications') // Updated table name
+      .from('campaign_creators') // Updated table name
       .select('*')
       .eq('discord_id', discordId)
       .order('created_at', { ascending: false });
@@ -49,14 +51,16 @@ export function CreatorForm() {
       let creatorData = {};
 
       if (prefilledDiscordID.length !== 0) {
-        const creator = await getMostRecentCampaignCreator(prefilledDiscordID);
+        const creator = await getMostRecentCampaignCreator(prefilledDiscordID); // No need to convert to number
         if (creator) {
           creatorData = {
             name: creator.name || '',
             channel_name: creator.channel_name || '',
             channel_url: creator.channel_url || '',
             deliverables: creator.deliverables || '',
-            deliverables_rate: creator.deliverables_rate || '',
+            rate: creator.rate || '',
+            rate_cpm: creator.rate_cpm || '',
+            personal_statement: creator.personal_statement || '',
           };
         }
       }
@@ -114,9 +118,15 @@ export function CreatorForm() {
       return;
     }
 
+    // Validate rates (non-negative)
+    if (parseFloat(formData.rate) < 0 || parseFloat(formData.rate_cpm) < 0) {
+      setError('Rates cannot be negative.');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
-        .from('creator_applications') // Insert into the new table
+        .from('campaign_creators') // Updated table name
         .insert([
           {
             campaign_id: formData.campaign_id,
@@ -124,9 +134,11 @@ export function CreatorForm() {
             channel_name: formData.channel_name,
             channel_url: formData.channel_url,
             deliverables: formData.deliverables,
-            deliverables_rate: formData.deliverables_rate,
-            discord_id: formData.discord_id,
-            agreed: formData.agreement,
+            rate: parseFloat(formData.rate), // Convert to numeric
+            rate_cpm: parseFloat(formData.rate_cpm), // Convert to numeric
+            personal_statement: formData.personal_statement,
+            selected: formData.selected,
+            discord_id: formData.discord_id, // No need to convert to number
           },
         ])
         .select()
@@ -229,10 +241,10 @@ export function CreatorForm() {
 
             <div>
               <label htmlFor="discord_id" className="block text-sm font-medium text-gray-800-200">
-                Discord ID - Ex. hotslicer
+                Discord ID - Ex. 655866521117130752
               </label>
               <input
-                type="text"
+                type="text" // Changed to text since discord_id is now text
                 id="discord_id"
                 value={formData.discord_id}
                 onChange={(e) => setFormData({ ...formData, discord_id: e.target.value })}
@@ -261,20 +273,49 @@ export function CreatorForm() {
             </div>
 
             <div>
-              <label htmlFor="deliverables_rate" className="block text-sm font-medium text-gray-800-200">
-                Deliverables Rate - Ex. $X, $XCPM, or $X + $XCPM
+              <label htmlFor="rate" className="block text-sm font-medium text-gray-800-200">
+                Deliverables Rate
               </label>
-              <input
-                type="text"
-                id="deliverables_rate"
-                value={formData.deliverables_rate}
-                onChange={(e) => setFormData({ ...formData, deliverables_rate: e.target.value })}
-                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                required
-              />
+              <div className="flex space-x-4">
+                <input
+                  type="number"
+                  id="rate"
+                  value={formData.rate}
+                  onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
+                  className="mt-1 block w-1/2 rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  placeholder="$ Flat Rate"
+                  step="any" // Allow floating-point numbers
+                  min="0" // Prevent negative values
+                  required
+                />
+                <input
+                  type="number"
+                  id="rate_cpm"
+                  value={formData.rate_cpm}
+                  onChange={(e) => setFormData({ ...formData, rate_cpm: e.target.value })}
+                  className="mt-1 block w-1/2 rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  placeholder="$ CPM"
+                  step="any" // Allow floating-point numbers
+                  min="0" // Prevent negative values
+                  required
+                />
+              </div>
               <p className="text-gray-800-400 mt-1">
                 You can put whatever rate you want, but if it's too high, clients may not select you.
               </p>
+            </div>
+
+            <div>
+              <label htmlFor="personal_statement" className="block text-sm font-medium text-gray-800-200">
+                Personal Statement
+              </label>
+              <textarea
+                id="personal_statement"
+                value={formData.personal_statement}
+                onChange={(e) => setFormData({ ...formData, personal_statement: e.target.value })}
+                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                required
+              />
             </div>
 
             <div className="mt-6">
