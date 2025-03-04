@@ -175,7 +175,7 @@ ${formData.desired_pricing_model
 - All sponsored videos will be posted on ${formData.date}
 
 
-## **To Declare Your Commitment React Below and [FILL OUT THIS FORM](${baseUrl})** 
+## **To Declare Your Commitment React Below and [FILL OUT THIS FORM](${baseUrl}/creator-form?campaignName=${encodeURIComponent(formData.name)})** 
 ### **OR** React to this message to get a customized link with QoL features such as prefill
 `;
 
