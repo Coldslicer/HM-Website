@@ -199,7 +199,7 @@ export function CreatorForm() {
 
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-800-200">
-                Name (First, Last) - Ex. Shreyan Phadke
+                Name (First, Last) - Ex. John Smith
               </label>
               <input
                 type="text"
