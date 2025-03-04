@@ -174,7 +174,7 @@ ${formData.desired_pricing_model
   .join("\n")}
 
 **Timeline**
-- All sponsored videos will be posted on ${formData.date}
+- All sponsored videos will be posted by ${formData.date}
 
 
 ## **To Declare Your Commitment React Below and [FILL OUT THIS FORM](${baseUrl}/creator-form?campaignName=${encodeURIComponent(formData.name)})** 

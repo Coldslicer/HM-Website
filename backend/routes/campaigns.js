@@ -71,7 +71,7 @@ router.post('/setup-discord', async (req, res) => {
     console.log('Fetching selected creators');
     const { data: creatorsData, error: creatorsError } = await SUPABASE_CLIENT
       .from('campaign_creators')
-      .select('id, discord_id, channel_id')
+      .select('id, discord_id, channel_id, channel_name')
       .eq('campaign_id', campaignId)
       .eq('selected', true);
 
@@ -86,11 +86,22 @@ router.post('/setup-discord', async (req, res) => {
     }
 
     let groupChatChannel;
+    let category_id
     try {
+
+      // Create the category
+      const category = await guild.channels.create({
+        name: company_name,
+        type: ChannelType.GuildCategory,
+      });
+
+      category_id = category.id;
+
       groupChatChannel = await guild.channels.create({
         name: company_name + ' - Group Chat',
         type: 0,  // Type for text channel
         reason: 'Group chat for campaign',
+        parent: category_id,
         permissionOverwrites: [
           {
             id: guild.id, // This is the ID of the guild (server), which represents @everyone
@@ -151,9 +162,10 @@ router.post('/setup-discord', async (req, res) => {
 
         console.log(`User fetched: ${user.tag}`);
         creatorChannel = await guild.channels.create({
-          name: company_name,
+          name: company_name+'-'+creator.channel_name.replace(/[^a-zA-Z0-9]/g, ""),
           type: 0,  // Type for text channel
           reason: `Your private channel for the "${company_name}" campaign`,
+          parent: category_id,
           permissionOverwrites: [
             {
               id: guild.id, // This is the ID of the guild (server), which represents @everyone

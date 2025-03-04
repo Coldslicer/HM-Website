@@ -46,7 +46,8 @@ export function Messaging() {
       const { data, error } = await supabase
         .from('campaign_creators')
         .select('id, channel_id, channel_url, channel_name')
-        .eq('campaign_id', currentCampaign?.id);
+        .eq('campaign_id', currentCampaign?.id)
+        .eq('selected',true);
 
       if (error) {
         console.error('Error fetching creators:', error);

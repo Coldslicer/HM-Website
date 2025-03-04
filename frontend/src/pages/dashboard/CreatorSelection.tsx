@@ -9,6 +9,7 @@ export const CreatorSelection: React.FC = () => {
   const [creators, setCreators] = useState([]);
   const [selectedCreators, setSelectedCreators] = useState([]);
   const [totalRate, setTotalRate] = useState(0);
+  const [totalRateCPM, setTotalRateCPM] = useState(0);
   const [selectedStatement, setSelectedStatement] = useState<string | null>(null); // State for popup content
 
   useEffect(() => {
@@ -18,7 +19,7 @@ export const CreatorSelection: React.FC = () => {
   const fetchCreators = async () => {
     const { data: creatorsData } = await supabase
       .from('campaign_creators')
-      .select('id, channel_url, channel_name, rate, selected, personal_statement') // Added personal_statement
+      .select('id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement') // Added personal_statement
       .eq('campaign_id', currentCampaign?.id);
 
     const creatorsWithChannelData = await Promise.all(
@@ -50,6 +51,7 @@ export const CreatorSelection: React.FC = () => {
     const selected = sortedCreators.filter((c) => c.selected);
     setSelectedCreators(selected);
     setTotalRate(selected.reduce((acc, c) => acc + c.rate, 0));
+    setTotalRateCPM(selected.reduce((acc, c) => acc + c.rate_cpm, 0));
   };
 
   const handleSelectCreator = async (creator) => {
@@ -63,6 +65,7 @@ export const CreatorSelection: React.FC = () => {
     const selected = updatedCreators.filter((c) => c.selected);
     setSelectedCreators(selected);
     setTotalRate(selected.reduce((acc, c) => acc + c.rate, 0));
+    setTotalRateCPM(selected.reduce((acc, c) => acc + c.rate_cpm, 0));
 
     await supabase
       .from('campaign_creators')
@@ -131,7 +134,8 @@ export const CreatorSelection: React.FC = () => {
             <tr className="bg-gray-50">
               <th className="py-3 px-4 text-left w-1/6">Channel Name</th>
               <th className="py-3 px-4 text-left w-1/6">Channel Link</th>
-              <th className="py-3 px-4 text-right w-1/6">Rate</th>
+              <th className="py-3 px-4 text-right w-1/6">Flat Rate</th>
+              <th className="py-3 px-4 text-right w-1/6">CPM Rate</th>
               <th className="py-3 px-4 text-right w-1/6">Followers/Subs</th>
               <th className="py-3 px-4 text-right w-1/6">Avg Views</th>
               <th className="py-3 px-4 text-right w-1/6">Country</th>
@@ -152,6 +156,7 @@ export const CreatorSelection: React.FC = () => {
                   </a>
                 </td>
                 <td className="py-3 px-4 text-right">{creator.rate}</td>
+                <td className="py-3 px-4 text-right">{creator.rate_cpm}</td>
                 <td className="py-3 px-4 text-right">{creator.subscriberCount}</td>
                 <td className="py-3 px-4 text-right">{creator.averageViews}</td>
                 <td className="py-3 px-4 text-right">{creator.country}</td>
@@ -161,9 +166,9 @@ export const CreatorSelection: React.FC = () => {
                       e.stopPropagation(); // Prevent row selection
                       handleOpenPopup(creator.personal_statement);
                     }}
-                    className="text-yellow-400 hover:text-yellow-500"
+                    className="text-white-400 hover:text-white-500"
                   >
-                    <Eye size={20} color="#FFFF" />
+                    <Eye size={20} />
                   </button>
                 </td>
               </tr>

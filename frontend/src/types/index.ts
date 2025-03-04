@@ -5,6 +5,7 @@ export type Campaign = {
   website: string;
   company_description: string;
   name: string;
+  rep_name: string;
   date: string;
   duration: number;
   niches: string[];
