@@ -39,9 +39,9 @@ router.post('/setup-discord', async (req, res) => {
 
     console.log('Campaign data fetched:', campaignData);
 
-    const { client_id, name } = campaignData;
+    const { client_id, company_name, rep_name } = campaignData;
 
-    if (!name) {
+    if (!company_name) {
       console.error('Campaign name is missing');
       return res.status(500).json({ error: 'Campaign name is missing' });
     }
@@ -61,7 +61,7 @@ router.post('/setup-discord', async (req, res) => {
     const companyName = clientData.company_name;
 
     // Create group chat channel
-    console.log('Creating group chat channel with name:', name);
+    console.log('Creating group chat channel with name:', company_name);
     const guild = DISCORD_CLIENT.guilds.cache.get(SERVER_ID);
     if (!guild) {
       console.error('Guild not found');
@@ -88,7 +88,7 @@ router.post('/setup-discord', async (req, res) => {
     let groupChatChannel;
     try {
       groupChatChannel = await guild.channels.create({
-        name: name + ' - Group Chat',
+        name: company_name + ' - Group Chat',
         type: 0,  // Type for text channel
         reason: 'Group chat for campaign',
         permissionOverwrites: [
@@ -117,7 +117,12 @@ router.post('/setup-discord', async (req, res) => {
 
     console.log('Group chat channel created:', groupChatChannel.id);
 
-    const groupChatChannelWebhook = await groupChatChannel.createWebhook(name, {
+    const webhook_name = rep_name && company_name
+  ? `${rep_name} | ${company_name}`
+  : company_name || "WARM by Hotslicer Media"; // Fallback in case company_name is undefined
+
+    const groupChatChannelWebhook = await groupChatChannel.createWebhook({
+      name: webhook_name,
       avatar: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png',
       reason: 'Webhook for group chat notifications',
     });
@@ -146,9 +151,9 @@ router.post('/setup-discord', async (req, res) => {
 
         console.log(`User fetched: ${user.tag}`);
         creatorChannel = await guild.channels.create({
-          name: name,
+          name: company_name,
           type: 0,  // Type for text channel
-          reason: `Your private channel for the "${name}" campaign`,
+          reason: `Your private channel for the "${company_name}" campaign`,
           permissionOverwrites: [
             {
               id: guild.id, // This is the ID of the guild (server), which represents @everyone
@@ -160,7 +165,8 @@ router.post('/setup-discord', async (req, res) => {
             },
           ]
         });
-        creatorWebhook = await creatorChannel.createWebhook(name, {
+        creatorWebhook = await creatorChannel.createWebhook({
+          name: webhook_name,
           avatar: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png',
           reason: 'Webhook for creator notifications',
         });

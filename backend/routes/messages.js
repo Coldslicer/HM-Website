@@ -36,18 +36,24 @@ router.post('/sendDM', async (req, res) => {
 
   // Fetch channel_id and webhook_url from Supabase
   let data, error;
+  try {
   if (isGroup) {
     ({ data, error } = await SUPABASE_CLIENT
       .from("campaigns")
       .select("group_chat_channel_id, webhook_url")
-      .eq('id', id)); // Fix: Add column name
+      .eq('id', id)
+      .single());
     channelId = data.group_chat_channel_id;
   } else {
     ({ data, error } = await SUPABASE_CLIENT
       .from("campaign_creators")
       .select("channel_id, webhook_url")
-      .eq('id', id)); // Fix: Add column name
+      .eq('id', id)
+      .single());
     channelId = data.channel_id;
+  }
+  } catch {
+    res.status(500).json({ error: 'Error fetching database information' });
   }
 
   console.log("recieved channel data: "+data);

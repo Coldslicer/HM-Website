@@ -3,7 +3,7 @@ import axios from 'axios';
 import { SUPABASE_CLIENT } from '../util/setup.js';
 
 const router = express.Router();
-const API_KEY = process.env.SUPABASE_API_KEY;
+const API_KEY = process.env.DOCUSEAL_API_KEY;
 
 router.get('/client-form', async (req, res) => {
   const { campaign_id, signer_email } = req.query;
@@ -88,7 +88,7 @@ router.get('/client-form', async (req, res) => {
       console.log('Supabase updated successfully:', data);
     }
   } catch (error) {
-    console.error('An error occurred while creating the submission:', error.message);
+    console.error('An error occurred while creating the submission:', error);
     if (!res.headersSent) {
       res.status(500).json({ error: "An error occurred during API call" });
     }
