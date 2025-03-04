@@ -222,10 +222,7 @@ export function Messaging() {
         >
           <div className="space-y-4">
             {messages.slice().reverse().map((msg) => {
-              const authorName = msg.bot
-                ? currentCampaign?.company_name
-                : msg.author;
-              const displayName = authorName
+              const displayName = msg.author
                 .split(' ')
                 .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ');

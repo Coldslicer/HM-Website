@@ -9,6 +9,7 @@ const initialFormData = {
   website: '',
   company_description: '',
   name: '',
+  rep_name: '',
   date: '',
   per_influencer_budget: [] as string[],
   desired_pricing_model: [] as string[],
@@ -94,6 +95,7 @@ export function BriefForm() {
         website: currentCampaign.website,
         company_description: currentCampaign.company_description,
         name: currentCampaign.name,
+        rep_name: currentCampaign.rep_name,
         per_influencer_budget: currentCampaign.per_influencer_budget,
         sponsorship_format: currentCampaign.sponsorship_format,
         desired_pricing_model: currentCampaign.desired_pricing_model,
@@ -269,6 +271,10 @@ ${formData.desired_pricing_model
               <dt className="text-sm font-medium text-black-400">Brand Description</dt>
               <dd className="text-black">{currentCampaign?.company_description}</dd>
             </div>
+            <div>
+              <dt className="text-sm font-medium text-black-400">Representative Name</dt>
+              <dd className="text-black">{currentCampaign?.rep_name}</dd>
+            </div>
             <br/>
             <h3 className="text-2x font-bold text-black mb-6">Campaign Information</h3>
             <div>
@@ -371,6 +377,25 @@ ${formData.desired_pricing_model
           />
         </div>
 
+        <div>
+          <label
+            htmlFor="company_name"
+            className="block text-sm font-medium text-black-200"
+          >
+            Representative (Your) Name
+          </label>
+          <input
+            type="text"
+            id="company_name"
+            value={formData.rep_name}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, rep_name: e.target.value }))
+            }
+            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            required
+          />
+        </div>
+
         <br/>
         <h3 className="text-2x font-bold text-black mb-6">Campaign Information</h3>
 
@@ -401,6 +426,36 @@ ${formData.desired_pricing_model
             Should be something descriptive, only containing letters, numbers, and spaces.
           </p>
           {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
+        </div>
+
+        <div>
+        <label
+  htmlFor="brief_url"
+  className="block text-sm font-medium text-black-200"
+>
+  Brief URL
+</label>
+          <input
+            type="url"
+            id="brief_url"
+            value={formData.brief_url}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, brief_url: e.target.value }))
+            }
+            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            required
+          />
+          <p className="text-sm text-black-400 mt-1">
+          Here's a template to help you write the perfect brief:{" "}
+  <a
+    href="https://docs.google.com/document/d/1xAh64H5T87aQ7JCEuiBbQEYxNg9lNJ5DR7gKX-13Je0/edit?usp=sharing"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-blue-500 underline"
+  >
+    LINK
+  </a>
+          </p>
         </div>
 
         <div>
@@ -833,25 +888,6 @@ ${formData.desired_pricing_model
     </div>
   </div>
 </div>
-
-        <div>
-          <label
-            htmlFor="brief_url"
-            className="block text-sm font-medium text-black-200"
-          >
-            Brief URL
-          </label>
-          <input
-            type="url"
-            id="brief_url"
-            value={formData.brief_url}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, brief_url: e.target.value }))
-            }
-            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            required
-          />
-        </div>
 
         <button
           type="submit"
