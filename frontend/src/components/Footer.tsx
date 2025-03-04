@@ -27,7 +27,7 @@ function Footer() {
     setTimeoutId(newTimeoutId);
 
     if (clickCount + 1 >= 5) {
-      window.location.href = "/home";
+      window.location.href = "/login";
     }
   };
 

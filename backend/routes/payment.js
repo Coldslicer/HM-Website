@@ -30,8 +30,8 @@ ROUTER.post('/create-checkout-session', async (req, res) => {
         },
       ],
       mode: 'payment',
-      success_url: 'http://localhost:3000/payment/success?session_id={CHECKOUT_SESSION_ID}', // Redirect after successful payment
-      cancel_url: 'http://localhost:3000/payment/cancel', // Redirect if user cancels
+      success_url: '/payment/success?session_id={CHECKOUT_SESSION_ID}', // Redirect after successful payment
+      cancel_url: '/payment/cancel', // Redirect if user cancels
       metadata: {
         campaign_id: campaign.id
       }

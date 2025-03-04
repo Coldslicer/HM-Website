@@ -7,11 +7,43 @@ import React, { useState } from "react";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 
+// Supabase client
+import { supabase } from '../lib/supabase'; // Import Supabase client
+
 /* ================ [ COMPONENT ] ================ */
 
 // Hero component
 function Hero() {
   const [email, setEmail] = useState("");
+
+  const handleSubmit = async () => {
+    // Validate email
+    if (!email || !email.includes("@") || !email.includes(".")) {
+      alert("Please enter a valid email address.");
+      return;
+    }
+
+    try {
+      // Insert email into Supabase `waitlist_users` table
+      const { data, error } = await supabase
+        .from("waitlist_users")
+        .insert([{ email }]);
+
+      if (error) {
+        console.error("Supabase error:", error);
+        alert("Failed to submit email. Please try again.");
+      } else {
+        console.log("Email added to waitlist:", email);
+        alert("Email submitted successfully!");
+      }
+    } catch (error) {
+      console.error("Error submitting email:", error);
+      alert("An error occurred. Please try again.");
+    }
+
+    // Reset the email field
+    setEmail("");
+  };
 
   return (
     <section className="pt-32 pb-16 px-4">
@@ -34,7 +66,10 @@ function Hero() {
             onChange={(e) => setEmail(e.target.value)}
             className="h-12 font-montserrat"
           />
-          <Button className="bg-[#FF6100] hover:bg-[#FF6100]/90 h-12 px-8 font-montserrat font-bold">
+          <Button
+            className="bg-[#FF6100] hover:bg-[#FF6100]/90 h-12 px-8 font-montserrat font-bold"
+            onClick={handleSubmit}
+          >
             Join Waitlist
           </Button>
         </div>

@@ -10,6 +10,7 @@ export type Campaign = {
   niches: string[];
   per_influencer_budget: string[];
   desired_pricing_model: string[];
+  sponsorship_format: string[],
   brief_url: string;
   status: string;
   created_at: string;

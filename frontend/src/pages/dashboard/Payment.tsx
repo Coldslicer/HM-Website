@@ -16,7 +16,7 @@ const Payment: React.FC = () => {
     }
 
     // Step 1: Create a Checkout Session on the server
-    const { id } = await fetch('http://localhost:3000/api/payment/create-checkout-session', {
+    const { id } = await fetch('/api/payment/create-checkout-session', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
