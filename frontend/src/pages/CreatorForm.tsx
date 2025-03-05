@@ -13,6 +13,7 @@ const initialFormData = {
   personal_statement: '', // Personal Statement (text)
   selected: false, // Selected (bool)
   discord_id: '', // Discord ID (text)
+  agreement: false, // Agreement (bool)
 };
 
 export function CreatorForm() {
@@ -45,6 +46,7 @@ export function CreatorForm() {
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<boolean>(false);
   const [campaignNotAvailable, setCampaignNotAvailable] = useState<boolean>(false);
+  const [pricingModel, setPricingModel] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -85,6 +87,7 @@ export function CreatorForm() {
         const campaign = data.find((c) => c.name === prefilledCampaignName);
         if (campaign) {
           campaignId = campaign.id;
+          setPricingModel(campaign.desired_pricing_model);
         } else {
           setCampaignNotAvailable(true);
         }
@@ -102,6 +105,21 @@ export function CreatorForm() {
 
     fetchData();
   }, [prefilledDiscordID, prefilledCampaignName]);
+
+  const handleCampaignChange = async (campaignId: string) => {
+    const campaign = campaigns.find((c) => c.id === campaignId);
+    if (campaign) {
+      setPricingModel(campaign.desired_pricing_model);
+
+      // Reset rates based on the new pricing model
+      setFormData((prevData) => ({
+        ...prevData,
+        campaign_id: campaignId,
+        rate: campaign.desired_pricing_model.includes('Flat-rate') ? prevData.rate : '0', // Reset to 0 if Flat-rate is not supported
+        rate_cpm: campaign.desired_pricing_model.includes('CPM (first 30d)') ? prevData.rate_cpm : '0', // Reset to 0 if CPM is not supported
+      }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,7 +202,7 @@ export function CreatorForm() {
               <select
                 id="campaign_id"
                 value={formData.campaign_id}
-                onChange={(e) => setFormData({ ...formData, campaign_id: e.target.value })}
+                onChange={(e) => handleCampaignChange(e.target.value)}
                 className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                 required
               >
@@ -276,29 +294,43 @@ export function CreatorForm() {
               <label htmlFor="rate" className="block text-sm font-medium text-gray-800-200">
                 Deliverables Rate
               </label>
-              <div className="flex space-x-4">
-                <input
-                  type="number"
-                  id="rate"
-                  value={formData.rate}
-                  onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
-                  className="mt-1 block w-1/2 rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                  placeholder="$ Flat Rate"
-                  step="any" // Allow floating-point numbers
-                  min="0" // Prevent negative values
-                  required
-                />
-                <input
-                  type="number"
-                  id="rate_cpm"
-                  value={formData.rate_cpm}
-                  onChange={(e) => setFormData({ ...formData, rate_cpm: e.target.value })}
-                  className="mt-1 block w-1/2 rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                  placeholder="$ CPM"
-                  step="any" // Allow floating-point numbers
-                  min="0" // Prevent negative values
-                  required
-                />
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center flex-1">
+                  <span className="mr-2">$</span>
+                  <input
+                    type="number"
+                    id="rate"
+                    value={formData.rate}
+                    onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
+                    className={`mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 ${
+                      !pricingModel.includes('Flat-rate') ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    placeholder="Flat Rate"
+                    step="any" // Allow floating-point numbers
+                    min="0" // Prevent negative values
+                    required
+                    disabled={!pricingModel.includes('Flat-rate')}
+                  />
+                </div>
+                <span className="text-gray-800">+</span> {/* Add the "+" sign */}
+                <div className="flex items-center flex-1">
+                  <span className="mr-2">$</span>
+                  <input
+                    type="number"
+                    id="rate_cpm"
+                    value={formData.rate_cpm}
+                    onChange={(e) => setFormData({ ...formData, rate_cpm: e.target.value })}
+                    className={`mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 ${
+                      !pricingModel.includes('CPM (first 30d)') ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                    placeholder="CPM"
+                    step="any" // Allow floating-point numbers
+                    min="0" // Prevent negative values
+                    required
+                    disabled={!pricingModel.includes('CPM (first 30d)')}
+                  />
+                </div>
+                <span className="text-gray-800">CPM</span> {/* Add the "CPM" text */}
               </div>
               <p className="text-gray-800-400 mt-1">
                 You can put whatever rate you want, but if it's too high, clients may not select you.
