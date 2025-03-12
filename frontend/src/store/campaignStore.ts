@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { Campaign } from '../types'
 
 interface CampaignState {
@@ -15,6 +15,7 @@ export const useCampaignStore = create<CampaignState>()(
     }),
     {
       name: 'campaign-storage',
+      storage: createJSONStorage(() => localStorage), // Forces usage of localStorage
     }
   )
 )

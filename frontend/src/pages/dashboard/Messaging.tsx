@@ -95,16 +95,35 @@ export function Messaging() {
 
   const handleSendMessage = async (isGroupChat: boolean) => {
     if (!selectedChannel || !message.trim()) return;
-    const messageWithHeader = isGroupChat ? '@here\n'+message : `<@${currentCreatorDiscordId}>\n`+message;
+  
+    // Check last message
+    const lastMessage = messages.length > 0 ? messages[0] : null; // Assuming messages are in reverse order
+    const now = Date.now();
+    const twoMinutesAgo = now - 120000; // 2 minutes in milliseconds
+  
+    let shouldPing = true;
+  
+    if (lastMessage && lastMessage.bot && lastMessage.timestamp >= twoMinutesAgo) {
+      shouldPing = false; // Don't ping if the last message was from the bot and within 2 minutes
+    }
+  
+    const messageWithHeader = isGroupChat
+      ? (shouldPing ? '@here\n' : '') + message
+      : (shouldPing ? `<@${currentCreatorDiscordId}>\n` : '') + message;
+  
     try {
       const response = await fetch('/api/messages/sendDM', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id: (isGroupChat ? currentCampaign?.id : currentCreatorId), message: messageWithHeader, isGroup: isGroupChat }),
+        body: JSON.stringify({
+          id: isGroupChat ? currentCampaign?.id : currentCreatorId,
+          message: messageWithHeader,
+          isGroup: isGroupChat,
+        }),
       });
-
+  
       if (response.ok) {
         console.log('Message sent successfully');
         setMessage('');
@@ -116,6 +135,7 @@ export function Messaging() {
       console.error('Error sending message:', error);
     }
   };
+  
 
   const refreshSelected = () => {
     console.log('Refreshing selected channel messages');
@@ -221,55 +241,98 @@ export function Messaging() {
   {/* Main Messaging Area */}
   <div className="flex-1 flex flex-col">
     {/* Messages Container */}
-    <div
-      ref={messagesContainerRef}
-      className="flex-1 p-6 overflow-y-auto bg-white"
-    >
-      <div className="space-y-4">
-      {messages.slice().reverse().map((msg) => {
+  <div
+    ref={messagesContainerRef}
+    className="flex-1 p-6 overflow-y-auto bg-white"
+  >
+    <div className="space-y-4">
+    {messages.slice().reverse().map((msg, index, arr) => {
   const displayName = msg.author
     .split(' ')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 
-  // Process message content
   let contentLines = msg.content.split('\n');
   if (contentLines.length > 1 && (contentLines[0].startsWith('<@') || contentLines[0].startsWith('@'))) {
-    contentLines.shift(); // Remove the first line if it's a ping
+    contentLines.shift(); // Remove ping
   }
   const filteredContent = contentLines.join('\n');
 
+  // Check previous message for merging logic
+  const previousMessage = arr[index - 1];
+  const isSameAuthor = previousMessage?.author === msg.author;
+  const previousTimestamp = new Date(previousMessage?.timestamp).getTime();
+  const currentTimestamp = new Date(msg.timestamp).getTime();
+  const timeDiff = (currentTimestamp - previousTimestamp) / 1000; // in seconds
+  const shouldMerge = isSameAuthor && timeDiff < 120;
+
+  const isClientMessage = msg.author === `${currentCampaign?.rep_name} | ${currentCampaign?.company_name}`;
+
   return (
-    <div
-      key={msg.id}
-      className={`max-w-[70%] p-4 rounded-lg ${
-        msg.author === currentCampaign?.rep_name + ' | ' + currentCampaign?.company_name
-          ? 'ml-auto bg-orange-50'
-          : 'bg-gray-50'
-      }`}
-    >
-      <p className="font-semibold text-gray-800">{displayName}</p>
-      <p className="text-gray-700 mt-1">{filteredContent}</p>
+    <div key={msg.id} className={`flex flex-col ${shouldMerge ? "mt-0.5" : "mt-4"} ${isClientMessage ? "items-end" : "items-start"}`}>
+      
+      {/* Show profile pic and name only if it's a new sequence */}
+      {!shouldMerge && (
+        <div className={`flex items-center mb-1 ${isClientMessage ? "justify-end" : "justify-start"}`}>
+          {!isClientMessage && (
+            <img
+              src={msg.profile_picture || 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png'}
+              alt={`${displayName}'s profile`}
+              className="w-8 h-8 rounded-full object-cover"
+            />
+          )}
+          <p className={`font-semibold text-gray-800 text-sm px-2 py-1 rounded-md bg-gray-100`}>
+            {displayName}
+          </p>
+          {isClientMessage && (
+            <img
+              src={msg.profile_picture || 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png'}
+              alt={`${displayName}'s profile`}
+              className="w-8 h-8 rounded-full object-cover"
+            />
+          )}
+        </div>
+      )}
+
+      {/* Message Text (No Bubble) */}
+      <p
+        className={`text-gray-800 whitespace-pre-wrap px-2 ${
+          isClientMessage ? "text-right" : "text-left"
+        }`}
+      >
+        {filteredContent}
+      </p>
     </div>
   );
 })}
 
-        <div ref={messagesEndRef} />
-      </div>
+
+
+
+
+      <div ref={messagesEndRef} />
     </div>
+  </div>
 
     {/* Message Input Area */}
     <div className="p-4 border-t border-gray-200">
       <div className="flex gap-2">
-        <textarea
-          id="message"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={2}
-          className="flex-1 px-4 py-2 rounded-md bg-gray-50 text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
-          placeholder="Type your message..."
-          disabled={!selectedChannel}
-        />
+      <textarea
+  id="message"
+  value={message}
+  onChange={(e) => setMessage(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); // Prevent new line
+      handleSendMessage(selectedChannel === groupChatChannelId);
+    }
+  }}
+  rows={2}
+  className="flex-1 px-4 py-2 rounded-md bg-gray-50 text-gray-800 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+  placeholder="Type your message..."
+  disabled={!selectedChannel}
+/>
+
         <button
           onClick={async() => {console.log(selectedChannel); handleSendMessage(selectedChannel == groupChatChannelId)}}
           className="bg-orange-500 text-white p-3 rounded-md hover:bg-orange-600 transition-colors"

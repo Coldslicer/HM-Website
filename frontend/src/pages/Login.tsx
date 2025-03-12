@@ -1,42 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import React from 'react';
 
 export function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [companyName, setCompanyName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signInWithEmail, signUpWithEmail, signInWithProvider } = useAuthStore();
-
-
+  const { signInWithEmail, signUpWithEmail, user, signInWithProvider } = useAuthStore();
   const navigate = useNavigate();
 
-const handleSubmit = async () => {
-  setLoading(true);
-  try {
-    if (isSignUp) {
-      await signUpWithEmail(email, password);
-    } else {
-      await signInWithEmail(email, password);
-    }
+  // Redirect if user is already logged in
+  useEffect(() => {
+    const checkUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    // Ensure the user is authenticated before navigating
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      if (user) {
+        navigate('/dashboard'); // Redirect to dashboard if user exists
+      }
+    };
 
-    if (user) {
-      navigate('/dashboard'); // Redirect to dashboard
+    checkUser();
+  }, [navigate]);
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      if (isSignUp) {
+        await signUpWithEmail(email, password);
+      } else {
+        await signInWithEmail(email, password);
+      }
+
+      // Ensure the user is authenticated before navigating
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        navigate('/dashboard'); // Redirect to dashboard
+      }
+    } catch (error) {
+      console.error(error);
     }
-  } catch (error) {
-    console.error(error);
-  }
-  setLoading(false);
-};
+    setLoading(false);
+  };
 
 
   return (

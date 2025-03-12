@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { useCampaignStore } from './campaignStore';
 
 interface AuthState {
   user: any;
@@ -12,40 +13,68 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => {
+  // Fetch the most recently updated campaign
+  const fetchLatestCampaign = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('campaigns')
+      .select('*')
+      .eq('client_id', userId)
+      .order('updated_at', { ascending: false }) // Sort by latest update
+      .limit(1)
+      .single();
+
+    if (error) {
+      console.error('Error fetching latest campaign:', error);
+      return;
+    }
+
+    if (data) {
+      useCampaignStore.getState().setCurrentCampaign(data);
+    }
+  };
+
+  // Function to load session manually
   const checkUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('Error fetching session:', error);
+    }
+
     set({ user: session?.user || null, loading: false });
   };
 
+  // Listen for auth changes
   supabase.auth.onAuthStateChange(async (event, session) => {
-    console.log(`Auth event: ${event}`, session); // Debugging log
+    console.log(`Auth event: ${event}`, session);
+
+    if (session) {
+      localStorage.setItem('supabase_session', JSON.stringify(session)); // Store session manually
+    } else {
+      localStorage.removeItem('supabase_session'); // Remove session on sign-out
+    }
+
     set({ user: session?.user || null });
 
     if (event === 'SIGNED_IN' && session?.user) {
-        // Ensure client entry exists & update profile picture
-        setTimeout(() => ensureClientExists(session.user), 0);
+      setTimeout(() => ensureClientExists(session.user), 0);
+      
     }
   });
 
-  // Function to ensure the user exists in the "clients" table
+  // Ensure user exists in Supabase DB
   async function ensureClientExists(user: any) {
     if (!user) return;
 
-    // Get the user's profile picture
     const googleAvatar = user.user_metadata?.avatar_url ?? null;
-
     const discordIdentity = user.identities?.find((id: any) => id.provider === 'discord');
-    const discordAvatar =
-      discordIdentity?.identity_data?.id && discordIdentity?.identity_data?.avatar
-        ? `https://cdn.discordapp.com/avatars/${discordIdentity.identity_data.id}/${discordIdentity.identity_data.avatar}.png`
-        : null;
+    const discordAvatar = discordIdentity?.identity_data?.id && discordIdentity?.identity_data?.avatar
+      ? `https://cdn.discordapp.com/avatars/${discordIdentity.identity_data.id}/${discordIdentity.identity_data.avatar}.png`
+      : null;
 
     const profilePicture = googleAvatar || discordAvatar || null;
 
-    console.log("Checking if client exists in Supabase...");
-
     try {
-      // Check if client exists
       const { data: existingClient, error: checkError } = await supabase
         .from('clients')
         .select('id')
@@ -53,44 +82,21 @@ export const useAuthStore = create<AuthState>((set) => {
         .single();
 
       if (checkError && checkError.code !== 'PGRST116') {
-        // Ignore "no rows found" error (PGRST116), but log other errors
         throw new Error(`Error checking client existence: ${checkError.message}`);
       }
 
       if (!existingClient) {
-        console.log("Client does not exist. Creating new entry...");
-
-        // Insert new client entry
-        const { error: insertError } = await supabase
-          .from('clients')
-          .insert([{ id: user.id, profile_picture: profilePicture }]);
-
-        if (insertError) {
-          throw new Error(`Failed to insert client: ${insertError.message}`);
-        }
-
-        console.log("New client entry created successfully.");
+        await supabase.from('clients').insert([{ id: user.id, profile_picture: profilePicture }]);
       } else if (profilePicture) {
-        console.log("Client exists. Updating profile picture...");
-
-        // Update profile picture
-        const { error: updateError } = await supabase
-          .from('clients')
-          .update({ profile_picture: profilePicture })
-          .eq('id', user.id);
-
-        if (updateError) {
-          throw new Error(`Failed to update profile picture: ${updateError.message}`);
-        }
-
-        console.log("Profile picture updated successfully.");
+        await supabase.from('clients').update({ profile_picture: profilePicture }).eq('id', user.id);
       }
+      await fetchLatestCampaign(user.id);
     } catch (error) {
       console.error("Error ensuring client existence:", error);
     }
   }
 
-  checkUser(); // Ensures the user state is set on load
+  checkUser(); // Check session on load
 
   return {
     user: null,
@@ -103,6 +109,7 @@ export const useAuthStore = create<AuthState>((set) => {
         console.error('Email sign-in error:', error);
       } else {
         set({ user: data.user });
+        localStorage.setItem('supabase_session', JSON.stringify(data.session)); // Store session
       }
     },
 
@@ -112,19 +119,31 @@ export const useAuthStore = create<AuthState>((set) => {
         console.error('Sign-up error:', error);
       } else {
         set({ user: data.user });
+        localStorage.setItem('supabase_session', JSON.stringify(data.session));
       }
     },
 
     signInWithProvider: async (provider) => {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${window.location.origin}/dashboard` },
+        options: { 
+          redirectTo: `${window.location.origin}/dashboard`,
+          skipBrowserRedirect: true,
+        },
       });
-      if (error) console.error('OAuth Sign-in error:', error);
+
+      if (error) {
+        console.error('OAuth Sign-in error:', error);
+      } else if (data?.url) {
+        window.location.href = data.url; // Manual redirect for OAuth
+      }
     },
 
     signOut: async () => {
       await supabase.auth.signOut();
+      useCampaignStore.getState().setCurrentCampaign(null);
+      localStorage.removeItem('campaign-storage');
+      localStorage.removeItem('supabase_session'); // Remove stored session
       set({ user: null });
     },
   };
