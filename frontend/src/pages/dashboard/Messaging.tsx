@@ -17,6 +17,7 @@ export function Messaging() {
   const messagesContainerRef = useRef(null);
   const [justLoaded, setJustLoaded] = useState(false);
   const [wasAtBottom, setWasAtBottom] = useState(false);
+  const [currentCreatorDiscordId, setCurrentCreatorDiscordId] = useState(''); 
 
   const currentCampaign = useCampaignStore((state) => state.currentCampaign);
 
@@ -45,7 +46,7 @@ export function Messaging() {
     const fetchCreators = async () => {
       const { data, error } = await supabase
         .from('campaign_creators')
-        .select('id, channel_id, channel_url, channel_name')
+        .select('id, channel_id, channel_url, channel_name, discord_id')
         .eq('campaign_id', currentCampaign?.id)
         .eq('selected',true);
 
@@ -73,6 +74,7 @@ export function Messaging() {
       });
       const data = await response.json();
       console.log('Fetched messages:', data);
+      
       setMessages(data.messages || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -83,22 +85,24 @@ export function Messaging() {
   const handleCreatorChange = (creator) => {
     handleChannelChange(creator.channel_id);
     setCurrentCreatorId(creator.id);
+    setCurrentCreatorDiscordId(creator.discord_id);
   }
   const handleChannelChange = (channelId) => {
     setSelectedChannel(channelId);
     fetchMessages(channelId);
+    setCurrentCreatorDiscordId('');
   };
 
   const handleSendMessage = async (isGroupChat: boolean) => {
     if (!selectedChannel || !message.trim()) return;
-
+    const messageWithHeader = isGroupChat ? '@here\n'+message : `<@${currentCreatorDiscordId}>\n`+message;
     try {
       const response = await fetch('/api/messages/sendDM', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id: (isGroupChat ? currentCampaign?.id : currentCreatorId), message: message, isGroup: isGroupChat }),
+        body: JSON.stringify({ id: (isGroupChat ? currentCampaign?.id : currentCreatorId), message: messageWithHeader, isGroup: isGroupChat }),
       });
 
       if (response.ok) {
@@ -222,26 +226,34 @@ export function Messaging() {
       className="flex-1 p-6 overflow-y-auto bg-white"
     >
       <div className="space-y-4">
-        {messages.slice().reverse().map((msg) => {
-          const displayName = msg.author
-            .split(' ')
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
+      {messages.slice().reverse().map((msg) => {
+  const displayName = msg.author
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 
-          return (
-            <div
-              key={msg.id}
-              className={`max-w-[70%] p-4 rounded-lg ${
-                msg.author === currentCampaign?.company_name
-                  ? 'ml-auto bg-orange-50'
-                  : 'bg-gray-50'
-              }`}
-            >
-              <p className="font-semibold text-gray-800">{displayName}</p>
-              <p className="text-gray-700 mt-1">{msg.content}</p>
-            </div>
-          );
-        })}
+  // Process message content
+  let contentLines = msg.content.split('\n');
+  if (contentLines.length > 1 && (contentLines[0].startsWith('<@') || contentLines[0].startsWith('@'))) {
+    contentLines.shift(); // Remove the first line if it's a ping
+  }
+  const filteredContent = contentLines.join('\n');
+
+  return (
+    <div
+      key={msg.id}
+      className={`max-w-[70%] p-4 rounded-lg ${
+        msg.author === currentCampaign?.rep_name + ' | ' + currentCampaign?.company_name
+          ? 'ml-auto bg-orange-50'
+          : 'bg-gray-50'
+      }`}
+    >
+      <p className="font-semibold text-gray-800">{displayName}</p>
+      <p className="text-gray-700 mt-1">{filteredContent}</p>
+    </div>
+  );
+})}
+
         <div ref={messagesEndRef} />
       </div>
     </div>

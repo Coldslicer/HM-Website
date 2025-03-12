@@ -23,12 +23,14 @@ export function Navbar() {
                 <Link to="/dashboard" className="px-4 py-2 hover:text-orange-500">
                   Dashboard
                 </Link>
-                <button
-                  onClick={() => signOut()}
-                  className="px-4 py-2 hover:text-orange-500"
-                >
-                  Sign Out
-                </button>
+                <Link to="/" className="px-4 py-2 hover:text-orange-500">
+                  <button
+                    onClick={() => signOut()}
+                    className="px-4 py-2 hover:text-orange-500"
+                  >
+                    Sign Out
+                  </button>
+                </Link>
               </>
             ) : (
               <div className="flex items-center space-x-4">

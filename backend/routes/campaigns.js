@@ -68,7 +68,7 @@ router.post('/setup-discord', async (req, res) => {
     // Fetch client data to get company_name
     const { data: clientData, error: clientError } = await SUPABASE_CLIENT
       .from('clients')
-      .select('company_name')
+      .select('profile_picture')
       .eq('id', client_id)
       .single();
 
@@ -77,7 +77,7 @@ router.post('/setup-discord', async (req, res) => {
       return res.status(500).json({ error: 'Error fetching client data' });
     }
 
-    const companyName = clientData.company_name;
+    const pfpLink = clientData.profile_picture;
 
     // Create group chat channel
     console.log('Creating group chat channel with name:', company_name);
@@ -158,7 +158,7 @@ router.post('/setup-discord', async (req, res) => {
 
     const groupChatChannelWebhook = await groupChatChannel.createWebhook({
       name: webhook_name,
-      avatar: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png',
+      avatar: pfpLink || 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png',
       reason: 'Webhook for group chat notifications',
     });
 
@@ -203,7 +203,7 @@ router.post('/setup-discord', async (req, res) => {
         });
         creatorWebhook = await creatorChannel.createWebhook({
           name: webhook_name,
-          avatar: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png',
+          avatar: pfpLink || 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png',
           reason: 'Webhook for creator notifications',
         });
       } catch (error) {
