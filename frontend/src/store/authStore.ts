@@ -1,79 +1,60 @@
-import { create } from 'zustand'
-import { User } from '../types'
-import { supabase } from '../lib/supabase'
+import { create } from 'zustand';
+import { supabase } from '../lib/supabase';
 
 interface AuthState {
-  user: User | null
-  loading: boolean
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, companyName: string) => Promise<void>
-  signOut: () => Promise<void>
-  setUser: (user: User | null) => void
+  user: any;
+  loading: boolean;
+  setUser: (user: any) => void;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  signInWithProvider: (provider: 'google' | 'discord') => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  loading: true,
-  signIn: async (email: string, password: string) => {
-    const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    if (signInError) throw signInError
+export const useAuthStore = create<AuthState>((set) => {
+  const checkUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    set({ user: session?.user || null, loading: false });
+  };
 
-    if (!authData.user) throw new Error('No user data returned')
+  supabase.auth.onAuthStateChange((_event, session) => {
+    set({ user: session?.user || null });
+  });
 
-    // Get the client data
-    const { data: clientData, error: clientError } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('id', authData.user.id)
-      .single()
+  return {
+    user: null,
+    loading: true,
+    setUser: (user) => set({ user }),
 
-    if (clientError) throw clientError
-
-    set({
-      user: {
-        id: authData.user.id,
-        email: authData.user.email!,
-        companyName: clientData.company_name,
-        role: 'client'
+    signInWithEmail: async (email, password) => {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        console.error('Email sign-in error:', error);
+      } else {
+        set({ user: data.user });
       }
-    })
-  },
-  signUp: async (email: string, password: string, companyName: string) => {
-    const { data: authData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-    })
-    if (signUpError) throw signUpError
+    },
 
-    if (!authData.user) throw new Error('No user data returned')
-
-    // Create the client record
-    const { error: clientError } = await supabase
-      .from('clients')
-      .insert([
-        {
-          id: authData.user.id,
-          company_name: companyName,
-        }
-      ])
-
-    if (clientError) throw clientError
-
-    set({
-      user: {
-        id: authData.user.id,
-        email: authData.user.email!,
-        companyName,
-        role: 'client'
+    signUpWithEmail: async (email, password) => {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        console.error('Sign-up error:', error);
+      } else {
+        set({ user: data.user });
       }
-    })
-  },
-  signOut: async () => {
-    await supabase.auth.signOut()
-    set({ user: null })
-  },
-  setUser: (user) => set({ user, loading: false }),
-}))
+    },
+
+    signInWithProvider: async (provider) => {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: `${window.location.origin}/dashboard` },
+      });
+      if (error) console.error('OAuth Sign-in error:', error);
+    },
+
+    signOut: async () => {
+      await supabase.auth.signOut();
+      set({ user: null });
+    },
+  };
+});

@@ -39,8 +39,7 @@ export { SUPABASE_CLIENT };
 /* ================ [ DISCORD ] ================ */
 
 // Imports
-import { Client, GatewayIntentBits } from 'discord.js';
-import { ON_READY, ON_USER_INTERACTION, ON_USER_MESSAGE, ON_USER_REACTION } from './discordSetup.js';
+import { Client, GatewayIntentBits, Partials } from 'discord.js';
 
 // Discord client
 console.log('[HM]: Connecting to Discord...');
@@ -53,16 +52,12 @@ const DISCORD_CLIENT = new Client({
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMessageReactions,
   ],
+  partials: [
+    Partials.Message,
+    Partials.Channel,
+    Partials.Reaction
+  ],
 });
-
-// Event listeners
-DISCORD_CLIENT.once('ready', () => ON_READY(DISCORD_CLIENT));
-DISCORD_CLIENT.on('interactionCreate', (interaction) => ON_USER_INTERACTION(SUPABASE_CLIENT, interaction));
-DISCORD_CLIENT.on('messageCreate', (message) => ON_USER_MESSAGE(SUPABASE_CLIENT, message));
-DISCORD_CLIENT.on('messageReactionAdd', (reaction, user) => ON_USER_REACTION(SUPABASE_CLIENT, reaction, user));
-
-// Login to Discord
-DISCORD_CLIENT.login(process.env.DISCORD_TOKEN); 
 
 // Export client
 export { DISCORD_CLIENT };

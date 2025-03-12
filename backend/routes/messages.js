@@ -33,42 +33,46 @@ return messages
 router.post('/sendDM', async (req, res) => {
   const { message, id, isGroup } = req.body;
   let channelId, webhookUrl;
+  console.log(message);
+  console.log(id);
+  console.log(isGroup);
 
   // Fetch channel_id and webhook_url from Supabase
-  let data, error;
   try {
-  if (isGroup) {
-    ({ data, error } = await SUPABASE_CLIENT
-      .from("campaigns")
-      .select("group_chat_channel_id, webhook_url")
-      .eq('id', id)
-      .single());
-    channelId = data.group_chat_channel_id;
-  } else {
-    ({ data, error } = await SUPABASE_CLIENT
-      .from("campaign_creators")
-      .select("channel_id, webhook_url")
-      .eq('id', id)
-      .single());
-    channelId = data.channel_id;
-  }
-  } catch {
-    res.status(500).json({ error: 'Error fetching database information' });
+    if (isGroup) {
+      const { data, error } = await SUPABASE_CLIENT
+        .from("campaigns")
+        .select("group_chat_channel_id, webhook_url")
+        .eq('id', id)
+        .single();
+        
+      if (!data) {
+        console.log("No data found for the given campaign ID:", id);
+        return res.status(404).json({ error: 'No campaign found for the given ID' });
+      }
+  
+      channelId = data.group_chat_channel_id;
+      webhookUrl = data.webhook_url;
+    } else {
+      const { data, error } = await SUPABASE_CLIENT
+        .from("campaign_creators")
+        .select("channel_id, webhook_url")
+        .eq('id', id)
+        .single();
+  
+      if (!data) {
+        console.log("No data found for the given creator ID:", id);
+        return res.status(404).json({ error: 'No creator found for the given ID' });
+      }
+  
+      channelId = data.channel_id;
+      webhookUrl = data.webhook_url;
+    }
+  } catch (error) {
+    console.log("Database error:", error);
+    return res.status(500).json({ error: 'Error fetching database information' });
   }
 
-  console.log("recieved channel data: "+data);
-
-  if (error) {
-    console.log("Error fetching creator DM information:", error);
-    return res.status(500).json({ error: 'Error fetching creator DM info' });
-  }
-
-  if (!data) {
-    console.log("No data found for the given ID");
-    return res.status(404).json({ error: 'No data found for the given ID' });
-  }
-
-  webhookUrl = data.webhook_url;
 
   if (webhookUrl) {
     try {

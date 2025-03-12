@@ -15,7 +15,7 @@ export const CreatorTimeline = () => {
   const fetchSelectedCreators = async () => {
     const { data: creatorsData } = await supabase
       .from('campaign_creators')
-      .select('id, draft, final, contract_signed, selected, channel_url')
+      .select('id, draft, final, contract_signed, selected, channel_url, channel_name')
       .eq('campaign_id', currentCampaign?.id)
       .eq('selected', true);
 
@@ -24,7 +24,7 @@ export const CreatorTimeline = () => {
     }
 
     const creatorsWithHandle = creatorsData.map((creator) => {
-      const handle = creator.channel_url.split('@')[1] || 'Unknown Handle';
+      const handle = creator.channel_name || creator.channel_url.split('@')[1] || "Unknown";
       return {
         ...creator,
         handle,

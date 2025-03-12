@@ -1,3 +1,6 @@
+import { SUPABASE_CLIENT } from './setup.js';
+import { DISCORD_CLIENT } from './setup.js';
+
 /* ================ [ HELPERS ] ================ */
 
 // idk what this does
@@ -44,7 +47,7 @@ async function getCampaignCreatorEntryByChannel(channelId, userId) {
 import { ChannelType } from 'discord.js';
 
 // On bot ready
-const ON_READY = async ( DISCORD_CLIENT ) => {
+const ON_READY = async () => {
 
   console.log(`[HM]: Discord bot logged in as ${DISCORD_CLIENT.user.tag}`);
 
@@ -63,7 +66,7 @@ const ON_READY = async ( DISCORD_CLIENT ) => {
 };
 
 // On user interaction
-const ON_USER_INTERACTION = async ( SUPABASE_CLIENT, interaction) => {
+const ON_USER_INTERACTION = async (interaction) => {
 
   if (!interaction.isCommand()) return;
   if (interaction.commandName === 'draft' || interaction.commandName === 'final') {
@@ -114,7 +117,7 @@ const ON_USER_INTERACTION = async ( SUPABASE_CLIENT, interaction) => {
 };
 
 // On user message
-const ON_USER_MESSAGE = async ( SUPABASE_CLIENT, message ) => {
+const ON_USER_MESSAGE = async ( message ) => {
   try {
     if (!message.bot) return;
 
@@ -145,7 +148,7 @@ const ON_USER_MESSAGE = async ( SUPABASE_CLIENT, message ) => {
 };
 
 // On user reaction
-const ON_USER_REACTION = async ( SUPABASE_CLIENT, reaction, user ) => {
+const ON_USER_REACTION = async ( reaction, user ) => {
 
   console.log('Reaction added:', reaction.emoji.name);
   try {
@@ -169,6 +172,8 @@ const ON_USER_REACTION = async ( SUPABASE_CLIENT, reaction, user ) => {
       return;
     }
 
+    console.log("fetched matching niches");
+
     // If the channel is in the 'niches' table
     if (niches && niches.length > 0) {
       // Send the form to the user who reacted
@@ -179,6 +184,17 @@ const ON_USER_REACTION = async ( SUPABASE_CLIENT, reaction, user ) => {
       
       // You can also access this with my /id command, or with discord developer mode enabled```;
 
+      if (!reaction.message || !reaction.message.content) {
+        try {
+            reaction.message = await reaction.message.fetch(); // Fetch the reaction object
+        } catch (error) {
+            console.error("Failed to fetch reaction message:", error);
+            return; // Exit to prevent errors
+        }
+      }
+
+      console.log(reaction.message);
+      console.log(reaction.message.content);
       
       // Send the form as a DM to the user who reacted
       const urlRegex = /(https?:\/\/[^\s)]+)/g; // Regex to match URLs

@@ -4,11 +4,30 @@
 import express from 'express';
 import { SUPABASE_CLIENT } from '../util/setup.js';  // Import your Supabase client
 import { DISCORD_CLIENT } from '../util/setup.js';  // Import your Discord client
-import { PermissionsBitField } from 'discord.js';
+import { PermissionsBitField, ChannelType } from 'discord.js';
 
 const router = express.Router();
 
 const SERVER_ID = process.env.SERVER_ID; // Use environment variable for the guild ID
+
+router.get('/validate-discord-id/:discordId', async (req, res) => {
+  const { discordId } = req.params;
+
+  // Check if the ID is a valid Discord Snowflake (numeric ID)
+  if (!/^\d{17,20}$/.test(discordId)) {
+    return res.status(400).json({ valid: false, error: 'Invalid Discord ID format' });
+  }
+
+  try {
+    // Try fetching the user from Discord
+    const user = await DISCORD_CLIENT.users.fetch(discordId);
+    return res.status(200).json({ valid: true, username: user.username, discriminator: user.discriminator });
+  } catch (error) {
+    console.error(`Failed to fetch Discord user ${discordId}:`, error);
+    return res.status(404).json({ valid: false, error: 'User not found or bot lacks permissions' });
+  }
+});
+
 
 router.post('/setup-discord', async (req, res) => {
   const { campaignId } = req.body;
@@ -95,11 +114,16 @@ router.post('/setup-discord', async (req, res) => {
         type: ChannelType.GuildCategory,
       });
 
+      if (!category) {
+        console.error('Failed to create category');
+        return res.status(500).json({ error: 'Failed to create category' });
+      }
+
       category_id = category.id;
 
       groupChatChannel = await guild.channels.create({
         name: company_name + ' - Group Chat',
-        type: 0,  // Type for text channel
+        type: ChannelType.GuildText,  // Type for text channel
         reason: 'Group chat for campaign',
         parent: category_id,
         permissionOverwrites: [
@@ -163,7 +187,7 @@ router.post('/setup-discord', async (req, res) => {
         console.log(`User fetched: ${user.tag}`);
         creatorChannel = await guild.channels.create({
           name: company_name+'-'+creator.channel_name.replace(/[^a-zA-Z0-9]/g, ""),
-          type: 0,  // Type for text channel
+          type: ChannelType.GuildText,  // Type for text channel
           reason: `Your private channel for the "${company_name}" campaign`,
           parent: category_id,
           permissionOverwrites: [
@@ -172,7 +196,7 @@ router.post('/setup-discord', async (req, res) => {
               deny: [PermissionsBitField.Flags.ViewChannel], // Deny view channel permission for everyone
             },
             {
-              id: user, // Allow view and send messages permissions for the creator
+              id: user.id, // Allow view and send messages permissions for the creator
               allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
             },
           ]

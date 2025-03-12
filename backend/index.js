@@ -9,6 +9,7 @@ import express from 'express';
 import cors from 'cors';
 import Stripe from "stripe";
 import { SUPABASE_CLIENT, DISCORD_CLIENT } from "./util/setup.js";
+import { ON_READY, ON_USER_INTERACTION, ON_USER_MESSAGE, ON_USER_REACTION } from "./util/discordSetup.js";
 
 // Routes
 import campaignsRouter from './routes/campaigns.js';
@@ -95,3 +96,12 @@ APP.use('/api/payment', paymentRouter); // Route for payment
 APP.listen(PORT, () => {
   console.log(`[HM]: Server started up on http://localhost:${PORT}`);
 });
+
+// Event listeners
+DISCORD_CLIENT.once('ready', async() => await ON_READY());
+DISCORD_CLIENT.on('interactionCreate', async(interaction) => await ON_USER_INTERACTION(interaction));
+DISCORD_CLIENT.on('messageCreate', async(message) => await ON_USER_MESSAGE(message));
+DISCORD_CLIENT.on('messageReactionAdd', async(reaction, user) => await ON_USER_REACTION(reaction, user));
+
+// Login to Discord
+DISCORD_CLIENT.login(process.env.DISCORD_TOKEN); 

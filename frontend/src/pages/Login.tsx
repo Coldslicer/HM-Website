@@ -1,85 +1,94 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../store/authStore'
+import { useState } from 'react';
+import { useAuthStore } from '../store/authStore';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
-export function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const navigate = useNavigate()
-  const { signIn } = useAuthStore()
+export function AuthPage() {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { signInWithEmail, signUpWithEmail, signInWithProvider } = useAuthStore();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      await signIn(email, password)
-      navigate('/dashboard')
-    } catch (error) {
-      console.error('Error signing in:', error)
+
+  const navigate = useNavigate();
+
+const handleSubmit = async () => {
+  setLoading(true);
+  try {
+    if (isSignUp) {
+      await signUpWithEmail(email, password);
+    } else {
+      await signInWithEmail(email, password);
     }
+
+    // Ensure the user is authenticated before navigating
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      navigate('/dashboard'); // Redirect to dashboard
+    }
+  } catch (error) {
+    console.error(error);
   }
+  setLoading(false);
+};
+
 
   return (
-    <div className="min-h-screen bg-white-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-gray-50 py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <div className="sm:mx-auto sm:w-full sm:max-w-md">
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-black">
-            Sign in to your account<br/><br/>
-            </h2>
+    <div className="flex h-screen items-center justify-center bg-gray-100">
+      <div className="w-full max-w-md bg-white p-6 rounded-md shadow-md">
+        <h2 className="text-2xl font-bold text-black mb-4 text-center">
+          {isSignUp ? 'Sign Up' : 'Sign In'}
+        </h2>
+        <div className="space-y-4">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition"
+          >
+            {isSignUp ? 'Sign Up' : 'Sign In'}
+          </button>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => signInWithProvider('google')}
+              className="w-[48%] text-center bg-gray-100 text-gray-700 py-2 rounded-md hover:bg-gray-200 transition"
+            >
+              Sign in with Google
+            </button>
+            <button
+              onClick={() => signInWithProvider('discord')}
+              className="w-[48%] text-center bg-gray-100 text-gray-700 py-2 rounded-md hover:bg-gray-200 transition"
+            >
+              Sign in with Discord
+            </button>
           </div>
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-black-200"
-              >
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm bg-white-700 text-black"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-black-200"
-              >
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm bg-white-700 text-black"
-                />
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-              >
-                Sign in
-              </button>
-            </div>
-          </form>
+          <p className="text-center text-sm">
+            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+            <button className="text-orange-500" onClick={() => setIsSignUp(!isSignUp)}>
+              {isSignUp ? 'Sign In' : 'Sign Up'}
+            </button>
+          </p>
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -103,27 +103,53 @@ export function CreatorForm() {
     fetchData();
   }, [prefilledDiscordID, prefilledCampaignName]);
 
+  const validateDiscordId = async(discordId) => {
+    try {
+      const response = await fetch(`/api/campaigns/validate-discord-id/${discordId}`);
+      const data = await response.json();
+  
+      if (data.valid) {
+        console.log(`Valid Discord ID! User: ${data.username}#${data.discriminator}`);
+        return true;
+      } else {
+        console.warn('Invalid Discord ID:', data.error);
+        return false
+      }
+    } catch (error) {
+      console.error('Error validating Discord ID:', error);
+      return false
+    }
+  }
+  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     // Ensure a campaign is selected
     if (!formData.campaign_id) {
       setError('Please select a campaign to express interest.');
       return;
     }
-
+  
     // Ensure agreement is checked
     if (!formData.agreement) {
       setError('You must agree to the terms to submit the form.');
       return;
     }
-
+  
     // Validate rates (non-negative)
     if (parseFloat(formData.rate) < 0 || parseFloat(formData.rate_cpm) < 0) {
       setError('Rates cannot be negative.');
       return;
     }
-
+  
+    // Validate Discord ID before submitting
+    const isValidDiscordId = await validateDiscordId(formData.discord_id);
+    if (!isValidDiscordId) {
+      setError('Invalid Discord ID. Please enter a valid Discord ID.');
+      return;
+    }
+  
     try {
       const { data, error } = await supabase
         .from('campaign_creators') // Updated table name
@@ -143,9 +169,9 @@ export function CreatorForm() {
         ])
         .select()
         .single();
-
+  
       if (error) throw error;
-
+  
       // On success, set success state to true
       setSuccess(true);
     } catch (err) {
@@ -153,6 +179,7 @@ export function CreatorForm() {
       setError('An error occurred while submitting your information. Please try again later.');
     }
   };
+  
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -241,7 +268,7 @@ export function CreatorForm() {
 
             <div>
               <label htmlFor="discord_id" className="block text-sm font-medium text-gray-800-200">
-                Discord ID - Ex. 655866521117130752
+                Discord ID (Not your Username) - Ex. 655866521117130752
               </label>
               <input
                 type="text" // Changed to text since discord_id is now text

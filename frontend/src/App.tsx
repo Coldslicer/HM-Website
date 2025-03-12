@@ -7,7 +7,7 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 // Custom components
 import { Navbar } from './components/Navbar'
 import { Hero } from './pages/Hero'
-import { Login } from './pages/Login'
+import { AuthPage } from './pages/Login'
 import { Signup } from './pages/Signup'
 import { Dashboard } from './pages/Dashboard'
 import { CreatorForm } from './pages/CreatorForm'
@@ -32,8 +32,8 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/beta" element={<BetaTest />} />
         <Route path="/home" element={<Hero />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/signup" element={<AuthPage />} />
         <Route path="/dashboard/*" element={<Dashboard />} />
         <Route path="/creator-form" element={<CreatorForm />} />
       </Routes>
