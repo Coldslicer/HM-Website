@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { supabase } from '../lib/supabase';
+import { SUPABASE_CLIENT } from '../lib/supabase';
 import { useCampaignStore } from './campaignStore';
 
 interface AuthState {
@@ -15,7 +15,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => {
   // Fetch the most recently updated campaign
   const fetchLatestCampaign = async (userId: string) => {
-    const { data, error } = await supabase
+    const { data, error } = await SUPABASE_CLIENT
       .from('campaigns')
       .select('*')
       .eq('client_id', userId)
@@ -35,7 +35,7 @@ export const useAuthStore = create<AuthState>((set) => {
 
   // Function to load session manually
   const checkUser = async () => {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const { data: { session }, error } = await SUPABASE_CLIENT.auth.getSession();
     
     if (error) {
       console.error('Error fetching session:', error);
@@ -45,7 +45,7 @@ export const useAuthStore = create<AuthState>((set) => {
   };
 
   // Listen for auth changes
-  supabase.auth.onAuthStateChange(async (event, session) => {
+  SUPABASE_CLIENT.auth.onAuthStateChange(async (event, session) => {
     console.log(`Auth event: ${event}`, session);
 
     if (session) {
@@ -75,7 +75,7 @@ export const useAuthStore = create<AuthState>((set) => {
     const profilePicture = googleAvatar || discordAvatar || null;
 
     try {
-      const { data: existingClient, error: checkError } = await supabase
+      const { data: existingClient, error: checkError } = await SUPABASE_CLIENT
         .from('clients')
         .select('id')
         .eq('id', user.id)
@@ -86,9 +86,9 @@ export const useAuthStore = create<AuthState>((set) => {
       }
 
       if (!existingClient) {
-        await supabase.from('clients').insert([{ id: user.id, profile_picture: profilePicture }]);
+        await SUPABASE_CLIENT.from('clients').insert([{ id: user.id, profile_picture: profilePicture }]);
       } else if (profilePicture) {
-        await supabase.from('clients').update({ profile_picture: profilePicture }).eq('id', user.id);
+        await SUPABASE_CLIENT.from('clients').update({ profile_picture: profilePicture }).eq('id', user.id);
       }
       await fetchLatestCampaign(user.id);
     } catch (error) {
@@ -104,7 +104,7 @@ export const useAuthStore = create<AuthState>((set) => {
     setUser: (user) => set({ user }),
 
     signInWithEmail: async (email, password) => {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await SUPABASE_CLIENT.auth.signInWithPassword({ email, password });
       if (error) {
         console.error('Email sign-in error:', error);
       } else {
@@ -114,7 +114,7 @@ export const useAuthStore = create<AuthState>((set) => {
     },
 
     signUpWithEmail: async (email, password) => {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await SUPABASE_CLIENT.auth.signUp({ email, password });
       if (error) {
         console.error('Sign-up error:', error);
       } else {
@@ -124,7 +124,7 @@ export const useAuthStore = create<AuthState>((set) => {
     },
 
     signInWithProvider: async (provider) => {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await SUPABASE_CLIENT.auth.signInWithOAuth({
         provider,
         options: { 
           redirectTo: `${window.location.origin}/dashboard`,
@@ -140,7 +140,7 @@ export const useAuthStore = create<AuthState>((set) => {
     },
 
     signOut: async () => {
-      await supabase.auth.signOut();
+      await SUPABASE_CLIENT.auth.signOut();
       useCampaignStore.getState().setCurrentCampaign(null);
       localStorage.removeItem('campaign-storage');
       localStorage.removeItem('supabase_session'); // Remove stored session

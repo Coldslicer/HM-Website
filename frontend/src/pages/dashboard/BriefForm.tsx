@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useCampaignStore } from '../../store/campaignStore';
-import { supabase } from '../../lib/supabase';
+import { SUPABASE_CLIENT } from '../../lib/supabase';
 
 const initialFormData = {
   company_name: '',
@@ -31,7 +31,7 @@ export function BriefForm() {
 
   useEffect(() => {
     const fetchNiches = async () => {
-      const { data, error } = await supabase
+      const { data, error } = await SUPABASE_CLIENT
         .from('niches')
         .select('*');
       if (error) {
@@ -45,7 +45,7 @@ export function BriefForm() {
     fetchNiches();
 
     const fetchRoles = async () => {
-      const { data, error } = await supabase
+      const { data, error } = await SUPABASE_CLIENT
         .from('roles')
         .select('*');
       if (error) {
@@ -62,7 +62,7 @@ export function BriefForm() {
       if (!user) return;
 
       // Fetch the most recent non-draft campaign for the current client
-      const { data, error } = await supabase
+      const { data, error } = await SUPABASE_CLIENT
         .from('campaigns')
         .select('*')
         .eq('client_id', user.id)
@@ -126,7 +126,7 @@ export function BriefForm() {
         status: 'brief_submitted',
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await SUPABASE_CLIENT
         .from('campaigns')
         .insert([campaign])
         .select()

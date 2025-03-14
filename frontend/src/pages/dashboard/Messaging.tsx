@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../../lib/supabase';
+import { SUPABASE_CLIENT } from '../../lib/supabase';
 import { useCampaignStore } from '../../store/campaignStore';
 import { FaPaperPlane } from 'react-icons/fa';
 
@@ -27,7 +27,7 @@ export function Messaging() {
   useEffect(() => {
     const fetchCampaignStatus = async () => {
       if (currentCampaign) {
-        const { data, error } = await supabase
+        const { data, error } = await SUPABASE_CLIENT
           .from('campaigns')
           .select('status, group_chat_channel_id, staff_chat_channel_id')
           .eq('id', currentCampaign.id)
@@ -48,7 +48,7 @@ export function Messaging() {
 
   useEffect(() => {
     const fetchCreators = async () => {
-      const { data, error } = await supabase
+      const { data, error } = await SUPABASE_CLIENT
         .from('campaign_creators')
         .select('id, channel_id, channel_url, channel_name, discord_id')
         .eq('campaign_id', currentCampaign?.id)

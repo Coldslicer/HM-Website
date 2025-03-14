@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCampaignStore } from '../../store/campaignStore';
-import { supabase } from '../../lib/supabase';
+import { SUPABASE_CLIENT } from '../../lib/supabase';
 import { Campaign } from '../../types';
 import { useAuthStore } from '../../store/authStore';
 import { Plus } from 'lucide-react';
@@ -14,7 +14,7 @@ export function CampaignSelector({ onClose }: { onClose?: () => void }) {
     if (!user) return;
 
     const fetchCampaigns = async () => {
-      const { data, error } = await supabase
+      const { data, error } = await SUPABASE_CLIENT
         .from('campaigns')
         .select('*')
         .eq('client_id', user.id)

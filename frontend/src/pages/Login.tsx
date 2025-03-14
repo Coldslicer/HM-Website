@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { SUPABASE_CLIENT } from '../lib/supabase';
 import React from 'react';
 
 export function AuthPage() {
@@ -17,7 +17,7 @@ export function AuthPage() {
     const checkUser = async () => {
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await SUPABASE_CLIENT.auth.getUser();
 
       if (user) {
         navigate('/dashboard'); // Redirect to dashboard if user exists
@@ -39,7 +39,7 @@ export function AuthPage() {
       // Ensure the user is authenticated before navigating
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await SUPABASE_CLIENT.auth.getUser();
 
       if (user) {
         navigate('/dashboard'); // Redirect to dashboard

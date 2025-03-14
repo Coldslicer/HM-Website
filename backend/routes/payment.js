@@ -1,145 +1,76 @@
-/* ================ [ STRIPE ] ================ */
-
-// Imports
 import express from 'express';
-import Stripe from 'stripe';
+import { SUPABASE_CLIENT } from '../util/setup.js'; // Backend Supabase import
+import nodemailer from 'nodemailer';
 
-// Router
 const ROUTER = express.Router();
 
-// Initialize stripe
-const STRIPE = new Stripe(process.env.STRIPE_KEY);
-
-// Post checkout session
-ROUTER.post('/create-checkout-session', async (req, res) => {
-  const { campaign } = req.body;
-
-  try {
-    const session = await STRIPE.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Test product'
-            },
-            unit_amount: 1000,
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: '/payment/success?session_id={CHECKOUT_SESSION_ID}', // Redirect after successful payment
-      cancel_url: '/payment/cancel', // Redirect if user cancels
-      metadata: {
-        campaign_id: campaign.id
-      }
-    });
-
-    res.send({ id: session.id });
-  } catch (error) {
-    res.status(500).send({ error: error.message });
-  }
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
 });
 
-async function getAllCheckoutSessions() {
+ROUTER.post('/get-creators', async (req, res) => {
   try {
-    // List all Checkout Sessions with pagination
-    let sessions = [];
-    let has_more = true;
-    let starting_after = null;
+    console.log('Request body:', req.body);
 
-    while (has_more) {
-      const params = starting_after ? { starting_after } : {};
-      const sessionList = await STRIPE.checkout.sessions.list({
-        limit: 100,  // Max results per page (adjust as necessary)
-        ...params
-      });
-
-      // Add the current page of sessions to the sessions array
-      sessions = sessions.concat(sessionList.data);
-
-      // Check if there are more pages of sessions
-      has_more = sessionList.has_more;
-
-      // If more pages exist, set the `starting_after` to the last session's ID
-      if (has_more) {
-        starting_after = sessionList.data[sessionList.data.length - 1].id;
-      }
+    const { campaign_id } = req.body;
+    if (!campaign_id) {
+      return res.status(400).json({ error: 'campaign_id is required' });
     }
 
-    // Log the session details along with metadata
-    sessions.forEach(session => {
-      console.log(`Session ID: ${session.id}`);
-      console.log(`Amount Total: ${session.amount_total / 100} ${session.currency.toUpperCase()}`);
-      console.log(`Payment Status: ${session.payment_status}`);
-      console.log(`Created: ${new Date(session.created * 1000)}`);
-      
-      // Log the metadata attached to the session
-      console.log(`Metadata:`, session.metadata);
-      console.log('---');
-    });
+    const { data, error } = await SUPABASE_CLIENT
+      .from('campaign_creators')
+      .select('id, channel_name, rate, rate_cpm, flat_paid, cpm_paid')
+      .eq('campaign_id', campaign_id);
 
-  } catch (error) {
-    console.error('Error retrieving checkout sessions:', error);
-  }
-}
-
-ROUTER.get('/success', async (req, res) => {
-  const { session_id } = req.query;
-
-  if (!session_id) {
-    return res.status(400).send('<h1>Error: Session ID not found.</h1>');
-  }
-
-  try {
-    // Retrieve the Checkout Session from Stripe
-    const session = await STRIPE.checkout.sessions.retrieve(session_id);
-
-    // Check if the payment was successful
-    if (session.payment_status === 'paid') {
-      const campaignId = session.metadata.campaign_id;
-
-      // Update the campaign status in Supabase
-      const { data, error } = await SUPABASE_CLIENT
-        .from('campaigns')
-        .update({ status: 'payment_done' })
-        .eq('id', campaignId);
-
-      if (error) {
-        console.error('Error updating Supabase:', error);
-        return res.status(500).send('<h1>Error: Unable to update campaign status.</h1>');
-      }
-
-      console.log('Campaign status updated to "payment_done" for campaign ID:', campaignId);
-
-      const transactionsChannel = DISCORD_CLIENT.channels.cache.get(process.env.TRANSACTIONS_CHANNEL_ID);
-
-      if (transactionsChannel) {
-        await transactionsChannel.send(`
-          Payment completed!
-          Transaction ID: ${session.id}
-          Campaign ID: ${campaignId}
-        `);
-      } else {
-        console.error('Transactions channel not found.');
-      }
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(500).json({ error: error.message });
     }
 
-    // Send a success message to the client
-    res.send('<h1>Payment Successful!</h1>');
+    console.log('Supabase data:', data);
+    res.json(data || []);
   } catch (error) {
-    console.error('Error retrieving session:', error);
-    res.status(500).send('<h1>Error: Unable to retrieve payment details.</h1>');
+    console.error('Error fetching creators:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-ROUTER.get('/cancel', (req, res) => {
-  res.send('<h1>Payment Canceled</h1>');
-});
+ROUTER.post('/initiate-payment', async (req, res) => {
+  try {
+    const { creator_id, type } = req.body;
 
-// Call the function to log all sessions and their metadata
-getAllCheckoutSessions();
+    // Fetch campaign email
+    const { data: campaignData, error: campaignError } = await SUPABASE_CLIENT
+      .from('campaigns')
+      .select('payment_email')
+      .eq('id', (await SUPABASE_CLIENT
+        .from('campaign_creators')
+        .select('campaign_id')
+        .eq('id', creator_id)
+        .single()
+      ).data.campaign_id);
+
+    if (campaignError || !campaignData) {
+      throw new Error('Campaign not found');
+    }
+
+    // Send email
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: campaignData.payment_email,
+      subject: 'Invoice Email',
+      text: 'Invoice email',
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Payment error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 export default ROUTER;

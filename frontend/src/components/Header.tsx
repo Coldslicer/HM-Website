@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "./ui/Input";
 
 // Supabase client
-import { supabase } from '../lib/supabase'; // Import Supabase client
+import { SUPABASE_CLIENT } from '../lib/supabase'; // Import Supabase client
 
 /* ================ [ COMPONENT ] ================ */
 
@@ -27,7 +27,7 @@ function Header() {
 
     try {
       // Insert email into Supabase `waitlist_users` table
-      const { data, error } = await supabase
+      const { data, error } = await SUPABASE_CLIENT
         .from("waitlist_users")
         .insert([{ email }]);
 
