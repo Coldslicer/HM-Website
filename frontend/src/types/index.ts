@@ -16,6 +16,8 @@ export type Campaign = {
   status: string;
   created_at: string;
   staff_chat_channel_id: string;
+  company_phone: string;
+  company_address: string;
 };
 
 export interface Creator {

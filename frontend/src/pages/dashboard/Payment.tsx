@@ -56,7 +56,13 @@ const Payment = () => {
         campaign_id: currentCampaign?.id
       });
 
-      setCreators(response.data || []);
+      // Sort creators by name
+      const sortedCreators = ((response.data as { channel_name: string }[]) || []).sort((a, b) =>
+        a.channel_name.localeCompare(b.channel_name)
+      );
+    
+
+      setCreators(sortedCreators);
     } catch (error) {
       if (axios.isAxiosError(error)) console.error('Error fetching creators:', error.response?.data || error.message);
       else console.error('Unexpected error:', error);
@@ -107,7 +113,7 @@ const Payment = () => {
 
       // Update creators with payment status
       const updatedCreators = creators.map((creator) =>
-        creator.id === creatorId ? { ...creator, [`${type}_paid`]: true } : creator
+        creator.id === creatorId ? { ...creator, [`${type}_emailed`]: true } : creator
       );
       setCreators(updatedCreators);
 
@@ -177,6 +183,8 @@ const Payment = () => {
                     <td className="py-3 px-4 text-left">{creator.channel_name}</td>
                     <td className="py-3 px-4 text-center">
                       {creator.flat_paid ? (
+                        <s className="text-green-500">${formatNum(creator.rate)}</s>
+                      ) : creator.flat_emailed ? (
                         <s>${formatNum(creator.rate)}</s>
                       ) : (
                         `$${formatNum(creator.rate)}`
@@ -184,6 +192,8 @@ const Payment = () => {
                     </td>
                     <td className="py-3 px-4 text-center">
                       {creator.cpm_paid ? (
+                        <s className="text-green-500">${formatNum(creator.rate_cpm)}</s>
+                      ) : creator.cpm_emailed ? (
                         <s>${formatNum(creator.rate_cpm)}</s>
                       ) : (
                         `$${formatNum(creator.rate_cpm)}`
@@ -192,33 +202,42 @@ const Payment = () => {
                     <td className="py-3 px-4 text-center">N/A</td>
                     <td className="py-3 px-4 text-center">
                       {!emailSubmitted ? (
-                        <span className="text-gray-400">Enter a recipient</span>
+                        <span className="text-gray-400">Enter recipient email</span>
                       ) : !creator.final_approved ? (
                         <span className="text-gray-400">Pending Approval</span>
                       ) : (
-                        <>
-                          {!creator.flat_paid && creator.rate > 0 && (
+                        <div className="flex flex-col gap-2 items-center">
+                          {!creator.flat_emailed && creator.rate > 0 && (
                             <button
                               onClick={() => handlePayment(creator.id, 'flat')}
                               disabled={loading}
-                              className="bg-green-500 text-white px-3 py-1 rounded mr-2 hover:bg-green-600"
+                              className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 w-fit"
                             >
                               Pay Flat
                             </button>
                           )}
-                          {!creator.cpm_paid && creator.rate_cpm > 0 && (
+                          {!creator.cpm_emailed && creator.rate_cpm > 0 && (
                             <button
                               onClick={() => handlePayment(creator.id, 'cpm')}
                               disabled={loading}
-                              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 w-fit"
                             >
                               Pay CPM
                             </button>
                           )}
-                          {(creator.flat_paid || creator.cpm_paid) && (
-                            <span className="text-gray-500">Payment Pending</span>
+                          {creator.flat_emailed && !creator.flat_paid && (
+                            <span className="text-gray-400">Flat Pending</span>
                           )}
-                        </>
+                          {creator.cpm_emailed && !creator.cpm_paid && (
+                            <span className="text-gray-400">CPM Pending</span>
+                          )}
+                          {creator.flat_paid && (
+                            <span className="text-green-500">Flat Complete</span>
+                          )}
+                          {creator.cpm_paid && (
+                            <span className="text-green-500">CPM Complete</span>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>
