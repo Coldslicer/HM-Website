@@ -4,6 +4,8 @@ import { useCampaignStore } from '../../store/campaignStore';
 import { FaPaperPlane } from 'react-icons/fa';
 
 export function Messaging() {
+  const INTERNAL_SERVER_TAGS = ['[hidden from clients]', '@here', '@everyone']; // Add more tags if needed
+  const [errorMessage, setErrorMessage] = useState("");
   const [creators, setCreators] = useState([]);
   const [currentCreatorId, setCurrentCreatorId] = useState('');
   const [messages, setMessages] = useState([]);
@@ -11,6 +13,7 @@ export function Messaging() {
   const [channelData, setChannelData] = useState({});
   const [campaignStatus, setCampaignStatus] = useState('');
   const [groupChatChannelId, setGroupChatChannelId] = useState('');
+  const [staffChatChannelId, setStaffChatChannelId] = useState('');
   const [selectedChannel, setSelectedChannel] = useState('');
   const intervalRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -26,7 +29,7 @@ export function Messaging() {
       if (currentCampaign) {
         const { data, error } = await supabase
           .from('campaigns')
-          .select('status, group_chat_channel_id')
+          .select('status, group_chat_channel_id, staff_chat_channel_id')
           .eq('id', currentCampaign.id)
           .single();
 
@@ -35,6 +38,7 @@ export function Messaging() {
         } else {
           setCampaignStatus(data.status);
           setGroupChatChannelId(data.group_chat_channel_id);
+          setStaffChatChannelId(data.staff_chat_channel_id);
         }
       }
     };
@@ -93,8 +97,16 @@ export function Messaging() {
     setCurrentCreatorDiscordId('');
   };
 
-  const handleSendMessage = async (isGroupChat: boolean) => {
+  const handleSendMessage = async (type) => {
+    if (INTERNAL_SERVER_TAGS.some(tag => message.includes(tag))) {
+      setErrorMessage("Error: Message contains restricted content.");
+      setTimeout(() => setErrorMessage(""), 3000); // Clear error after 3 seconds
+      return;
+    }
     if (!selectedChannel || !message.trim()) return;
+
+    console.log(type);
+    
   
     // Check last message
     const lastMessage = messages.length > 0 ? messages[0] : null; // Assuming messages are in reverse order
@@ -107,7 +119,7 @@ export function Messaging() {
       shouldPing = false; // Don't ping if the last message was from the bot and within 2 minutes
     }
   
-    const messageWithHeader = isGroupChat
+    const messageWithHeader = (type == 'staff' || type == 'group')
       ? (shouldPing ? '@here\n' : '') + message
       : (shouldPing ? `<@${currentCreatorDiscordId}>\n` : '') + message;
   
@@ -118,9 +130,9 @@ export function Messaging() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: isGroupChat ? currentCampaign?.id : currentCreatorId,
+          id: type == 'dm' ? currentCreatorId : currentCampaign?.id,
           message: messageWithHeader,
-          isGroup: isGroupChat,
+          type: type,
         }),
       });
   
@@ -134,6 +146,7 @@ export function Messaging() {
     } catch (error) {
       console.error('Error sending message:', error);
     }
+    refreshSelected();
   };
   
 
@@ -207,9 +220,23 @@ export function Messaging() {
   <div className="w-64 bg-gray-50 border-r border-gray-200 p-4 max-h-screen overflow-y-auto">
     <h3 className="text-lg font-semibold text-gray-800 mb-4">Channels</h3>
     <ul className="space-y-2">
-      <li>
-        <button
-          onClick={() => handleChannelChange(groupChatChannelId)}
+  {staffChatChannelId && (
+    <li>
+      <button
+        onClick={() => handleChannelChange(staffChatChannelId)}
+        className={`w-full text-left px-4 py-2 rounded-md ${
+          selectedChannel === staffChatChannelId
+            ? 'bg-orange-500 text-white'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+        }`}
+      >
+        Staff
+      </button>
+    </li>
+  )}
+  <li>
+    <button
+      onClick={() => handleChannelChange(groupChatChannelId)}
           className={`w-full text-left px-4 py-2 rounded-md ${
             selectedChannel === groupChatChannelId
               ? 'bg-orange-500 text-white'
@@ -316,6 +343,9 @@ export function Messaging() {
 
     {/* Message Input Area */}
     <div className="p-4 border-t border-gray-200">
+    {errorMessage && (
+  <p className="text-red-500 text-sm mb-2">{errorMessage}</p>
+)}
       <div className="flex gap-2">
       <textarea
   id="message"
@@ -324,7 +354,7 @@ export function Messaging() {
   onKeyDown={(e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault(); // Prevent new line
-      handleSendMessage(selectedChannel === groupChatChannelId);
+      handleSendMessage(selectedChannel === groupChatChannelId ? "group" : (selectedChannel == staffChatChannelId ? "staff" : "dm"));
     }
   }}
   rows={2}
@@ -334,7 +364,7 @@ export function Messaging() {
 />
 
         <button
-          onClick={async() => {console.log(selectedChannel); handleSendMessage(selectedChannel == groupChatChannelId)}}
+          onClick={async() => {console.log(selectedChannel); handleSendMessage(selectedChannel === groupChatChannelId ? "group" : (selectedChannel == staffChatChannelId ? "staff" : "dm"))}}
           className="bg-orange-500 text-white p-3 rounded-md hover:bg-orange-600 transition-colors"
           disabled={!selectedChannel}
         >

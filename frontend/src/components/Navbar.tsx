@@ -15,9 +15,6 @@ export function Navbar() {
           </Link>
           
           <div className="flex items-center space-x-4">
-            <Link to="/case-studies" className="px-4 py-2 hover:text-orange-500">
-              Case Studies
-            </Link>
             {user ? (
               <>
                 <Link to="/dashboard" className="px-4 py-2 hover:text-orange-500">

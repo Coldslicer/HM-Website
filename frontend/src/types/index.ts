@@ -15,6 +15,7 @@ export type Campaign = {
   brief_url: string;
   status: string;
   created_at: string;
+  staff_chat_channel_id: string;
 };
 
 

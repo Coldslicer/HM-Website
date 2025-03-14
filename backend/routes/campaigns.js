@@ -227,6 +227,60 @@ router.post('/setup-discord', async (req, res) => {
         return res.status(500).json({ error: `Error updating creator ${creator.discord_id} with channel and webhook URL` });
       }
     }
+    
+    // Create staff-only channel
+let staffChatChannel;
+let staffChatWebhook;
+try {
+  staffChatChannel = await guild.channels.create({
+    name: company_name + ' - Staff',
+    type: ChannelType.GuildText,
+    reason: 'Private staff channel for campaign',
+    parent: category_id,
+    permissionOverwrites: [
+      {
+        id: guild.id, // Deny access for @everyone
+        deny: [PermissionsBitField.Flags.ViewChannel],
+      },
+      // Add staff roles here (replace 'STAFF_ROLE_ID' with the actual role ID)
+      {
+        id: 'STAFF_ROLE_ID',
+        allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+      }
+    ],
+  });
+
+  staffChatWebhook = await staffChatChannel.createWebhook({
+    name: `Staff | ${company_name}`,
+    avatar: pfpLink || 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png',
+    reason: 'Webhook for staff chat notifications',
+  });
+} catch (error) {
+  console.error('Error creating staff chat channel:', error);
+  return res.status(500).json({ error: 'Error creating staff chat channel' });
+}
+
+if (!staffChatChannel) {
+  console.error('Failed to create staff chat channel');
+  return res.status(500).json({ error: 'Failed to create staff chat channel' });
+}
+
+console.log('Staff chat channel created:', staffChatChannel.id);
+
+// Store staff channel info in Supabase
+const { error: updateStaffChatError } = await SUPABASE_CLIENT
+  .from('campaigns')
+  .update({
+    staff_chat_channel_id: staffChatChannel.id,
+    staff_chat_webhook_url: staffChatWebhook.url
+  })
+  .eq('id', campaignId);
+
+if (updateStaffChatError) {
+  console.error('Error updating campaign with staff chat webhook:', updateStaffChatError);
+  return res.status(500).json({ error: 'Error updating campaign with staff chat webhook' });
+}
+
 
     console.log('Updating campaign status to contract_signed');
     const { error: updateStatusError } = await SUPABASE_CLIENT
