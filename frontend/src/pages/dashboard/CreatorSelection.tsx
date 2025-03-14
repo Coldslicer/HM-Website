@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useCampaignStore } from '../../store/campaignStore';
-import { supabase } from '../../lib/supabase';
+import { SUPABASE_CLIENT } from '../../lib/supabase';
 import { Eye } from 'lucide-react';
 import axios from 'axios';
 
@@ -10,16 +10,16 @@ export const CreatorSelection: React.FC = () => {
   const [selectedCreators, setSelectedCreators] = useState([]);
   const [totalRate, setTotalRate] = useState(0);
   const [totalRateCPM, setTotalRateCPM] = useState(0);
-  const [selectedStatement, setSelectedStatement] = useState<string | null>(null); // State for popup content
+  const [selectedStatement, setSelectedStatement] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCreators();
   }, [currentCampaign]);
 
   const fetchCreators = async () => {
-    const { data: creatorsData } = await supabase
+    const { data: creatorsData } = await SUPABASE_CLIENT
       .from('campaign_creators')
-      .select('id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement') // Added personal_statement
+      .select('id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement')
       .eq('campaign_id', currentCampaign?.id);
 
     const creatorsWithChannelData = await Promise.all(
@@ -67,7 +67,7 @@ export const CreatorSelection: React.FC = () => {
     setTotalRate(selected.reduce((acc, c) => acc + c.rate, 0));
     setTotalRateCPM(selected.reduce((acc, c) => acc + c.rate_cpm, 0));
 
-    await supabase
+    await SUPABASE_CLIENT
       .from('campaign_creators')
       .update({ selected: !creator.selected })
       .eq('id', creator.id);
@@ -77,16 +77,19 @@ export const CreatorSelection: React.FC = () => {
     const confirmed = window.confirm('Are you sure you want to finalize the selected creators?');
     if (confirmed) {
       try {
-        currentCampaign.status = 'creators_selected';
-        const { error } = await supabase
+        const { error } = await SUPABASE_CLIENT
           .from('campaigns')
-          .update({ status: 'creators_selected' })
+          .update({ 
+            status: 'creators_selected', 
+            total_price: totalRate 
+          })
           .eq('id', currentCampaign.id);
 
         if (error) {
-          console.error('Error updating campaign status in Supabase:', error.message);
-          alert('Failed to update campaign status in Supabase.');
+          console.error('Error updating campaign in Supabase:', error.message);
+          alert('Failed to update campaign in Supabase.');
         } else {
+          currentCampaign.status = 'creators_selected';
           alert('Creators finalized successfully!');
         }
       } catch (error) {
@@ -102,6 +105,10 @@ export const CreatorSelection: React.FC = () => {
 
   const handleClosePopup = () => {
     setSelectedStatement(null);
+  };
+
+  const formatNumber = (num) => {
+    return num?.toLocaleString() || '';
   };
 
   if (currentCampaign?.status === 'draft') {
@@ -139,7 +146,7 @@ export const CreatorSelection: React.FC = () => {
               <th className="py-3 px-4 text-right w-1/6">Followers/Subs</th>
               <th className="py-3 px-4 text-right w-1/6">Avg Views</th>
               <th className="py-3 px-4 text-right w-1/6">Country</th>
-              <th className="py-3 px-4 text-center w-1/6">Personal Statement</th> {/* New column */}
+              <th className="py-3 px-4 text-center w-1/6">Personal Statement</th>
             </tr>
           </thead>
           <tbody>
@@ -155,15 +162,15 @@ export const CreatorSelection: React.FC = () => {
                     LINK
                   </a>
                 </td>
-                <td className="py-3 px-4 text-right">{creator.rate}</td>
-                <td className="py-3 px-4 text-right">{creator.rate_cpm}</td>
-                <td className="py-3 px-4 text-right">{creator.subscriberCount}</td>
-                <td className="py-3 px-4 text-right">{creator.averageViews}</td>
+                <td className="py-3 px-4 text-right">${formatNumber(creator.rate)}</td>
+                <td className="py-3 px-4 text-right">${formatNumber(creator.rate_cpm)}</td>
+                <td className="py-3 px-4 text-right">{formatNumber(creator.subscriberCount)}</td>
+                <td className="py-3 px-4 text-right">{formatNumber(creator.averageViews)}</td>
                 <td className="py-3 px-4 text-right">{creator.country}</td>
                 <td className="py-3 px-4 text-center">
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent row selection
+                      e.stopPropagation();
                       handleOpenPopup(creator.personal_statement);
                     }}
                     className="text-white-400 hover:text-white-500"
@@ -178,7 +185,7 @@ export const CreatorSelection: React.FC = () => {
       </div>
 
       <div className="text-black text-right mt-4">
-        <p>Total Rate: {totalRate}</p>
+        <p>Total Rate: ${formatNumber(totalRate)}</p>
       </div>
 
       {currentCampaign?.status === 'brief_submitted' && (
@@ -189,7 +196,6 @@ export const CreatorSelection: React.FC = () => {
         </div>
       )}
 
-      {/* Popup Modal for Personal Statement */}
       {selectedStatement && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
           <div className="bg-gray-50 p-6 rounded-lg max-w-md w-full">

@@ -12,7 +12,7 @@ import { Textarea } from "./ui/Textarea";
 import { RadioGroup, RadioGroupItem } from "./ui/RadioGroup";
 
 // Supabase client
-import { supabase } from '../lib/supabase';
+import { SUPABASE_CLIENT } from '../lib/supabase';
 
 /* ================ [ COMPONENT ] ================ */
 
@@ -58,7 +58,7 @@ function TesterApplication() {
     if (isStepValid()) {
       try {
         // Insert data into Supabase `tester_applications` table
-        const { data, error } = await supabase
+        const { data, error } = await SUPABASE_CLIENT
           .from("tester_applications")
           .insert([
             {

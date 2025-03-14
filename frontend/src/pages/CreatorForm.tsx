@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { SUPABASE_CLIENT } from '../lib/supabase';
 import { useSearchParams } from 'react-router-dom';
 
 const initialFormData = {
@@ -22,7 +22,7 @@ export function CreatorForm() {
   const prefilledDiscordID = searchParams.get('discordId') || '';
 
   const getMostRecentCampaignCreator = async (discordId) => {
-    const { data, error } = await supabase
+    const { data, error } = await SUPABASE_CLIENT
       .from('campaign_creators') // Updated table name
       .select('*')
       .eq('discord_id', discordId)
@@ -68,7 +68,7 @@ export function CreatorForm() {
       }
 
       // Fetch campaigns that are 'brief_submitted'
-      const { data, error } = await supabase
+      const { data, error } = await SUPABASE_CLIENT
         .from('campaigns')
         .select('*')
         .eq('status', 'brief_submitted')
@@ -169,7 +169,7 @@ export function CreatorForm() {
     }
   
     try {
-      const { data, error } = await supabase
+      const { data, error } = await SUPABASE_CLIENT
         .from('campaign_creators') // Updated table name
         .insert([
           {

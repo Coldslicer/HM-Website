@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useCampaignStore } from '../../store/campaignStore';
 import { DocusealForm } from '@docuseal/react'
-import { supabase } from '../../lib/supabase';
+import { SUPABASE_CLIENT } from '../../lib/supabase';
 
 
 export const Contract = () => {
@@ -63,7 +63,7 @@ export const Contract = () => {
                 campaignId: currentCampaign.id,
             });
             currentCampaign.status = 'contract_signed';
-            supabase.from('campaigns').update({ status: 'contract_signed' }).eq('id', currentCampaign.id);
+            SUPABASE_CLIENT.from('campaigns').update({ status: 'contract_signed' }).eq('id', currentCampaign.id);
               
         }}
     />

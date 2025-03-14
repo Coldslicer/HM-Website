@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { SUPABASE_CLIENT } from '../../lib/supabase';
 import { useCampaignStore } from '../../store/campaignStore';
 import { ChevronRight } from 'lucide-react'; // Icon for visual indication
 
@@ -13,7 +13,7 @@ export const CreatorTimeline = () => {
   }, [currentCampaign]);
 
   const fetchSelectedCreators = async () => {
-    const { data: creatorsData } = await supabase
+    const { data: creatorsData } = await SUPABASE_CLIENT
       .from('campaign_creators')
       .select('id, draft, final, contract_signed, selected, channel_url, channel_name')
       .eq('campaign_id', currentCampaign?.id)
