@@ -1,7 +1,7 @@
 /* ================ [ IMPORTS ] ================ */
 
 // React components
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 
 // Components
 import { Header } from "../components/Header";
@@ -46,4 +46,4 @@ function BetaTest() {
 
 /* ================ [ EXPORTS ] ================ */
 
-export default BetaTest;
+export { BetaTest };

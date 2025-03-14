@@ -18,12 +18,11 @@ export type Campaign = {
   staff_chat_channel_id: string;
 };
 
-
 export interface Creator {
-  id: string; // Unique identifier for the creator (UUID)
-  channel_url: string; // URL of the creator's channel (YouTube, TikTok, Instagram, etc.)
-  discord_ign: string; // Discord handle/username
-  rate: number; // The rate the creator charges per video (in dollars)
+  id: string; // Unique identifier (UUID)
+  channel_url: string; // URL to channel (YouTube, TikTok, Instagram, etc.)
+  discord_ign: string; // Discord handle / username
+  rate: number; // Rate charged per video (dollars)
   status: string;
   campaign_id: string; // ID of the campaign the creator is associated with
 }

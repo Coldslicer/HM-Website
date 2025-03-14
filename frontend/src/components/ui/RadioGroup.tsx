@@ -8,7 +8,7 @@ import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import { Circle } from "lucide-react";
 
 // Utility functions
-import { cn } from "../../../lib/utils";
+import { cn } from "../../lib/utility";
 
 /* ================ [ COMPONENT ] ================ */
 

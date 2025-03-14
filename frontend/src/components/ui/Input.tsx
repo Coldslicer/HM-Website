@@ -4,7 +4,7 @@
 import * as React from "react";
 
 // Utility functions
-import { cn } from "../../../lib/utils";
+import { cn } from "../../lib/utility";
 
 /* ================ [ COMPONENT ] ================ */
 

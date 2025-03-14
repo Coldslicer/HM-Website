@@ -1,8 +1,5 @@
 /* ================ [ IMPORTS ] ================ */
 
-// React components
-import React from "react";
-
 // Icons
 import { ClipboardList, Send, CheckCircle } from "lucide-react";
 
