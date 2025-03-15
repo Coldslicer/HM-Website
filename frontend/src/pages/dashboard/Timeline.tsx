@@ -46,9 +46,18 @@ export const CreatorTimeline = () => {
 
   const openPopup = (text) => setPopupContent(text);
   const closePopup = () => setPopupContent(null);
+  
+  const isValidUrl = (string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
 
   const handleApproval = async (creatorId) => {
-    const { data: creator } = await supabase
+    const { data: creator } = await SUPABASE_CLIENT
       .from('campaign_creators')
       .select('discord_id')
       .eq('id', creatorId)
@@ -56,14 +65,13 @@ export const CreatorTimeline = () => {
 
     if (!creator) return;
 
-    await supabase
+    await SUPABASE_CLIENT
       .from('campaign_creators')
       .update({ final_approved: true })
       .eq('id', creatorId);
 
     fetchSelectedCreators();
     
-    // Send formatted message upon approval
     fetch('/api/messages/sendDM', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -95,17 +103,17 @@ export const CreatorTimeline = () => {
         <div className="flex justify-between items-center mt-6">
           <div className={`relative flex flex-col items-center w-1/4 p-4 rounded-md border-2 ${contractComplete ? 'border-green-500' : 'border-gray-300'} bg-gray-50`}>
             <div className="text-sm text-gray-600">Contract Signed</div>
-            <div className={`mt-2 text-sm ${contractComplete ? 'text-green-500' : 'text-gray-500'}`}>{contractComplete ? 'Complete' : 'Incomplete'}</div>
+            <div className={`mt-2 text-sm cursor-pointer ${contractComplete ? 'text-green-500 underline' : 'text-gray-500'}`} onClick={() => contractComplete && openPopup(creator.contract_signed)}> {contractComplete ? 'Complete' : 'Incomplete'}</div>
           </div>
           <div className={`w-1/6 h-1 ${contractComplete && draftComplete ? 'bg-green-500' : 'bg-gray-300'}`}></div>
           <div className={`relative flex flex-col items-center w-1/4 p-4 rounded-md border-2 ${draftComplete ? 'border-green-500' : 'border-gray-300'} bg-gray-50`}>
             <div className="text-sm text-gray-600">Draft Submitted</div>
-            <div className={`mt-2 text-sm ${draftComplete ? 'text-green-500' : 'text-gray-500'}`}>{draftComplete ? 'Complete' : 'Incomplete'}</div>
+            <div className={`mt-2 text-sm cursor-pointer ${draftComplete ? 'text-green-500 underline' : 'text-gray-500'}`} onClick={() => draftComplete && openPopup(creator.draft)}> {draftComplete ? 'Complete' : 'Incomplete'}</div>
           </div>
           <div className={`w-1/6 h-1 ${draftComplete && finalComplete ? 'bg-green-500' : 'bg-gray-300'}`}></div>
           <div className={`relative flex flex-col items-center w-1/4 p-4 rounded-md border-2 ${finalComplete ? 'border-green-500' : 'border-gray-300'} bg-gray-50`}>
             <div className="text-sm text-gray-600">Final Submitted</div>
-            <div className={`mt-2 text-sm ${finalComplete ? 'text-green-500' : 'text-gray-500'}`}>{finalComplete ? 'Complete' : 'Incomplete'}</div>
+            <div className={`mt-2 text-sm cursor-pointer ${finalComplete ? 'text-green-500 underline' : 'text-gray-500'}`} onClick={() => finalComplete && openPopup(creator.final)}> {finalComplete ? 'Complete' : 'Incomplete'}</div>
           </div>
         </div>
         {finalComplete && (
@@ -132,6 +140,15 @@ export const CreatorTimeline = () => {
         <AnimatePresence>
           <div className="space-y-6">{selectedCreators.map(renderTimelineItem)}</div>
         </AnimatePresence>
+      )}
+      {popupContent && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full">
+            {/* <h3 className="text-xl font-semibold text-gray-800 mb-4">Step Details</h3> */}
+            <p className="text-gray-600">{popupContent}</p>
+            <button onClick={closePopup} className="mt-4 bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600">Close</button>
+          </div>
+        </div>
       )}
     </div>
   );
