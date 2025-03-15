@@ -62,4 +62,4 @@ function Landing() {
 
 /* ================ [ EXPORTS ] ================ */
 
-export default Landing;
+export { Landing };

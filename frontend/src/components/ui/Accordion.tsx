@@ -8,7 +8,7 @@ import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { ChevronDown } from "lucide-react";
 
 // Utility functions
-import { cn } from "../../../lib/utils";
+import { cn } from "../../lib/utility";
 
 /* ================ [ COMPONENT ] ================ */
 

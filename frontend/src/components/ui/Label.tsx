@@ -6,7 +6,7 @@ import * as LabelPrimitive from "@radix-ui/react-label";
 import { cva, type VariantProps } from "class-variance-authority";
 
 // Utility functions
-import { cn } from "../../../lib/utils";
+import { cn } from "../../lib/utility";
 
 /* ================ [ COMPONENT ] ================ */
 
