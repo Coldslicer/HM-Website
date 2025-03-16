@@ -1,4 +1,3 @@
-
 import { discordClient } from "./util/discordSetup.js";
 import { SlashCommandBuilder } from '@discordjs/builders';
 
@@ -19,7 +18,15 @@ const commands = [
             .setDescription('The link to your video or folder')
             .setRequired(true)
     ),
-    new SlashCommandBuilder()
+  new SlashCommandBuilder()
+    .setName('live')
+    .setDescription('Submit your live YouTube URL')
+    .addStringOption(option => 
+      option.setName('link')
+            .setDescription('The YouTube URL for your live video')
+            .setRequired(true)
+    ),
+  new SlashCommandBuilder()
     .setName('id')
     .setDescription('Tells you your discord ID to enter into the campaign form')
 ];
@@ -28,7 +35,7 @@ const commands = [
 export async function registerSlashCommands() {
   const commandsData = commands.map(command => command.toJSON());
   try {
-    await discordClient.application.commands.set(commandsData); // Registers commands globally
+    await discordClient.application.commands.set(commandsData);
     console.log('Slash commands registered');
   } catch (error) {
     console.error('Error registering slash commands:', error);
