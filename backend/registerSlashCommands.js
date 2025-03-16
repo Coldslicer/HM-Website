@@ -1,4 +1,4 @@
-import { discordClient } from "./util/discordSetup.js";
+import { DISCORD_CLIENT } from "./util/setup.js";
 import { SlashCommandBuilder } from '@discordjs/builders';
 
 const commands = [
@@ -35,13 +35,13 @@ const commands = [
 export async function registerSlashCommands() {
   const commandsData = commands.map(command => command.toJSON());
   try {
-    await discordClient.application.commands.set(commandsData);
+    await DISCORD_CLIENT.application.commands.set(commandsData);
     console.log('Slash commands registered');
   } catch (error) {
     console.error('Error registering slash commands:', error);
   }
 }
 
-discordClient.once('ready', async () => {
+DISCORD_CLIENT.once('ready', async () => {
   await registerSlashCommands();
 });
