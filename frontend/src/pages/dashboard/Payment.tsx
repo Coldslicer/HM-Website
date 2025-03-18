@@ -16,33 +16,37 @@ const Payment = () => {
 
   // State variables
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [creators, setCreators] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [emailLoading, setEmailLoading] = useState(false);
-  const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
 
   // Handle campaign change
   useEffect(() => {
     if (currentCampaign?.status === 'contract_signed') {
-      checkEmail();
+      checkForm();
       fetchCreators();
     }
   }, [currentCampaign]);
 
   // Check if an email is already in supabase
-  const checkEmail = async () => {
+  const checkForm = async () => {
     try {
       const { data, error } = await SUPABASE_CLIENT
         .from('campaigns')
-        .select('payment_email')
+        .select('payment_email, company_phone, company_address')
         .eq('id', currentCampaign?.id)
         .single();
 
       if (error) throw error;
 
-      if (data.payment_email) {
+      if (data.payment_email && data.company_address && data.company_phone) {
         setEmail(data.payment_email);
-        setEmailSubmitted(true);
+        setAddress(data.company_address);
+        setPhone(data.company_phone);
+        setFormSubmitted(true);
       }
     } catch (error) {
       console.error('Error checking for email:', error);
@@ -72,14 +76,14 @@ const Payment = () => {
   };
 
   // Submit an email to supabase
-  const submitEmail = async () => {
+  const submitForm = async () => {
     if (!email) {
-      alert('Please enter a valid email address.');
+      alert('Invalid entry: missing: '+[email,phone,address].filter((v) => (v != '')));
       return;
     }
 
     // Begin loading state
-    setEmailLoading(true);
+    setFormLoading(true);
 
     try {
       const { error } = await SUPABASE_CLIENT
@@ -90,14 +94,14 @@ const Payment = () => {
       if (error) throw error;
 
       alert('Email updated successfully!');
-      setEmailSubmitted(true);
+      setFormSubmitted(true);
     } catch (error) {
       console.error('Error updating email:', error);
       alert('Email update failed.');
     }
 
     // Exit loading state
-    setEmailLoading(false);
+    setFormLoading(false);
   };
 
   // Handle payment for a creator
@@ -143,24 +147,46 @@ const Payment = () => {
       <h1 className="text-2xl font-bold mb-4">Payment</h1>
 
       {/* Submit Email */}
-      {!emailSubmitted && (
-        <div className="mb-8">
-          <label className="block text-sm font-medium mb-2">Invoice Recipient:</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="border p-2 rounded w-full max-w-md"
-            placeholder="Enter email address"
-          />
-          <button
-            onClick={submitEmail}
-            disabled={emailLoading}
-            className="bg-blue-500 text-white px-4 py-2 rounded mt-2 hover:bg-blue-600"
-          >
-            {emailLoading ? 'Submitting...' : 'Submit Email'}
-          </button>
-        </div>
+      {!formSubmitted && (
+        <div className="mt-8">
+        <label className="block text-sm font-medium mb-2">Change Invoice Recipient:</label>
+      
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border p-2 rounded w-full max-w-md"
+          placeholder="Enter new email address"
+          required
+        />
+      
+        <input
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          className="border p-2 rounded w-full max-w-md mt-2"
+          placeholder="Enter phone number"
+          required
+        />
+      
+        <input
+          type="text"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          className="border p-2 rounded w-full max-w-md mt-2"
+          placeholder="Enter address"
+          required
+        />
+      
+        <button
+          onClick={submitForm}
+          disabled={loading}
+          className="bg-blue-500 text-white px-4 py-2 rounded mt-2 hover:bg-blue-600"
+        >
+          {loading ? 'Updating...' : 'Update Recipient'}
+        </button>
+      </div>
+      
       )}
 
       {/* Creator Table */}
@@ -201,7 +227,7 @@ const Payment = () => {
                     </td>
                     <td className="py-3 px-4 text-center">N/A</td>
                     <td className="py-3 px-4 text-center">
-                      {!emailSubmitted ? (
+                      {!formSubmitted ? (
                         <span className="text-gray-400">Enter recipient email</span>
                       ) : !creator.final_approved ? (
                         <span className="text-gray-400">Pending Approval</span>
@@ -253,24 +279,46 @@ const Payment = () => {
       )}
 
       {/* Change Email */}
-      {emailSubmitted && (
+      {formSubmitted && (
         <div className="mt-8">
-          <label className="block text-sm font-medium mb-2">Change Invoice Recipient:</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="border p-2 rounded w-full max-w-md"
-            placeholder="Enter new email address"
-          />
-          <button
-            onClick={submitEmail}
-            disabled={emailLoading}
-            className="bg-blue-500 text-white px-4 py-2 rounded mt-2 hover:bg-blue-600"
-          >
-            {emailLoading ? 'Updating...' : 'Update Email'}
-          </button>
-        </div>
+        <label className="block text-sm font-medium mb-2">Change Invoice Recipient:</label>
+      
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border p-2 rounded w-full max-w-md"
+          placeholder="Enter new email address"
+          required
+        />
+      
+        <input
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          className="border p-2 rounded w-full max-w-md mt-2"
+          placeholder="Enter phone number"
+          required
+        />
+      
+        <input
+          type="text"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          className="border p-2 rounded w-full max-w-md mt-2"
+          placeholder="Enter address"
+          required
+        />
+      
+        <button
+          onClick={submitForm}
+          disabled={loading}
+          className="bg-blue-500 text-white px-4 py-2 rounded mt-2 hover:bg-blue-600"
+        >
+          {loading ? 'Updating...' : 'Update Recipient'}
+        </button>
+      </div>
+      
       )}
     </div>
   );

@@ -9,6 +9,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Hero } from './pages/Hero'
 import { Landing } from './pages/Landing'
 import { AuthPage } from './pages/Login'
+import { CreatorSharingPage } from './pages/CreatorSharingPage';
 
 /* ================ [ APP ] ================ */
 
@@ -32,6 +33,7 @@ function App() {
         <Route path="/dashboard/*" element={<Dashboard />} />
 
         <Route path="/creator-form" element={<CreatorForm />} />
+        <Route path="/creatorsharing/:campaignId" element={<CreatorSharingPage />} />
 
         <Route path="/home" element={<Hero />} />
       </Routes>

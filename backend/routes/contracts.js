@@ -10,13 +10,13 @@ router.get('/client-form', async (req, res) => {
 
   const { data: existingData, error: fetchError } = await SUPABASE_CLIENT
       .from("campaigns")
-      .select("contract_json")
+      .select("id, contract_json, name")
       .eq("id", campaign_id)
       .single();
 
     if (fetchError) {
       console.error('Error fetching Supabase data:', fetchError.message);
-      return res.status(500).json({ error: 'Failed to fetch Supabase data' });
+      return res.status(500).json({ error: 'Failed to fetch Supabase campaign data' });
     }
 
     if (existingData && existingData.contract_json) {
@@ -36,9 +36,18 @@ router.get('/client-form', async (req, res) => {
     return res.status(400).json({ error: 'Signer email is required' });
   }
 
+  const { data: creatorData, error: error } = await SUPABASE_CLIENT
+    .from("campaign_creators")
+    .select("channel_name, deliverables, rate, rate_cpm")
+    .eq("campaign_id", campaign_id)
+  
+  if (error) {
+    return res.status(500).json({ error: 'Failed to fetch Supabase creator data' });
+  }
+
   try {
     const submissionData = {
-      template_id: 528118,
+      template_id: 747452,
       send_email: false,
       external_id: campaign_id,
       submitters: [
@@ -48,17 +57,36 @@ router.get('/client-form', async (req, res) => {
           fields: [
             {
               name: 'Creators',
-              default_value: 'If this shows up, prefill is working',
+              default_value: creatorData.length
+                ? creatorData.map(c => c.channel_name).join(', ')
+                : 'No creators assigned',
+            },
+            {
+              name: 'Content Type',
+              default_value: creatorData.length
+                ? creatorData.map(c => c.deliverables).join('; ')
+                : 'No deliverables specified',
+            },
+            {
+              name: 'Campaign',
+              default_value: existingData.name || "Unknown",
+            },
+            {
+              name: 'Fees',
+              default_value: creatorData.length
+                ? `$${creatorData.reduce((sum, c) => sum + (c.rate || 0), 0)}`
+                : 'TBD',
             },
           ],
         },
         {
-          email: signer_email, // Replace with actual client email if needed
+          email: signer_email,
           role: 'client',
           external_id: campaign_id,
         },
       ],
     };
+    
 
     const response = await axios.request({
       method: 'POST',
@@ -88,7 +116,9 @@ router.get('/client-form', async (req, res) => {
       console.log('Supabase updated successfully:', data);
     }
   } catch (error) {
-    console.error('An error occurred while creating the submission:', error);
+    console.error('An error occurred while creating the submission:', error.message);
+    console.error('Error response:', error.response?.data || error.message);
+
     if (!res.headersSent) {
       res.status(500).json({ error: "An error occurred during API call" });
     }

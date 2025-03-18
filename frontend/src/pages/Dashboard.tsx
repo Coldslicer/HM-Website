@@ -1,6 +1,7 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Sidebar } from '../components/dashboard/Sidebar'
+import { WelcomePage } from './dashboard/Welcome'
 import { BriefForm } from './dashboard/BriefForm'
 import { CreatorSelection } from './dashboard/CreatorSelection'
 import { Messaging } from './dashboard/Messaging'
@@ -14,8 +15,9 @@ export function Dashboard() {
       <Sidebar />
       <div className="flex-1 p-8">
         <Routes>
-          <Route index element={<Navigate to="brief" replace />} />
+          <Route index element={<Navigate to="welcome" replace />} />
           <Route path="brief" element={<BriefForm />} />
+          <Route path="welcome" element={<WelcomePage />} />
           
           { <Route 
             path="creators" 

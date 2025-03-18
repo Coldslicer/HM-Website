@@ -3,14 +3,19 @@ import { useCampaignStore } from '../../store/campaignStore';
 import { SUPABASE_CLIENT } from '../../lib/supabase';
 import { Eye } from 'lucide-react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
+type CreatorSelectionProps = {
+  campaignId?: string;
+};
 
-export const CreatorSelection: React.FC = () => {
+export const CreatorSelection: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
   const { currentCampaign } = useCampaignStore();
   const [creators, setCreators] = useState([]);
   const [selectedCreators, setSelectedCreators] = useState([]);
   const [totalRate, setTotalRate] = useState(0);
   const [totalRateCPM, setTotalRateCPM] = useState(0);
   const [selectedStatement, setSelectedStatement] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchCreators();
@@ -20,7 +25,7 @@ export const CreatorSelection: React.FC = () => {
     const { data: creatorsData } = await SUPABASE_CLIENT
       .from('campaign_creators')
       .select('id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement')
-      .eq('campaign_id', currentCampaign?.id);
+      .eq('campaign_id', campaignId || currentCampaign?.id);
 
     const creatorsWithChannelData = await Promise.all(
       creatorsData.map(async (creator) => {
@@ -184,17 +189,18 @@ export const CreatorSelection: React.FC = () => {
         </table>
       </div>
 
-      <div className="text-black text-right mt-4">
-        <p>Total Rate: ${formatNumber(totalRate)}</p>
-      </div>
+      <div className="mt-4 flex items-center justify-between bg-gray-100 p-3 rounded-md text-sm text-black">
+  <span className="font-medium">Total Rate: ${formatNumber(totalRate)} + CPM Payments</span>
+  {!campaignId && currentCampaign?.status === 'brief_submitted' && (
+    <button 
+      onClick={finalizeCreators} 
+      className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-md transition"
+    >
+      Finalize Creators
+    </button>
+  )}
+</div>
 
-      {currentCampaign?.status === 'brief_submitted' && (
-        <div className="flex justify-center mt-4">
-          <button onClick={finalizeCreators} className="bg-orange-500 text-black px-4 py-2 rounded-md">
-            Finalize Creators
-          </button>
-        </div>
-      )}
 
       {selectedStatement && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
@@ -210,6 +216,28 @@ export const CreatorSelection: React.FC = () => {
           </div>
         </div>
       )}
+<div className="mt-4 p-2 bg-gray-100 text-black rounded-md text-sm flex items-center">
+  <span className="mr-2">🔗 Love a creator but don't like their rate? </span>
+  <Link to='https://docs.google.com/forms/d/1P6I3g-l7ENpU0yNHnjkmJ9lAq2uHs9Am4zadRl2tQ_I' className='text-blue-500 underline hover:text-blue-600'>Fill out this form</Link>
+</div>
+
+<div className="mt-4 p-2 bg-gray-100 text-black rounded-md text-sm flex items-center">
+  <span className="mr-2">🔗 Share this page:</span>
+  <button
+    onClick={() => {
+      navigator.clipboard.writeText(`${window.location.origin}/creatorsharing/${campaignId || currentCampaign?.id}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }}
+    className={`ml-2 px-2 py-1 rounded text-xs ${
+      copied ? "bg-blue-800 text-white" : "bg-blue-500 text-white hover:bg-blue-600"
+    }`}
+  >
+    {copied ? "Copied!" : "Copy Link"}
+  </button>
+</div>
+
+
     </div>
   );
 };

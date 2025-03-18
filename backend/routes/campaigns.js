@@ -242,11 +242,6 @@ try {
         id: guild.id, // Deny access for @everyone
         deny: [PermissionsBitField.Flags.ViewChannel],
       },
-      // Add staff roles here (replace 'STAFF_ROLE_ID' with the actual role ID)
-      {
-        id: 'STAFF_ROLE_ID',
-        allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
-      }
     ],
   });
 

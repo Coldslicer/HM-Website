@@ -188,10 +188,10 @@ export function BriefForm() {
             </div>
 
             {/* Brand Address */}
-            <div>
+            {/* <div>
               <dt className="text-sm font-medium text-black-400">Brand Address</dt>
               <dd className="text-black">{currentCampaign.company_address}</dd>
-            </div>
+            </div> */}
 
             {/* Brand Description */}
             <div>
@@ -206,10 +206,10 @@ export function BriefForm() {
             </div>
 
             {/* Company Phone */}
-            <div>
+            {/* <div>
               <dt className="text-sm font-medium text-black-400">Company Phone</dt>
               <dd className="text-black">{currentCampaign.company_phone}</dd>
-            </div>
+            </div> */}
 
             <h3 className="text-2x font-bold text-black mb-6">Campaign Information</h3>
             <div>
@@ -286,7 +286,7 @@ export function BriefForm() {
         </div>
 
         {/* Brand Address */}
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-black-200">Brand Address</label>
           <input
             type="text"
@@ -295,7 +295,7 @@ export function BriefForm() {
             className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
             placeholder="e.g., 123 Main St, City, State, ZIP"
           />
-        </div>
+        </div> */}
 
         {/* Brand Description */}
         <div>
@@ -323,7 +323,7 @@ export function BriefForm() {
         </div>
 
         {/* Company Phone */}
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-black-200">Company Phone</label>
           <input
             type="tel"
@@ -332,7 +332,7 @@ export function BriefForm() {
             className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
             placeholder="e.g., +1 (555) 123-4567"
           />
-        </div>
+        </div> */}
 
         <br />
         <h3 className="text-2x font-bold text-black mb-6">Campaign Information</h3>

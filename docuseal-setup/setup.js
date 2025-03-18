@@ -23,7 +23,7 @@ const API_KEY = process.env.DOCUSEAL_API_KEY;
 var documentId;
 
 // Read the file synchronously and encode it to base64
-const filePath = './templates/Contract Agreement Template.pdf'; // Replace this with your file path
+const filePath = './templates/CLIENT Contract Template.pdf'; // Replace this with your file path
 const fileData = fs.readFileSync(filePath, { encoding: 'base64' });
 
 axios.post('https://api.docuseal.com/templates/pdf', {
@@ -38,7 +38,7 @@ axios.post('https://api.docuseal.com/templates/pdf', {
   console.log(response.data);
   documentId = response.data.documents[0].id; // Access the document ID from the response
   console.log('Document ID:', documentId);
-  console.log('Template created successfully\nRemember to put the template ID in the backend');
+  console.log('Template created successfully\nRemember to put the template ID in the codebase');
 }).catch((error) => {
   console.error('an error occured while creating the document');
 });
