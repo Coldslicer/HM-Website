@@ -1,6 +1,29 @@
 
-import { discordClient } from "./util/discordSetup.js";
 import { SlashCommandBuilder } from '@discordjs/builders';
+
+// Imports
+import { Client, GatewayIntentBits, Partials } from 'discord.js';
+
+import { config } from 'dotenv';
+config();
+
+// Discord client
+console.log('[HM]: Connecting to Discord...');
+const DISCORD_CLIENT = new Client({
+  intents: [
+    //GatewayIntentBits.DirectMessages
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions,
+  ],
+  partials: [
+    Partials.Message,
+    Partials.Channel,
+    Partials.Reaction
+  ],
+});
 
 const commands = [
   new SlashCommandBuilder()
@@ -8,7 +31,7 @@ const commands = [
     .setDescription('Submit your current draft link')
     .addStringOption(option => 
       option.setName('link')
-            .setDescription('The link to your video or folder')
+            .setDescription('The link to your unlisted video or online draft folder')
             .setRequired(true)
     ),
   new SlashCommandBuilder()
@@ -16,7 +39,15 @@ const commands = [
     .setDescription('Submit your final draft link')
     .addStringOption(option => 
       option.setName('link')
-            .setDescription('The link to your video or folder')
+            .setDescription('The link to your unlisted video or online draft folder')
+            .setRequired(true)
+    ),
+    new SlashCommandBuilder()
+    .setName('live')
+    .setDescription('Submit your LIVE video link after you\'re approved for posting')
+    .addStringOption(option => 
+      option.setName('link')
+            .setDescription('The link to your live video on the platform you make content on')
             .setRequired(true)
     ),
     new SlashCommandBuilder()
@@ -28,13 +59,17 @@ const commands = [
 export async function registerSlashCommands() {
   const commandsData = commands.map(command => command.toJSON());
   try {
-    await discordClient.application.commands.set(commandsData); // Registers commands globally
+    await DISCORD_CLIENT.application.commands.set(commandsData); // Registers commands globally
     console.log('Slash commands registered');
   } catch (error) {
     console.error('Error registering slash commands:', error);
   }
 }
 
-discordClient.once('ready', async () => {
+DISCORD_CLIENT.once('ready', async () => {
+  console.log("registering slash commands...")
   await registerSlashCommands();
+  console.log("successful");
 });
+
+DISCORD_CLIENT.login(process.env.DISCORD_TOKEN);

@@ -6,7 +6,7 @@ const router = express.Router();
 const API_KEY = process.env.DOCUSEAL_API_KEY;
 
 router.get('/client-form', async (req, res) => {
-  const { campaign_id, signer_email } = req.query;
+  const { campaign_id, signer_email, fullyManaged } = req.query;
 
   const { data: existingData, error: fetchError } = await SUPABASE_CLIENT
       .from("campaigns")
@@ -74,9 +74,14 @@ router.get('/client-form', async (req, res) => {
             {
               name: 'Fees',
               default_value: creatorData.length
-                ? `$${creatorData.reduce((sum, c) => sum + (c.rate || 0), 0)}`
-                : 'TBD',
-            },
+              ? `Total: $${Math.round(
+                  creatorData.reduce((sum, c) => sum + (c.rate || 0), 0) * (fullyManaged ? 1.2 : 1)
+                )}\n` +
+                creatorData
+                  .map(c => `${c.channel_name}: $${c.rate_cpm || 0} CPM`)
+                  .join(', ')
+              : 'TBD'
+            }            
           ],
         },
         {

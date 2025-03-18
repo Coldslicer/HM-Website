@@ -1,7 +1,7 @@
 /* ================ [ IMPORTS ] ================ */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useCampaignStore } from '../../store/campaignStore';
 import { SUPABASE_CLIENT } from '../../lib/supabase';
@@ -299,7 +299,7 @@ export function BriefForm() {
 
         {/* Brand Description */}
         <div>
-          <label className="block text-sm font-medium text-black-200">Brand Description</label>
+          <label className="block text-sm font-medium text-black-200">Brand Description (Will be shown to influencers)</label>
           <textarea
             value={formData.company_description}
             onChange={(e) => setFormData(prev => ({ ...prev, company_description: e.target.value }))}
@@ -307,6 +307,9 @@ export function BriefForm() {
             placeholder="e.g., Acme Corp is a leading provider of innovative solutions..."
             required
           />
+          <p className="text-sm text-black-400 mt-1">
+            This will be shown to influencers, so make sure it represents your brand!
+          </p>
         </div>
 
         {/* Representative Name */}
@@ -387,16 +390,35 @@ export function BriefForm() {
         </div>
 
         {/* Posting Date */}
-        <div>
-          <label className="block text-sm font-medium text-black-200">Posting Date</label>
-          <input
-            type="date"
-            value={formData.date}
-            onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            required
-          />
-        </div>
+<div>
+  <label className="block text-sm font-medium text-black-200">Posting Date</label>
+  
+  <select
+    value={formData.date}
+    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+    className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
+    required
+  >
+    <option value="">Select a date or choose flexible</option>
+    <option value="flexible">Flexible (influencers can post according to their upload schedule)</option>
+  </select>
+
+  {formData.date !== "flexible" && (
+    <div>
+    <input
+      type="date"
+      value={formData.date}
+      onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+      className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
+      required
+    />
+    <label className="text-sm text-black-400 mt-1">
+            This should be the latest date you want videos out
+    </label>
+    </div>
+  )}
+</div>
+
 
         {/* Niches */}
         <div>
@@ -815,6 +837,7 @@ export function BriefForm() {
           Submit Brief
         </button>
       </form>
+      <p className="text-sm text-gray-600 mt-2"><b>Missing options, or want something more complex?</b> We can help! Submit an inquiry to our parent agency, Hotslicer Media: <Link className='text-blue-500 underline hover:text-blue-700' to="https://forms.gle/hs33XS3Ay3i14jqC7">CLICK HERE</Link></p>
     </div>
   );
 }

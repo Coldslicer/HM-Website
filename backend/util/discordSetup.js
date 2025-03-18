@@ -69,7 +69,7 @@ const ON_READY = async () => {
 const ON_USER_INTERACTION = async (interaction) => {
 
   if (!interaction.isCommand()) return;
-  if (interaction.commandName === 'draft' || interaction.commandName === 'final') {
+  if (interaction.commandName === 'draft' || interaction.commandName === 'final' || interaction.commandName === 'live') {
     const userId = interaction.user.id;
     const channelId = interaction.channel.id;
     const draftLink = interaction.options.getString('link'); // Assuming the link is passed as a string argument
@@ -80,7 +80,18 @@ const ON_USER_INTERACTION = async (interaction) => {
         // Update the 'draft' column in the campaign_creators table
 
         // Dynamically update the column based on the command name ('draft' or 'final')
-        const columnToUpdate = interaction.commandName; // 'draft' or 'final'
+        let columnToUpdate;
+        switch (interaction.commandName) {
+          case 'draft':
+            columnToUpdate = 'draft';
+            break;
+          case 'final':
+            columnToUpdate = 'final';
+            break;
+          case 'live':
+            columnToUpdate = 'live_url';
+            break;
+        }
 
         let { data, error } = await SUPABASE_CLIENT
             .from('campaign_creators')
