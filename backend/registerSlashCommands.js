@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 
+=======
+import { DISCORD_CLIENT } from "./util/setup.js";
+>>>>>>> 1e97fa03e7c39ea327fa27a9df3cea279bf516f4
 import { SlashCommandBuilder } from '@discordjs/builders';
 
 // Imports
@@ -50,7 +54,15 @@ const commands = [
             .setDescription('The link to your live video on the platform you make content on')
             .setRequired(true)
     ),
-    new SlashCommandBuilder()
+  new SlashCommandBuilder()
+    .setName('live')
+    .setDescription('Submit your live YouTube URL')
+    .addStringOption(option => 
+      option.setName('link')
+            .setDescription('The YouTube URL for your live video')
+            .setRequired(true)
+    ),
+  new SlashCommandBuilder()
     .setName('id')
     .setDescription('Tells you your discord ID to enter into the campaign form')
 ];
@@ -59,7 +71,11 @@ const commands = [
 export async function registerSlashCommands() {
   const commandsData = commands.map(command => command.toJSON());
   try {
+<<<<<<< HEAD
     await DISCORD_CLIENT.application.commands.set(commandsData); // Registers commands globally
+=======
+    await DISCORD_CLIENT.application.commands.set(commandsData);
+>>>>>>> 1e97fa03e7c39ea327fa27a9df3cea279bf516f4
     console.log('Slash commands registered');
   } catch (error) {
     console.error('Error registering slash commands:', error);
@@ -67,7 +83,10 @@ export async function registerSlashCommands() {
 }
 
 DISCORD_CLIENT.once('ready', async () => {
+<<<<<<< HEAD
   console.log("registering slash commands...")
+=======
+>>>>>>> 1e97fa03e7c39ea327fa27a9df3cea279bf516f4
   await registerSlashCommands();
   console.log("successful");
 });
