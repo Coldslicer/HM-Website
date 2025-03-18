@@ -8,7 +8,6 @@ import path from 'path';
 import { PDFDocument } from 'pdf-lib';
 import { fileURLToPath } from 'url';
 import { SUPABASE_CLIENT } from '../util/setup.js';
-import axios from 'axios';
 
 /* ================ [ HELPERS ] ================ */
 
@@ -22,7 +21,7 @@ const formatDate = () => {
   });
 };
 
-// Calculate text position
+// Text center position
 const centerPos = (text, font, size, pos) => {
   const textWidth = font.widthOfTextAtSize(text, size);
   return {
@@ -36,7 +35,7 @@ const centerPos = (text, font, size, pos) => {
 // Router
 const ROUTER = express.Router();
 
-// Email transporter
+// Email sending transporter
 const TRANSPORTER = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -45,44 +44,23 @@ const TRANSPORTER = nodemailer.createTransport({
   },
 });
 
-// Get path to invoice
+// Get script directory
 const FILE_PATH = fileURLToPath(import.meta.url);
 const DIRNAME = path.dirname(FILE_PATH);
 
-// Fetch views on CPM video
-const getYouTubeViews = async (videoUrl) => {
-  try {
-    const videoIdMatch = videoUrl.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/);
-    if (!videoIdMatch || !videoIdMatch[1]) {
-      throw new Error('Invalid YouTube URL');
-    }
-    
-    const response = await axios.get(
-      `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIdMatch[1]}&key=${process.env.YOUTUBE_API_KEY}`
-    );
-    
-    if (!response.data.items || response.data.items.length === 0) {
-      throw new Error('No video data found');
-    }
-    
-    return parseInt(response.data.items[0].statistics.viewCount);
-  } catch (error) {
-    console.error('YouTube API error:', error);
-    throw new Error('Failed to fetch video views');
-  }
-};
-
-// Create invoice PDF
+// Modify PDF
 const modifyPDF = async (campaignData, paymentAmount) => {
   const INVOICE_PATH = path.resolve(DIRNAME, '../assets/invoice.pdf');
   const INVOICE = await PDFDocument.load(await fs.readFile(INVOICE_PATH));
 
+  // Load fonts
   INVOICE.registerFontkit(fontkit);
   const ROBOTO = await INVOICE.embedFont(await fs.readFile(path.resolve(DIRNAME, '../assets/Roboto-Regular.ttf')));
   const ROBOTO_BOLD = await INVOICE.embedFont(await fs.readFile(path.resolve(DIRNAME, '../assets/Roboto-Bold.ttf')));
 
   const PAGE = INVOICE.getPages()[0];
 
+  // Text positions
   const POS = {
     date: { x: 470, y: 670 },
     id: { x: 470, y: 633 },
@@ -99,6 +77,7 @@ const modifyPDF = async (campaignData, paymentAmount) => {
     balance_due: { x: 470, y: 309 }
   };
 
+  // Date (Roboto 10pt Bold)
   const dateText = formatDate();
   PAGE.drawText(dateText, {
     ...centerPos(dateText, ROBOTO_BOLD, 10, POS.date),
@@ -106,6 +85,7 @@ const modifyPDF = async (campaignData, paymentAmount) => {
     size: 10
   });
 
+  // Invoice ID (Roboto 10pt Bold)
   const invoiceIdText = "INVOICE NO. " + campaignData.invoice_id.toString();
   PAGE.drawText(invoiceIdText, {
     ...centerPos(invoiceIdText, ROBOTO_BOLD, 10, POS.id),
@@ -113,6 +93,7 @@ const modifyPDF = async (campaignData, paymentAmount) => {
     size: 10
   });
 
+  // Contact Info (Roboto 10pt Regular)
   const drawContactInfo = (text, pos) => {
     PAGE.drawText(text, {
       x: pos.x,
@@ -125,6 +106,7 @@ const modifyPDF = async (campaignData, paymentAmount) => {
   drawContactInfo(campaignData.rep_name, POS.contact_name);
   drawContactInfo(campaignData.company_name, POS.company_name);
   
+  // Handle address splitting
   const address = campaignData.company_address;
   if (address.length > 30) {
     const splitIndex = address.lastIndexOf(' ', 30);
@@ -138,6 +120,7 @@ const modifyPDF = async (campaignData, paymentAmount) => {
   drawContactInfo(campaignData.company_phone, POS.phone);
   drawContactInfo(campaignData.payment_email, POS.email);
 
+  // Description (Left-aligned with dynamic values)
   const descriptionText = `HSM ${campaignData.type} payment - ${campaignData.creatorName}`;
   PAGE.drawText(descriptionText, {
     x: POS.description.x,
@@ -146,7 +129,8 @@ const modifyPDF = async (campaignData, paymentAmount) => {
     size: 10
   });
 
-  const priceText = `$${paymentAmount.toFixed(2)}`;
+  // Price Fields (Roboto 10pt Regular)
+  const priceText = `$${paymentAmount}`;
   const drawPriceField = (pos) => {
     PAGE.drawText(priceText, {
       ...centerPos(priceText, ROBOTO, 10, pos),
@@ -158,12 +142,14 @@ const modifyPDF = async (campaignData, paymentAmount) => {
   drawPriceField(POS.unit_price);
   drawPriceField(POS.total);
 
+  // Subtotal (Roboto 10pt Bold)
   PAGE.drawText(priceText, {
     ...centerPos(priceText, ROBOTO_BOLD, 10, POS.subtotal),
     font: ROBOTO_BOLD,
     size: 10
   });
 
+  // Balance Due (Roboto 15pt Bold)
   PAGE.drawText(priceText, {
     ...centerPos(priceText, ROBOTO_BOLD, 15, POS.balance_due),
     font: ROBOTO_BOLD,
@@ -175,29 +161,20 @@ const modifyPDF = async (campaignData, paymentAmount) => {
 
 /* ================ [ ROUTES ] ================ */
 
-// Get creators
+// Get creators route
 ROUTER.post('/get-creators', async (req, res) => {
   try {
     const { campaign_id } = req.body;
 
+    // No campaign id
     if (!campaign_id) {
       return res.status(400).json({ error: 'campaign_id is required' });
     }
 
+    // Fetch creators for the campaign
     const { data, error } = await SUPABASE_CLIENT
       .from('campaign_creators')
-      .select(`
-        id,
-        channel_name,
-        rate,
-        rate_cpm,
-        flat_paid,
-        cpm_paid,
-        final_approved,
-        flat_emailed,
-        cpm_emailed,
-        live_submitted
-      `)
+      .select('id, channel_name, rate, rate_cpm, flat_paid, cpm_paid, final_approved, flat_emailed, cpm_emailed')
       .eq('campaign_id', campaign_id);
 
     if (error) {
@@ -212,25 +189,23 @@ ROUTER.post('/get-creators', async (req, res) => {
   }
 });
 
-// Initiate payment
+// Initiate payment route
 ROUTER.post('/initiate-payment', async (req, res) => {
   try {
     const { creator_id, type } = req.body;
 
+    // Fetch creator data
     const { data: creatorData, error: creatorError } = await SUPABASE_CLIENT
       .from('campaign_creators')
-      .select('campaign_id, rate, rate_cpm, channel_name, live_url')
+      .select('campaign_id, rate, rate_cpm, channel_name')
       .eq('id', creator_id)
       .single();
 
     if (creatorError || !creatorData) {
-      return res.status(404).json({ error: 'Creator not found' });
+      return res.status(404).json({ error: 'Creator or campaign not found' });
     }
 
-    if (type === 'cpm' && !creatorData.live_url) {
-      return res.status(400).json({ error: 'Live URL not available for CPM calculation' });
-    }
-
+    // Fetch campaign data
     const { data: campaignData, error: campaignError } = await SUPABASE_CLIENT
       .from('campaigns')
       .select('payment_email, rep_name, company_name, company_address, company_phone, invoice_id')
@@ -241,24 +216,19 @@ ROUTER.post('/initiate-payment', async (req, res) => {
       return res.status(404).json({ error: 'Campaign not found' });
     }
 
-    let paymentAmount;
-    if (type === 'flat') {
-      paymentAmount = creatorData.rate;
-    } else {
-      const views = await getYouTubeViews(creatorData.live_url);
-      paymentAmount = (views / 1000) * creatorData.rate_cpm;
-    }
-
+    // Generate modified PDF with additional parameters
+    const paymentAmount = type === 'flat' ? creatorData.rate : creatorData.rate_cpm;
     const modifiedPdf = await modifyPDF(
       { 
         ...campaignData,
-        type: type.toUpperCase(),
+        type: type.toUpperCase(),  // Convert to uppercase for display
         creatorName: creatorData.channel_name 
       },
       paymentAmount
     );
 
-    await TRANSPORTER.sendMail({
+    // Send email with PDF attachment
+    TRANSPORTER.sendMail({
       from: process.env.INVOICE_EMAIL,
       to: campaignData.payment_email,
       subject: 'Invoice from Hotslicer Media',
@@ -270,6 +240,7 @@ ROUTER.post('/initiate-payment', async (req, res) => {
       }]
     });
 
+    // Update emailed status
     const { error: updateError } = await SUPABASE_CLIENT
       .from('campaign_creators')
       .update({ [`${type}_emailed`]: true })
@@ -277,6 +248,7 @@ ROUTER.post('/initiate-payment', async (req, res) => {
 
     if (updateError) throw updateError;
 
+    // Increment invoice ID
     const { error: incrementError } = await SUPABASE_CLIENT
       .from('campaigns')
       .update({ invoice_id: campaignData.invoice_id + 1 })
@@ -284,12 +256,10 @@ ROUTER.post('/initiate-payment', async (req, res) => {
 
     if (incrementError) throw incrementError;
 
-    res.json({ success: true, amount: paymentAmount });
+    res.json({ success: true });
   } catch (error) {
     console.error('Payment error:', error);
-    res.status(500).json({ 
-      error: error.response?.data?.error?.message || error.message || 'Payment processing failed' 
-    });
+    res.status(500).json({ error: error.message });
   }
 });
 
