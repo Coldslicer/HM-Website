@@ -8,8 +8,6 @@ import { PermissionsBitField, ChannelType } from 'discord.js';
 
 const router = express.Router();
 
-const SERVER_ID = process.env.SERVER_ID; // Use environment variable for the guild ID
-
 router.get('/validate-discord-id/:discordId', async (req, res) => {
   const { discordId } = req.params;
 
@@ -81,7 +79,7 @@ router.post('/setup-discord', async (req, res) => {
 
     // Create group chat channel
     console.log('Creating group chat channel with name:', company_name);
-    const guild = DISCORD_CLIENT.guilds.cache.get(SERVER_ID);
+    const guild = DISCORD_CLIENT.guilds.cache.get(campaignData.server_id);
     if (!guild) {
       console.error('Guild not found');
       return res.status(500).json({ error: 'Guild not found' });

@@ -1,8 +1,6 @@
 
-import { SlashCommandBuilder } from '@discordjs/builders';
-
 // Imports
-import { Client, GatewayIntentBits, Partials } from 'discord.js';
+import { SlashCommandBuilder, Client, GatewayIntentBits, Partials, PermissionFlagsBits } from 'discord.js';
 
 import { config } from 'dotenv';
 config();
@@ -51,8 +49,63 @@ const commands = [
             .setRequired(true)
     ),
     new SlashCommandBuilder()
+    .setName('register')
+    .setDescription('registers the channel this is used in to recieve sponsorship offers')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addStringOption(option => 
+      option.setName('description')
+            .setDescription('The name of the niche this channel is meant for. THIS IS SHOWN TO CLIENTS.')
+            .setRequired(true)
+    ),
+    new SlashCommandBuilder()
+    .setName('registrations')
+    .setDescription('shows all Warm channel registrations on this server'),
+    new SlashCommandBuilder()
+    .setName('unregister')
+    .setDescription('removes all Warm registrations for this channel')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+// Roles Management Commands
+new SlashCommandBuilder()
+.setName('showroles')
+.setDescription('Shows all the configured roles in Warm'),
+
+
+new SlashCommandBuilder()
+.setName('addrole')
+.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+.setDescription('Configures a role to conditionally recieve updates depending on the clients\' preferences')
+.addStringOption(option =>
+  option.setName('title')
+    .setDescription('The title of the role to add')
+    .setRequired(true)
+)
+.addStringOption(option =>
+  option.setName('description')
+    .setDescription('A brief description of the role to be shown to clients')
+    .setRequired(true)
+)
+.addStringOption(option =>
+  option.setName('value')
+    .setDescription('Ping the role you want to add. Ex. @tech')
+    .setRequired(true)
+),
+
+new SlashCommandBuilder()
+.setName('removerole')
+.setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+.setDescription('Removes a role configuration from Warm')
+.addStringOption(option =>
+  option.setName('value')
+    .setDescription('Ping the role you want to remove. Ex. @tech')
+    .setRequired(true)
+),
+    new SlashCommandBuilder()
     .setName('id')
-    .setDescription('Tells you your discord ID to enter into the campaign form')
+    .setDescription('Tells you your discord ID to enter into the campaign form'),
+
+    new SlashCommandBuilder()
+    .setName('help')
+    .setDescription('Shows information about how to use Warm commands')
 ];
 
 // Register the slash commands with Discord
@@ -68,6 +121,7 @@ export async function registerSlashCommands() {
 
 DISCORD_CLIENT.once('ready', async () => {
   console.log("registering slash commands...")
+  await DISCORD_CLIENT.application.commands.fetch(); // Ensures the application is ready
   await registerSlashCommands();
   console.log("successful");
 });

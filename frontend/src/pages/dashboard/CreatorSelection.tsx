@@ -3,7 +3,7 @@ import { useCampaignStore } from '../../store/campaignStore';
 import { SUPABASE_CLIENT } from '../../lib/supabase';
 import { Eye } from 'lucide-react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 type CreatorSelectionProps = {
   campaignId?: string;
 };
@@ -16,6 +16,7 @@ export const CreatorSelection: React.FC<CreatorSelectionProps> = ({ campaignId }
   const [totalRateCPM, setTotalRateCPM] = useState(0);
   const [selectedStatement, setSelectedStatement] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchCreators();
@@ -60,23 +61,28 @@ export const CreatorSelection: React.FC<CreatorSelectionProps> = ({ campaignId }
   };
 
   const handleSelectCreator = async (creator) => {
-    if (currentCampaign?.status !== 'brief_submitted') return;
+  if (currentCampaign?.status !== 'brief_submitted') return;
 
-    const updatedCreators = creators.map((c) =>
-      c.channel_url === creator.channel_url ? { ...c, selected: !c.selected } : c
-    );
-    setCreators(updatedCreators);
+  // Toggle the selected state of the clicked creator
+  const updatedCreators = creators.map((c) =>
+    c.id === creator.id ? { ...c, selected: !c.selected } : c
+  );
+  setCreators(updatedCreators);
 
-    const selected = updatedCreators.filter((c) => c.selected);
-    setSelectedCreators(selected);
-    setTotalRate(selected.reduce((acc, c) => acc + c.rate, 0));
-    setTotalRateCPM(selected.reduce((acc, c) => acc + c.rate_cpm, 0));
+  // Update selected creators based on the new state of 'selected' for each creator
+  const selected = updatedCreators.filter((c) => c.selected);
+  setSelectedCreators(selected);
 
-    await SUPABASE_CLIENT
-      .from('campaign_creators')
-      .update({ selected: !creator.selected })
-      .eq('id', creator.id);
-  };
+  // Update the total rate and total rate CPM dynamically
+  setTotalRate(selected.reduce((acc, c) => acc + c.rate, 0));
+  setTotalRateCPM(selected.reduce((acc, c) => acc + c.rate_cpm, 0));
+
+  // Persist the change in the database
+  await SUPABASE_CLIENT
+    .from('campaign_creators')
+    .update({ selected: !creator.selected })
+    .eq('id', creator.id);
+};
 
   const finalizeCreators = async () => {
     const confirmed = window.confirm('Are you sure you want to finalize the selected creators?');
@@ -101,7 +107,9 @@ export const CreatorSelection: React.FC<CreatorSelectionProps> = ({ campaignId }
         console.error('Error finalizing creators:', error);
         alert('Failed to finalize creators.');
       }
+      
     }
+    navigate('/dashboard/creators');
   };
 
   const handleOpenPopup = (statement: string) => {
@@ -190,7 +198,17 @@ export const CreatorSelection: React.FC<CreatorSelectionProps> = ({ campaignId }
       </div>
 
       <div className="mt-4 flex items-center justify-between bg-gray-100 p-3 rounded-md text-sm text-black">
-  <span className="font-medium">Total Rate: ${formatNumber(totalRate)} + CPM Payments</span>
+      <span className="font-medium">
+    Total: ${formatNumber(totalRate)} Flat + ${formatNumber(
+      Math.round(selectedCreators.reduce((acc, creator) => {
+        // Calculate expected CPM payments for each creator
+        var expectedCPM = ((creator.rate_cpm * creator.averageViews) / 1000);
+        if (!expectedCPM) expectedCPM = 0;
+        return acc + expectedCPM;
+      }, 0))
+    )}
+    {' '} Expected CPM
+  </span>
   {!campaignId && currentCampaign?.status === 'brief_submitted' && (
     <button 
       onClick={finalizeCreators} 

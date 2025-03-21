@@ -27,7 +27,7 @@ export function Sidebar() {
 
   // Subscribe to campaign status changes
   useEffect(() => {
-    if (!currentCampaign) return;
+    if (!currentCampaign?.id) return;
   
     const campaignId = currentCampaign.id;
   

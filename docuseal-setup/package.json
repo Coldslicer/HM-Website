@@ -1,6 +1,11 @@
 {
   "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
     "axios": "^1.7.9",
-    "fs": "^0.0.1-security"
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "fs": "^0.0.1-security",
+    "he": "^1.2.0",
+    "marked": "^15.0.7"
   }
 }

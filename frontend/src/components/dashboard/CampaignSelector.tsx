@@ -46,6 +46,7 @@ export function CampaignSelector({ onClose }: { onClose?: () => void }) {
           {campaigns.map((campaign) => (
             <div
               key={campaign.id}
+              defaultValue={currentCampaign}
               onClick={() => handleSelectCampaign(campaign)}
               className={`p-6 rounded-lg cursor-pointer transition-all
                 ${currentCampaign?.id === campaign.id

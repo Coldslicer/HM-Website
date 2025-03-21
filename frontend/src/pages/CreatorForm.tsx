@@ -200,223 +200,222 @@ export function CreatorForm() {
   
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        <br />
-        Express Interest in a Campaign
-      </h2>
+<div className="max-w-2xl mx-auto p-4 sm:p-6 md:p-8">
+  <h2 className="text-2xl font-bold text-gray-800 mb-6">
+    Express Interest in a Campaign
+  </h2>
 
-      {success ? (
-        <div className="bg-white-300 p-6 rounded-lg text-green-500">
-          <p>Thank you! Your interest in the campaign has been successfully submitted.</p>
-          <p>We’ll get back to you shortly!</p>
-        </div>
-      ) : (
-        <>
-          {error && <div className="text-red-500 mb-4">{error}</div>}
-
-          {campaignNotAvailable && (
-            <div className="bg-yellow-500 p-4 mb-4 rounded-md text-gray-800">
-              <p>The campaign you are trying to express interest in is no longer accepting responses.</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="campaign_id" className="block text-sm font-medium text-gray-800-200">
-                Select Campaign
-              </label>
-              <select
-                id="campaign_id"
-                value={formData.campaign_id}
-                onChange={(e) => handleCampaignChange(e.target.value)}
-                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                required
-              >
-                <option value="">Select a campaign</option>
-                {campaigns.map((campaign) => (
-                  <option key={campaign.id} value={campaign.id}>
-                    {campaign.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-800-200">
-                Name (First, Last) - Ex. John Smith
-              </label>
-              <input
-                type="text"
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="channel_name" className="block text-sm font-medium text-gray-800-200">
-                Your Channel Name - Ex. Hotslicer
-              </label>
-              <input
-                type="text"
-                id="channel_name"
-                value={formData.channel_name}
-                onChange={(e) => setFormData({ ...formData, channel_name: e.target.value })}
-                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="channel_url" className="block text-sm font-medium text-gray-800-200">
-                Your Channel Link - https://www.youtube.com/@Hotslicer
-              </label>
-              <input
-                type="url"
-                id="channel_url"
-                value={formData.channel_url}
-                onChange={(e) => setFormData({ ...formData, channel_url: e.target.value })}
-                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="discord_id" className="block text-sm font-medium text-gray-800-200">
-                Discord ID (Not your Username) - Ex. 655866521117130752
-              </label>
-              <input
-                type="text" // Changed to text since discord_id is now text
-                id="discord_id"
-                value={formData.discord_id}
-                onChange={(e) => setFormData({ ...formData, discord_id: e.target.value })}
-                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="deliverables" className="block text-sm font-medium text-gray-800-200">
-                Deliverables (Available options are listed on Discord)
-              </label>
-              <select
-                id="deliverables"
-                value={formData.deliverables}
-                onChange={(e) => setFormData({ ...formData, deliverables: e.target.value })}
-                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                required
-              >
-                <option value="">Select a deliverable</option>
-                <option value="Longform Integration (30s)">Longform Integration (30s)</option>
-                <option value="Longform Integration (60s)">Longform Integration (60s)</option>
-                <option value="Shortform Video">Shortform Video</option>
-                <option value="Dedicated Longform">Dedicated Longform</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="rate" className="block text-sm font-medium text-gray-800-200">
-                Deliverables Rate
-              </label>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center flex-1">
-                  <span className="mr-2">$</span>
-                  <input
-                    type="number"
-                    id="rate"
-                    value={formData.rate}
-                    onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
-                    className={`mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 ${
-                      !pricingModel.includes('Flat-rate') ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                    placeholder="Flat Rate"
-                    step="any" // Allow floating-point numbers
-                    min="0" // Prevent negative values
-                    required
-                    disabled={!pricingModel.includes('Flat-rate')}
-                  />
-                </div>
-                <span className="text-gray-800">+</span> {/* Add the "+" sign */}
-                <div className="flex items-center flex-1">
-                  <span className="mr-2">$</span>
-                  <input
-                    type="number"
-                    id="rate_cpm"
-                    value={formData.rate_cpm}
-                    onChange={(e) => setFormData({ ...formData, rate_cpm: e.target.value })}
-                    className={`mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 ${
-                      !pricingModel.includes('CPM (first 30d)') ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                    placeholder="CPM"
-                    step="any" // Allow floating-point numbers
-                    min="0" // Prevent negative values
-                    required
-                    disabled={!pricingModel.includes('CPM (first 30d)')}
-                  />
-                </div>
-                <span className="text-gray-800">CPM</span> {/* Add the "CPM" text */}
-              </div>
-              <p className="text-gray-800-400 mt-1">
-                You can put whatever rate you want, but if it's too high, clients may not select you.
-              </p>
-            </div>
-
-            <div>
-              <label htmlFor="personal_statement" className="block text-sm font-medium text-gray-800-200">
-                Personal Statement
-              </label>
-              <textarea
-                id="personal_statement"
-                value={formData.personal_statement}
-                onChange={(e) => setFormData({ ...formData, personal_statement: e.target.value })}
-                className="mt-1 block w-full rounded-md border-white-700 bg-white-700 text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                required
-              />
-            </div>
-
-            <div className="mt-6">
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input
-                    type="checkbox"
-                    id="agreement"
-                    checked={formData.agreement}
-                    onChange={(e) => setFormData({ ...formData, agreement: e.target.checked })}
-                    className="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
-                    required
-                  />
-                </div>
-                <div className="ml-3">
-                  <label htmlFor="agreement" className="block text-sm font-medium text-gray-700">
-                    I agree to these terms:
-                  </label>
-                  <ul className="mt-2 text-sm text-gray-600 space-y-1">
-                    <li>
-                      • I will follow through with the listed rates and deliverables to the best of my ability.
-                    </li>
-                    <li>
-                      • I understand that this sponsorship is not guaranteed and is up to the brands.
-                    </li>
-                    <li>
-                      • Hotslicer Media will take a 15% cut from the sponsorship.
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-800 bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-            >
-              Submit Interest
-            </button>
-          </form>
-        </>
-      )}
+  {success ? (
+    <div className="bg-green-50 p-6 rounded-lg text-green-500">
+      <p>Thank you! Your interest in the campaign has been successfully submitted.</p>
+      <p>We’ll get back to you shortly!</p>
     </div>
+  ) : (
+    <>
+      {error && <div className="text-red-500 mb-4">{error}</div>}
+
+      {campaignNotAvailable && (
+        <div className="bg-yellow-500 p-4 mb-4 rounded-md text-gray-800">
+          <p>The campaign you are trying to express interest in is no longer accepting responses.</p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label htmlFor="campaign_id" className="block text-sm font-medium text-gray-800">
+            Select Campaign
+          </label>
+          <select
+            id="campaign_id"
+            value={formData.campaign_id}
+            onChange={(e) => handleCampaignChange(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+            required
+          >
+            <option value="">Select a campaign</option>
+            {campaigns.map((campaign) => (
+              <option key={campaign.id} value={campaign.id}>
+                {campaign.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-800">
+            Name (First, Last) - Ex. John Smith
+          </label>
+          <input
+            type="text"
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="channel_name" className="block text-sm font-medium text-gray-800">
+            Your Channel Name - Ex. Hotslicer
+          </label>
+          <input
+            type="text"
+            id="channel_name"
+            value={formData.channel_name}
+            onChange={(e) => setFormData({ ...formData, channel_name: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="channel_url" className="block text-sm font-medium text-gray-800">
+            Your Channel Link - https://www.youtube.com/@Hotslicer
+          </label>
+          <input
+            type="url"
+            id="channel_url"
+            value={formData.channel_url}
+            onChange={(e) => setFormData({ ...formData, channel_url: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="discord_id" className="block text-sm font-medium text-gray-800">
+            Discord ID (Not your Username) - Ex. 655866521117130752
+          </label>
+          <input
+            type="text"
+            id="discord_id"
+            value={formData.discord_id}
+            onChange={(e) => setFormData({ ...formData, discord_id: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="deliverables" className="block text-sm font-medium text-gray-800">
+            Deliverables (Available options are listed on Discord)
+          </label>
+          <select
+            id="deliverables"
+            value={formData.deliverables}
+            onChange={(e) => setFormData({ ...formData, deliverables: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+            required
+          >
+            <option value="">Select a deliverable</option>
+            <option value="Longform Integration (30s)">Longform Integration (30s)</option>
+            <option value="Longform Integration (60s)">Longform Integration (60s)</option>
+            <option value="Shortform Video">Shortform Video</option>
+            <option value="Dedicated Longform">Dedicated Longform</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="rate" className="block text-sm font-medium text-gray-800">
+            Deliverables Rate
+          </label>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center flex-1">
+              <span className="mr-2">$</span>
+              <input
+                type="number"
+                id="rate"
+                value={formData.rate}
+                onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
+                className={`mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5 ${
+                  !pricingModel.includes('Flat-rate') ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                placeholder="Flat Rate"
+                step="any"
+                min="0"
+                required
+                disabled={!pricingModel.includes('Flat-rate')}
+              />
+            </div>
+            <span className="text-gray-800">+</span>
+            <div className="flex items-center flex-1">
+              <span className="mr-2">$</span>
+              <input
+                type="number"
+                id="rate_cpm"
+                value={formData.rate_cpm}
+                onChange={(e) => setFormData({ ...formData, rate_cpm: e.target.value })}
+                className={`mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5 ${
+                  !pricingModel.includes('CPM (first 30d)') ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                placeholder="CPM"
+                step="any"
+                min="0"
+                required
+                disabled={!pricingModel.includes('CPM (first 30d)')}
+              />
+            </div>
+            <span className="text-gray-800">CPM</span>
+          </div>
+          <p className="text-gray-600 mt-1">
+            You can put whatever rate you want, but if it's too high, clients may not select you.
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor="personal_statement" className="block text-sm font-medium text-gray-800">
+            Personal Statement
+          </label>
+          <textarea
+            id="personal_statement"
+            value={formData.personal_statement}
+            onChange={(e) => setFormData({ ...formData, personal_statement: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+            required
+          />
+        </div>
+
+        <div className="mt-6">
+          <div className="flex items-start">
+            <div className="flex items-center h-5">
+              <input
+                type="checkbox"
+                id="agreement"
+                checked={formData.agreement}
+                onChange={(e) => setFormData({ ...formData, agreement: e.target.checked })}
+                className="h-5 w-5 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
+                required
+              />
+            </div>
+            <div className="ml-3">
+              <label htmlFor="agreement" className="block text-sm font-medium text-gray-700">
+                I agree to these terms:
+              </label>
+              <ul className="mt-2 text-sm text-gray-600 space-y-1">
+                <li>• I will follow through with the listed rates and deliverables to the best of my ability.</li>
+                <li>• I understand that this sponsorship is not guaranteed and is up to the brands.</li>
+                <li>• Hotslicer Media will take a 15% cut from the sponsorship.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          className="w-full py-2 px-4 mt-6 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+        >
+          Submit Interest
+        </button>
+      </form>
+
+      {/* Add some empty space below the form */}
+      <div className="mt-8"></div>
+    </>
+  )}
+</div>
+
+
+
   );
 }

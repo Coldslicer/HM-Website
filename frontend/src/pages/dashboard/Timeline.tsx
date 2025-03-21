@@ -16,22 +16,24 @@ export const CreatorTimeline = () => {
   const fetchSelectedCreators = async () => {
     const { data: creatorsData } = await SUPABASE_CLIENT
       .from('campaign_creators')
-      .select('id, draft, final, contract_signed, selected, channel_url, channel_name, final_approved, discord_id')
+      .select('id, draft, live_url, contract_signed, selected, channel_url, channel_name, final_approved, discord_id')
       .eq('campaign_id', currentCampaign?.id)
       .eq('selected', true);
 
     if (!creatorsData) return;
 
-    const creatorsWithHandle = creatorsData.map((creator) => {
-      const handle = creator.channel_name || creator.channel_url.split('@')[1] || "Unknown";
-      return { ...creator, handle };
-    });
+
+    const creatorsWithHandle = creatorsData.map((creator) => ({
+      ...creator, 
+      handle: creator.channel_name || creator.channel_url.split('@')[1] || "Unknown",
+      live_url: creator.live_url ?? '' // Ensure live_url is always a string
+    }));
 
     const sortedCreators = creatorsWithHandle.sort((a, b) => {
       if (a.final_approved && !b.final_approved) return 1;
       if (!a.final_approved && b.final_approved) return -1;
-      if (isCompleted(a.final) && !a.final_approved) return -1;
-      if (isCompleted(b.final) && !b.final_approved) return 1;
+      if (isCompleted(a.live_url) && !a.final_approved) return -1;
+      if (isCompleted(b.live_url) && !b.final_approved) return 1;
       if (isCompleted(a.draft) && !isCompleted(b.draft)) return -1;
       if (!isCompleted(a.draft) && isCompleted(b.draft)) return 1;
       if (isCompleted(a.contract_signed) && !isCompleted(b.contract_signed)) return -1;
@@ -76,7 +78,7 @@ export const CreatorTimeline = () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: `[hidden from clients] Hey there <@${creator.discord_id}>, the client has approved your final draft. Good work!`,
+        message: `[hidden from clients] Hey there <@${creator.discord_id}>, the client has approved your live draft. Good work!`,
         id: creatorId,
         type: "dm",
       }),
@@ -86,7 +88,7 @@ export const CreatorTimeline = () => {
   const renderTimelineItem = (creator) => {
     const contractComplete = isCompleted(creator.contract_signed);
     const draftComplete = isCompleted(creator.draft);
-    const finalComplete = isCompleted(creator.final);
+    const finalComplete = isCompleted(creator.live_url);
     const finalApproved = creator.final_approved;
 
     return (
@@ -112,8 +114,8 @@ export const CreatorTimeline = () => {
           </div>
           <div className={`w-1/6 h-1 ${draftComplete && finalComplete ? 'bg-green-500' : 'bg-gray-300'}`}></div>
           <div className={`relative flex flex-col items-center w-1/4 p-4 rounded-md border-2 ${finalComplete ? 'border-green-500' : 'border-gray-300'} bg-gray-50`}>
-            <div className="text-sm text-gray-600">Final Submitted</div>
-            <div className={`mt-2 text-sm cursor-pointer ${finalComplete ? 'text-green-500 underline' : 'text-gray-500'}`} onClick={() => finalComplete && openPopup(creator.final)}> {finalComplete ? 'Complete' : 'Incomplete'}</div>
+            <div className="text-sm text-gray-600">Live Submitted</div>
+            <div className={`mt-2 text-sm cursor-pointer ${finalComplete ? 'text-green-500 underline' : 'text-gray-500'}`} onClick={() => finalComplete && openPopup(creator.live_url)}> {finalComplete ? 'Complete' : 'Incomplete'}</div>
           </div>
         </div>
         {finalComplete && (

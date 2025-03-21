@@ -23,7 +23,7 @@ export const WelcomePage = () => {
         
 {/* Step 2: Schedule a Call */}
 <div className="bg-white p-6 rounded-lg shadow-md">
-  <h2 className="text-xl font-semibold mb-2">Step 2: Schedule a Call</h2>
+  <h2 className="text-xl font-semibold mb-2">Step 2 (Optional): Talk with the CEO</h2>
   <div className="rounded-lg overflow-hidden border border-gray-300 shadow-md relative invert-calcom">
     <div className="invert-calcom">
         <iframe

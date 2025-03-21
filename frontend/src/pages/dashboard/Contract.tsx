@@ -6,6 +6,7 @@ import { SUPABASE_CLIENT } from '../../lib/supabase';
 
 export const Contract = () => {
   const { currentCampaign } = useCampaignStore();
+  const navigate = useNavigate();
 
   if (currentCampaign?.status !== 'creators_selected' && currentCampaign?.status !== 'contract_signed') {
     return (
@@ -46,9 +47,14 @@ export const Contract = () => {
     };
 
     const askResponse = async () => {
-      const response = await axios.get('/api/contracts/client-form',{});
-      setResponseData(response);
-    }
+      try {
+        const response = await axios.get('/api/contracts/client-form', { params: { campaign_id: currentCampaign.id } });
+        setResponseData(response.data); // Set response.data instead of response
+      } catch (error) {
+        console.error("Error fetching contract:", error);
+      }
+    };
+    
 
 
     fetchCampaignData();
@@ -63,7 +69,7 @@ export const Contract = () => {
       const fullyManaged = selectedOption === 'fully_managed';
 
       const response = await axios.get('/api/contracts/client-form', {
-        params: { campaign_id: currentCampaign?.id, signer_email: email },
+        params: { campaign_id: currentCampaign?.id, signer_email: email, fully_managed: fullyManaged },
       });
       setResponseData(response.data);
 

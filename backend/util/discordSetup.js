@@ -1,5 +1,6 @@
 import { SUPABASE_CLIENT } from './setup.js';
 import { DISCORD_CLIENT } from './setup.js';
+import { PermissionFlagsBits } from 'discord.js'
 
 /* ================ [ HELPERS ] ================ */
 
@@ -69,7 +70,217 @@ const ON_READY = async () => {
 const ON_USER_INTERACTION = async (interaction) => {
 
   if (!interaction.isCommand()) return;
+  if (interaction.commandName === 'help') {
+    const helpMessage = `
+  **Welcome to Warm, by Hotslicer Media**
+  
+  **For Creators**
+    **/draft** - Submit or update campaign drafts (YouTube or Google Drive links).  
+    **/live** - Submit your live YouTube video link.  
+    **/id** - Get your Discord user ID.
+  ---
+  
+  **For Campaign Managers**
+    **/register** - Register the current channel for sponsorships. (Admin only)  
+    **/registrations** - View all channel registrations in the server.  
+    **/unregister** - Remove the current channel’s registration. (Admin only)  
+
+    **/showroles** - View all configured roles in the server.  
+    **/addrole** - Add a new role configuration. (Admin only)  
+    **/removerole** - Remove an existing role configuration. (Admin only)
+  ---
+  
+  For questions or assistance, contact:
+    Hotslicer (<@655866521117130752>) for media inquiries.
+    Coldslicer (<@767458854249824328>) for feature requests.
+  `;
+  
+    return interaction.reply({ content: helpMessage, ephemeral: true });
+  }
+  
+  
+  if (interaction.commandName === 'register') {
+    if (!interaction.guild) {
+      return interaction.reply({ content: "Sorry, this command can only be used in a server.", ephemeral: true });
+    }
+    if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({
+        content: "You do not have the required permissions to use this command.",
+        ephemeral: true
+      });
+    }
+    
+
+    const channel_id = interaction.channel.id;  // The user's Discord ID
+    const server_id = interaction.guild.id;  // The Discord server ID
+
+    // Insert data into Supabase
+    const { data, error } = await SUPABASE_CLIENT
+      .from('niches')
+      .insert([{ name: interaction.options.getString('description'), channel_id, server_id }]);
+
+    if (error) {
+      console.error('Error inserting into Supabase:', error.message);
+      return interaction.reply({ content: "Failed to register. Please try again later.", ephemeral: true });
+    }
+
+    return interaction.reply({ content: "Successfully registered!", ephemeral: true });
+  }
+  if (interaction.commandName === 'registrations') {
+    if (!interaction.guild) {
+      return interaction.reply({ content: "Sorry, this command can only be used in a server.", ephemeral: true });
+    }
+  
+    const server_id = interaction.guild.id;  // The Discord server ID
+  
+    // Fetch all the registrations for the server from Supabase
+    const { data, error } = await SUPABASE_CLIENT
+      .from('niches')
+      .select('name, channel_id')
+      .eq('server_id', server_id);  // Querying by server ID
+  
+    if (error) {
+      console.error('Error fetching registrations from Supabase:', error.message);
+      return interaction.reply({ content: "Failed to fetch registrations. Please try again later.", ephemeral: true });
+    }
+  
+    if (!data || data.length === 0) {
+      return interaction.reply({ content: "No registrations found for this server.", ephemeral: true });
+    }
+  
+    // Format the response to display all the registrations
+    const registrationList = data.map((item, index) => {
+      return `${index + 1}. <#${item.channel_id}>: ${item.name}`;
+    }).join("\n");
+  
+    return interaction.reply({ content: `**Registered Channels:**\n${registrationList}`, ephemeral: true });
+  }
+
+  if (interaction.commandName === 'unregister') {
+    if (!interaction.guild) {
+      return interaction.reply({ content: "Sorry, this command can only be used in a server.", ephemeral: true });
+    }
+    if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({
+        content: "You do not have the required permissions to use this command.",
+        ephemeral: true
+      });
+    }
+  
+    const channel_id = interaction.channel.id;  // The channel ID of the current channel
+    const server_id = interaction.guild.id;  // The Discord server ID
+  
+    // Delete the registration for the current channel from Supabase
+    const { data, error } = await SUPABASE_CLIENT
+      .from('niches')
+      .delete()
+      .eq('channel_id', channel_id)
+      .eq('server_id', server_id);  // Ensure we only remove from the specific server
+  
+    if (error) {
+      console.error('Error removing registration from Supabase:', error.message);
+      return interaction.reply({ content: "Failed to unregister the channel. Please try again later.", ephemeral: true });
+    }
+  
+    if (data && data.length === 0) {
+      return interaction.reply({ content: "No registration found for this channel.", ephemeral: true });
+    }
+  
+    return interaction.reply({ content: "Successfully unregistered the channel!", ephemeral: true });
+  }
+  
+  
+  // Handle /showroles command
+  if (interaction.commandName === 'showroles') {
+    if (!interaction.guild) {
+      return interaction.reply({ content: "Sorry, this command can only be used in a server.", ephemeral: true });
+    }
+
+    const server_id = interaction.guild.id;
+
+    // Fetch roles from Supabase
+    const { data: roles, error } = await SUPABASE_CLIENT
+      .from('roles')
+      .select('id, title, description, value')
+      .eq('server_id', server_id);
+
+    if (error) {
+      console.error('Error fetching roles:', error.message);
+      return interaction.reply({ content: "Failed to retrieve role configurations. Please try again later.", ephemeral: true });
+    }
+
+    if (!roles || roles.length === 0) {
+      return interaction.reply({ content: "There are no roles configured for this server.", ephemeral: true });
+    }
+
+    // Construct the response with role titles, descriptions, and values
+    const roleList = roles.map(role => `- **${role.title} (${role.value})**: ${role.description}`).join('\n');
+
+    return interaction.reply({ content: `Here are the roles configured for this server:\n${roleList}`, ephemeral: true });
+  }
+
+  // Handle /addrole command
+  if (interaction.commandName === 'addrole') {
+    if (!interaction.guild) {
+      return interaction.reply({ content: "Sorry, this command can only be used in a server.", ephemeral: true });
+    }
+    if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({
+        content: "You do not have the required permissions to use this command.",
+        ephemeral: true
+      });
+    }
+
+    const title = interaction.options.getString('title');
+    const description = interaction.options.getString('description');
+    const value = interaction.options.getString('value');
+    const server_id = interaction.guild.id;
+
+    // Add the new role to Supabase
+    const { data, error } = await SUPABASE_CLIENT
+      .from('roles')
+      .insert([{ title, description, value, server_id }]);
+
+    if (error) {
+      console.error('Error adding role:', error.message);
+      return interaction.reply({ content: "Failed to add the role. Please try again later.", ephemeral: true });
+    }
+
+    return interaction.reply({ content: `Role "${title}" (${value}) added successfully!`, ephemeral: true });
+  }
+
+  // Handle /removerole command
+  if (interaction.commandName === 'removerole') {
+    if (!interaction.guild) {
+      return interaction.reply({ content: "Sorry, this command can only be used in a server.", ephemeral: true });
+    }
+    if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({
+        content: "You do not have the required permissions to use this command.",
+        ephemeral: true
+      });
+    }
+
+    const value = interaction.options.getString('value');
+    const server_id = interaction.guild.id;
+
+    // Remove the role from Supabase by value
+    const { data, error } = await SUPABASE_CLIENT
+      .from('roles')
+      .delete()
+      .match({ value, server_id });
+
+    if (error) {
+      console.error('Error removing role:', error.message);
+      return interaction.reply({ content: "Failed to remove the role. Please try again later.", ephemeral: true });
+    }
+
+    return interaction.reply({ content: `Role configurations for ${value} removed successfully!`, ephemeral: true });
+  }
   if (interaction.commandName === 'draft' || interaction.commandName === 'final' || interaction.commandName === 'live') {
+    if (!interaction.guild) {
+      return interaction.reply({ content: "Sorry, this command can only be used in a server.", ephemeral: true });
+    }
     const userId = interaction.user.id;
     const channelId = interaction.channel.id;
     const draftLink = interaction.options.getString('link'); // Assuming the link is passed as a string argument

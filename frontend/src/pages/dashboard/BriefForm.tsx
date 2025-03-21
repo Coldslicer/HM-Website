@@ -35,25 +35,78 @@ export function BriefForm() {
   const [niches, setNiches] = useState<{ name: string | null; discord_webhook_url: string }[]>([]);
   const [roles, setRoles] = useState<{ value: string | null; key: string }[]>([]);
   const [error, setError] = useState('');
+  const [clientServers, setClientServers] = useState<string[]>([]);
+  const [selectedServer, setSelectedServer] = useState<string | null>(null);
+
+  // Load form data from localStorage when component mounts
+  useEffect(() => {
+    const savedData = localStorage.getItem("formData");
+    if (savedData) {
+      setFormData(JSON.parse(savedData));
+    }
+  }, []);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("formData", JSON.stringify(formData));
+  }, [formData]);
+
+
 
   /* ================ [ EFFECT HOOKS ] ================ */
 
-  useEffect(() => {
-    const fetchNiches = async () => {
-      const { data, error } = await SUPABASE_CLIENT
-        .from('niches')
-        .select('*');
-      if (error) console.error('Error fetching niches:', error);
-      else setNiches(data || []);
-    };
+  const fetchNiches = async (serverId: string | null) => {
+    if (!serverId) return;
+    
+    const { data, error } = await SUPABASE_CLIENT
+      .from('niches')
+      .select('*') // Select only the name field
+      .eq('server_id', serverId)
+      .neq('name',null);
+  
+    if (error) {
+      console.error('Error fetching niches:', error);
+    } else {
+      setNiches(data || []);
+    }
+};
 
-    const fetchRoles = async () => {
+const fetchRoles = async (serverId: string | null) => {
+  const { data, error } = await SUPABASE_CLIENT
+    .from('roles')
+    .select('*')
+    .eq('server_id',serverId);
+  if (error) console.error('Error fetching roles:', error);
+  else setRoles(data || []);
+};
+
+
+  useEffect(() => {
+    const fetchClientServers = async () => {
+      if (!user) return;
+      
       const { data, error } = await SUPABASE_CLIENT
-        .from('roles')
-        .select('*');
-      if (error) console.error('Error fetching roles:', error);
-      else setRoles(data || []);
-    };
+        .from('clients')
+        .select('servers')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching client servers:', error);
+      } else {
+        const serversArray = data?.servers || [];
+        setClientServers(serversArray);
+  
+        // If there's only one server, automatically set the campaign's server_id.
+        if (serversArray.length === 1) {
+          setFormData(prev => ({ ...prev, server_id: serversArray[0] }));
+          // Optionally, update the currentCampaign if it exists.
+          if (currentCampaign && !currentCampaign.server_id) {
+            setCurrentCampaign(prev => ({ ...prev, server_id: serversArray[0] }));
+          }
+        }
+      }
+    }
 
     const fetchMostRecentCampaign = async () => {
       if (!user) return;
@@ -92,7 +145,7 @@ export function BriefForm() {
         sponsorship_format: currentCampaign.sponsorship_format,
         desired_pricing_model: currentCampaign.desired_pricing_model,
         date: currentCampaign.date,
-        niches: currentCampaign.niches,
+        niches: currentCampaign.niches || [],
         brief_url: currentCampaign.brief_url,
       });
     } else {
@@ -100,34 +153,123 @@ export function BriefForm() {
       fetchMostRecentCampaign();
     }
 
-    fetchNiches();
-    fetchRoles();
+    fetchClientServers();
+    if (clientServers.length > 0) {
+      setSelectedServer(clientServers[0]);
+    }
   }, [currentCampaign, user]);
+
+
+
+  useEffect(() => {
+    console.log(selectedServer);
+    fetchNiches(selectedServer);
+    fetchRoles(selectedServer);
+    formData.niches = [];
+  }, [selectedServer]);
+  
 
   /* ================ [ HANDLERS ] ================ */
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-
+  
+    if (!/^[a-zA-Z0-9 ]+$/.test(formData.name)) {
+      setError('Campaign name can only contain letters, numbers, and spaces.');
+      return;
+    }
+  
     try {
-      const { data } = await SUPABASE_CLIENT
+      const campaign = {
+        client_id: user.id,
+        ...formData,
+        status: 'brief_submitted',
+        server_id: selectedServer, // Keeping this from the second function
+      };
+  
+      const { data, error } = await SUPABASE_CLIENT
         .from('campaigns')
-        .insert([{
-          client_id: user.id,
-          ...formData,
-          status: 'brief_submitted',
-        }])
+        .insert([campaign])
         .select()
         .single();
+  
+      if (error) throw error;
+  
+      const campaignInfo = {
+        id: data.id,
+        ...campaign,
+        created_at: data.created_at,
+      };
+  
+      setCurrentCampaign(campaignInfo);
+  
+      const baseUrl = window.location.origin; // Dynamically get the base URL
+      let formattedMessage = '';
+      for (const role of roles) {
+        if (formData.per_influencer_budget.includes(role.id)) formattedMessage += role.value + " \n";
+      }
+      formattedMessage += `
 
-      setCurrentCampaign({ id: data.id, ...formData, created_at: data.created_at });
-      
-      // ... rest of submit handler remains unchanged ...
+# Sponsorship Offer from **${formData.company_name}**
+
+- ${formData.company_description}
+
+- ${formData.website.startsWith("https://") ? `[WEBSITE LINK](${formData.website})` : formData.website}
+
+## Key Campaign Details
+
+**Brief**
+- ${formData.brief_url.startsWith("https://") ? `[BRIEF LINK](${formData.brief_url})` : formData.brief_url}
+
+**Deliberable Type Options**
+${formData.sponsorship_format.map((format) => `- ${format}`).join("\n")}
+
+**Payment Format Options**
+${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
+
+**Timeline**
+- ${formData.date == 'flexible' ? 'flexible posting: you can work it into your posting schedule' : `All sponsored videos will be posted by ${formData.date}`}
+
+## **To Declare Your Commitment React Below and [FILL OUT THIS FORM](${baseUrl}/creator-form?campaignName=${encodeURIComponent(formData.name)})** 
+### **OR** React to this message to get a customized link with QoL features such as prefill
+`;
+
+      // Send to selected niches' webhooks
+      const selectedNiches = niches.filter((niche) => formData.niches.includes(niche.name!));
+      for (const niche of selectedNiches) {
+        await fetch('/api/messages/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            channelId: niche.channel_id,
+            message: formattedMessage,
+          }),
+        });
+      }
+
+      // Additionally send to the NULL niche's webhook
+      const nullChannel = niches.find((niche) => niche.name === null)?.channel_id;
+      if (nullChannel) {
+        await fetch('/api/messages/send-brief', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            channelId: nullChannel,
+            message: formattedMessage,
+          }),
+        });
+      } else {
+        console.error('No webhook found for NULL niche, could not post to the all sponsorships channel.');
+      }
+  
+      navigate('/dashboard/creators');
     } catch (error) {
       console.error('Error submitting brief:', error);
     }
   };
+
+  
 
   const handleNicheToggle = (niche: string) => {
     setFormData((prev) => ({
@@ -138,7 +280,7 @@ export function BriefForm() {
     }));
   };
 
-  const handleBudgetToggle = (value: 'regular' | 'large') => {
+  const handleRoleToggle = (value: 'regular' | 'large') => {
     setFormData((prev) => ({
       ...prev,
       per_influencer_budget: prev.per_influencer_budget.includes(value)
@@ -221,7 +363,7 @@ export function BriefForm() {
               <dd className="text-black">{currentCampaign.date}</dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-black-400">Niches</dt>
+              <dt className="text-sm font-medium text-black-400">Channels</dt>
               <dd className="text-black">
                 {currentCampaign.niches.join(', ')}
               </dd>
@@ -422,9 +564,30 @@ export function BriefForm() {
 
         {/* Niches */}
         <div>
-          <label className="block text-sm font-medium text-black-200 mb-2">Niches</label>
+{clientServers.length > 1 && (
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-black-200">Select Server</label>
+    <select
+      value={selectedServer || ''}
+      onChange={(e) => {
+        setSelectedServer(e.target.value);
+      }}
+      className="mt-1 block w-full rounded-md border-gray-700 bg-white text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
+      required
+    >
+      <option value="">Select a server</option>
+      {clientServers.map((serverId, index) => (
+        <option key={index} value={serverId}>
+          {serverId} {/* You might want to display a more user-friendly name if available */}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
+
+          <label className="block text-sm font-medium text-black-200 mb-2">Channels</label>
           <div className="flex flex-wrap gap-2">
-            {niches.filter((niche) => niche.name !== null).map((niche) => (
+            {niches.filter((niche) => niche !== null).map((niche) => (
               <button
                 key={niche.name}
                 type="button"
@@ -443,92 +606,56 @@ export function BriefForm() {
         </div>
 
         {/* Influencer Size */}
-        <div>
-          <label className="block text-sm font-medium text-black-200 mb-2">Influencer Size</label>
-          <div className="grid grid-cols-2 gap-4">
-            {/* Small Influencers Card */}
+        {Array.isArray(roles) && roles.length > 0 && (
+  <div>
+    <label className="block text-sm font-medium text-black-200 mb-2">Influencer Size</label>
+    <div className="grid grid-cols-2 gap-4">
+      {roles.map((role) => (
+        <div
+          key={role.id}
+          onClick={() => handleRoleToggle(role.id)} // Use the role key for toggle
+          className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
+            ${
+              formData.per_influencer_budget.includes(role.id)
+                ? 'border-orange-500 bg-orange-50 shadow-orange-sm'
+                : 'border-gray-200 bg-white hover:border-orange-300'
+            }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-black font-medium">{role.title}</span>
             <div
-              onClick={() => handleBudgetToggle('regular')}
-              className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
-                ${
-                  formData.per_influencer_budget.includes('regular')
-                    ? 'border-orange-500 bg-orange-50 shadow-orange-sm'
-                    : 'border-gray-200 bg-white hover:border-orange-300'
+              className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
+                ${formData.per_influencer_budget.includes(role.id)
+                  ? 'bg-orange-500'
+                  : 'bg-gray-100 border-2 border-gray-300'
                 }`}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-black font-medium">Standard Influencers</span>
-                <div className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
-                  ${
-            formData.per_influencer_budget.includes('regular')
-              ? 'bg-orange-500'
-              : 'bg-gray-100 border-2 border-gray-300'
-          }`}
-        >
-          {formData.per_influencer_budget.includes('regular') && (
-            <svg
-              className="w-4 h-4 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          )}
+              {formData.per_influencer_budget.includes(role.id) && (
+                <svg
+                  className="w-4 h-4 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              )}
+            </div>
+          </div>
+          <p className="text-sm text-gray-600 mt-2">
+            {role.description}
+          </p>
         </div>
-      </div>
-      <p className="text-sm text-gray-600 mt-2">
-        Want to make meaningful impressions on viewers? Click this to choose from our standard influencer options!
-      </p>
-    </div>
-
-    {/* Large Influencers Card */}
-    <div
-      onClick={() => handleBudgetToggle('large')}
-      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
-        ${
-          formData.per_influencer_budget.includes('large')
-            ? 'border-orange-500 bg-orange-50 shadow-orange-sm'
-            : 'border-gray-200 bg-white hover:border-orange-300'
-        }`}
-    >
-      <div className="flex items-center justify-between">
-        <span className="text-black font-medium">Large Influencers</span>
-        <div className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
-          ${
-            formData.per_influencer_budget.includes('large')
-              ? 'bg-orange-500'
-              : 'bg-gray-100 border-2 border-gray-300'
-          }`}
-        >
-          {formData.per_influencer_budget.includes('large') && (
-            <svg
-              className="w-4 h-4 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          )}
-        </div>
-      </div>
-      <p className="text-sm text-gray-600 mt-2">
-        Need to bring out the big guns? Click this to reach out to our largest influencers! ($1000+ per influencer)
-      </p>
+      ))}
     </div>
   </div>
-</div>
+)}
+
 
 <div>
   <label className="block text-sm font-medium text-black-200 mb-2">
