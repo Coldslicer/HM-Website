@@ -1,6 +1,4 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
-import InlineWidget from '@calcom/embed-react';
 
 export const WelcomePage = () => {
   return (
