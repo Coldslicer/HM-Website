@@ -136,6 +136,10 @@ router.post('/setup-discord', async (req, res) => {
                 allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
               };
             }))),
+          {
+            id: DISCORD_CLIENT.user.id, // Allow the bot to view and send messages in the channel
+            allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+          },
         ]
       });
     } catch (error) {
@@ -197,6 +201,10 @@ router.post('/setup-discord', async (req, res) => {
               id: user.id, // Allow view and send messages permissions for the creator
               allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
             },
+            {
+              id: DISCORD_CLIENT.user.id, // Allow the bot to view and send messages in the channel
+              allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+            }
           ]
         });
         creatorWebhook = await creatorChannel.createWebhook({
@@ -240,6 +248,10 @@ try {
         id: guild.id, // Deny access for @everyone
         deny: [PermissionsBitField.Flags.ViewChannel],
       },
+      {
+        id: DISCORD_CLIENT.user.id, // Allow the bot to view and send messages in the channel
+        allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+      }
     ],
   });
 

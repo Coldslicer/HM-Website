@@ -66,7 +66,7 @@ function loadHtmlTemplate(templatePath = '../assets/CAMPAIGNCONTRACTWITHFIELDS.h
 
 
 // Function to upload the contract template to DocuSeal
-async function uploadTemplateToDocuSeal(htmlContent) {
+async function uploadTemplateToDocuSeal(htmlContent, campaignId) {
   try {
     // Create a full HTML document if necessary (make sure the structure is correct)
     const fullHtml = `
@@ -85,7 +85,7 @@ async function uploadTemplateToDocuSeal(htmlContent) {
     
     // Make a POST request to DocuSeal to upload the template
     const response = await axios.post('https://api.docuseal.com/templates/html', {
-      name: 'Campaign Contract', // Template name
+      name: 'Campaign Contract '+campaignId, // Template name
       html_body: fullHtml, // Send the full HTML structure here as 'html_body'
       folder_name: 'Client Contracts', // Specify the category here
     }, {
@@ -124,7 +124,7 @@ async function generateContract(campaignId) {
   });
 
   // Upload the rendered HTML to DocuSeal
-  const documentId = await uploadTemplateToDocuSeal(renderedHtml);
+  const documentId = await uploadTemplateToDocuSeal(renderedHtml,campaignId);
   if (documentId) {
     console.log(`Template uploaded successfully with Document ID: ${documentId}`);
   } else {
@@ -184,7 +184,18 @@ router.get('/client-form', async (req, res) => {
       // external_id: campaign_id,
       order: 'preserved',
       submitters: [
-        { email: signer_email, role: 'client', external_id: campaign_id },
+        {
+          email: signer_email,
+          role: 'client',
+          external_id: campaign_id,
+          fields: [
+            {
+              name: 'FullyManagedCampaign',
+              default_value: fully_managed ? "Client has opted for Fully Managed Campaign services. Client acknowledges an additional 15% fee applies to each Influencer’s rate as reflected in the table or invoice." : "Client has not opted for Fully Managed Campaign services and agrees to manage all Influencer communications and logistics.",
+              readonly: false
+            },
+          ]
+        },
         {
           email: process.env.AGENCY_EMAIL,
           role: 'agency',
