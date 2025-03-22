@@ -1,7 +1,7 @@
 /* ================ [ IMPORTS ] ================ */
 
 // React components
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 
 // Page components
 import { Header } from "../components/Header";

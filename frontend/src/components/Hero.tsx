@@ -1,8 +1,5 @@
 /* ================ [ IMPORTS ] ================ */
 
-// React components
-import React from "react";
-
 // UI components
 import { Button } from "./ui/Button";
 

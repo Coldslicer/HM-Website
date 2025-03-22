@@ -1,12 +1,17 @@
 /* ================ [ IMPORTS ] ================ */
 
 // React components
-import React, { useState } from "react";
+import { useState } from "react";
 
 // UI components
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/Accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "./ui/Accordion";
 
 /* ================ [ COMPONENT ] ================ */
 
@@ -73,8 +78,8 @@ function FAQ() {
       <div className="container mx-auto max-w-5xl">
         <div className="text-center mb-8">
           <h2 className="text-3xl md:text-4xl font-bold mb-8 font-montserrat inline-block whitespace-nowrap">
-            Ditch <span className="text-blue-400">COLD</span> Influencer Outreach With{" "}
-            <span className="text-[#FF6100]">WARM</span>
+            Ditch <span className="text-blue-400">COLD</span> Influencer
+            Outreach With <span className="text-[#FF6100]">WARM</span>
           </h2>
         </div>
 
@@ -99,7 +104,9 @@ function FAQ() {
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, index) => (
               <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="font-bold font-montserrat">{faq.question}</AccordionTrigger>
+                <AccordionTrigger className="font-bold font-montserrat">
+                  {faq.question}
+                </AccordionTrigger>
                 <AccordionContent className="font-medium font-montserrat">
                   <div className="animate-fadeIn">{faq.answer}</div>
                 </AccordionContent>

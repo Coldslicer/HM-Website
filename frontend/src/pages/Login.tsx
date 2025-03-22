@@ -6,7 +6,7 @@ import { SUPABASE_CLIENT } from "../lib/supabase";
 import { useAuthStore } from "../store/authStore";
 import { Lock, Mail, Eye, EyeOff, Check, LogIn } from "lucide-react";
 
-/* ================ [ AUTHENTICATION ] ================ */
+/* ================ [ LOGIN ] ================ */
 
 function Login() {
   // Helper functions

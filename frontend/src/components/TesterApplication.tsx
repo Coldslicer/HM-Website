@@ -1,18 +1,18 @@
 /* ================ [ IMPORTS ] ================ */
 
 // React components
-import React, { useState } from "react";
+import { useState } from "react";
 
 // UI components
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/Dialog";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 import { Label } from "./ui/Label";
-import { Textarea } from "./ui/Textarea";
+import { TextArea } from "./ui/TextArea";
 import { RadioGroup, RadioGroupItem } from "./ui/RadioGroup";
 
 // Supabase client
-import { SUPABASE_CLIENT } from '../lib/supabase';
+import { SUPABASE_CLIENT } from "../lib/supabase";
 
 /* ================ [ COMPONENT ] ================ */
 
@@ -58,17 +58,17 @@ function TesterApplication() {
     if (isStepValid()) {
       try {
         // Insert data into Supabase `tester_applications` table
-        const { data, error } = await SUPABASE_CLIENT
-          .from("tester_applications")
-          .insert([
-            {
-              email: formData.email,
-              discord_id: formData.discordTag,
-              company_name: formData.companyName,
-              statement: formData.interest,
-              agreed: formData.agreement === "yes",
-            },
-          ]);
+        const { error } = await SUPABASE_CLIENT.from(
+          "tester_applications"
+        ).insert([
+          {
+            email: formData.email,
+            discord_id: formData.discordTag,
+            company_name: formData.companyName,
+            statement: formData.interest,
+            agreed: formData.agreement === "yes",
+          },
+        ]);
 
         if (error) {
           console.error("Supabase error:", error);
@@ -105,7 +105,9 @@ function TesterApplication() {
               id="email"
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
               required
             />
           </div>
@@ -117,7 +119,9 @@ function TesterApplication() {
             <Input
               id="discordTag"
               value={formData.discordTag}
-              onChange={(e) => setFormData({ ...formData, discordTag: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, discordTag: e.target.value })
+              }
               required
             />
           </div>
@@ -129,7 +133,9 @@ function TesterApplication() {
             <Input
               id="companyName"
               value={formData.companyName}
-              onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, companyName: e.target.value })
+              }
               required
             />
           </div>
@@ -137,11 +143,15 @@ function TesterApplication() {
       case 4:
         return (
           <div className="grid gap-4">
-            <Label htmlFor="interest">Why are you interested in beta testing?</Label>
-            <Textarea
+            <Label htmlFor="interest">
+              Why are you interested in beta testing?
+            </Label>
+            <TextArea
               id="interest"
               value={formData.interest}
-              onChange={(e) => setFormData({ ...formData, interest: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, interest: e.target.value })
+              }
               required
             />
           </div>
@@ -149,10 +159,15 @@ function TesterApplication() {
       case 5:
         return (
           <div className="grid gap-4">
-            <Label>I agree to be an active contributor, point out bugs, and recommend features to our team</Label>
+            <Label>
+              I agree to be an active contributor, point out bugs, and recommend
+              features to our team
+            </Label>
             <RadioGroup
               value={formData.agreement}
-              onValueChange={(value) => setFormData({ ...formData, agreement: value })}
+              onValueChange={(value) =>
+                setFormData({ ...formData, agreement: value })
+              }
               required
             >
               <div className="flex items-center space-x-2">
@@ -181,7 +196,9 @@ function TesterApplication() {
           loading="lazy"
         />
         <h1 className="text-4xl font-bold mb-4">Join Warm</h1>
-        <p className="text-xl text-gray-600 mb-12">Help us revolutionize Influencer Marketing.</p>
+        <p className="text-xl text-gray-600 mb-12">
+          Help us revolutionize Influencer Marketing.
+        </p>
         <Button
           className="w-full max-w-md bg-[#FF6100] hover:bg-[#FF6100]/90 mb-4"
           onClick={() => setIsDialogOpen(true)}
@@ -208,10 +225,17 @@ function TesterApplication() {
           </DialogHeader>
           <div className="py-4">{renderStep()}</div>
           <div className="flex justify-between mt-4">
-            <Button variant="outline" onClick={handlePrevious} disabled={step === 1}>
+            <Button
+              variant="outline"
+              onClick={handlePrevious}
+              disabled={step === 1}
+            >
               Previous
             </Button>
-            <Button onClick={step === 5 ? handleSubmit : handleNext} disabled={!isStepValid()}>
+            <Button
+              onClick={step === 5 ? handleSubmit : handleNext}
+              disabled={!isStepValid()}
+            >
               {step === 5 ? "Submit" : "Next"}
             </Button>
           </div>
