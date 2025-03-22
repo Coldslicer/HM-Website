@@ -1,53 +1,15 @@
 /* ================ [ IMPORTS ] ================ */
 
-// React components
-import React, { useState } from "react";
-
 // UI components
 import { Button } from "./ui/Button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/Dialog";
-import { Input } from "./ui/Input";
 
-// Supabase client
-import { SUPABASE_CLIENT } from '../lib/supabase'; // Import Supabase client
+// Icons
+import { ArrowRight } from "lucide-react";
 
 /* ================ [ COMPONENT ] ================ */
 
 // Header component
 function Header() {
-  const [email, setEmail] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const handleSubmit = async () => {
-    // Validate email
-    if (!email || !email.includes("@") || !email.includes(".")) {
-      alert("Please enter a valid email address.");
-      return;
-    }
-
-    try {
-      // Insert email into Supabase `waitlist_users` table
-      const { data, error } = await SUPABASE_CLIENT
-        .from("waitlist_users")
-        .insert([{ email }]);
-
-      if (error) {
-        console.error("Supabase error:", error);
-        alert("Failed to submit email. Please try again.");
-      } else {
-        console.log("Email added to waitlist:", email);
-        alert("Email submitted successfully!");
-      }
-    } catch (error) {
-      console.error("Error submitting email:", error);
-      alert("An error occurred. Please try again.");
-    }
-
-    // Close the dialog and reset the email field
-    setIsDialogOpen(false);
-    setEmail("");
-  };
-
   return (
     <header className="fixed top-0 w-full bg-white/80 backdrop-blur-sm z-50 border-b">
       <div className="container mx-auto px-4 h-16 flex items-center">
@@ -68,30 +30,11 @@ function Header() {
             Beta Tester
           </a>
         </nav>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-[#FF6100] hover:bg-[#FF6100]/90">Join Waitlist</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Join the Waitlist</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <Input
-                placeholder="Enter your email..."
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <Button
-                className="bg-[#FF6100] hover:bg-[#FF6100]/90 w-full"
-                onClick={handleSubmit}
-              >
-                Submit
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <a href="/login">
+          <Button className="bg-[#FF6100] hover:bg-[#FF6100]/90">
+            Get started for free <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </a>
       </div>
     </header>
   );
