@@ -1,50 +1,15 @@
 /* ================ [ IMPORTS ] ================ */
 
 // React components
-import React, { useState } from "react";
+import React from "react";
 
 // UI components
 import { Button } from "./ui/Button";
-import { Input } from "./ui/Input";
-
-// Supabase client
-import { SUPABASE_CLIENT } from '../lib/supabase'; // Import Supabase client
 
 /* ================ [ COMPONENT ] ================ */
 
 // Hero component
 function Hero() {
-  const [email, setEmail] = useState("");
-
-  const handleSubmit = async () => {
-    // Validate email
-    if (!email || !email.includes("@") || !email.includes(".")) {
-      alert("Please enter a valid email address.");
-      return;
-    }
-
-    try {
-      // Insert email into Supabase `waitlist_users` table
-      const { data, error } = await SUPABASE_CLIENT
-        .from("waitlist_users")
-        .insert([{ email }]);
-
-      if (error) {
-        console.error("Supabase error:", error);
-        alert("Failed to submit email. Please try again.");
-      } else {
-        console.log("Email added to waitlist:", email);
-        alert("Email submitted successfully!");
-      }
-    } catch (error) {
-      console.error("Error submitting email:", error);
-      alert("An error occurred. Please try again.");
-    }
-
-    // Reset the email field
-    setEmail("");
-  };
-
   return (
     <section className="pt-32 pb-16 px-4">
       <div className="container mx-auto max-w-6xl text-center">
@@ -58,20 +23,12 @@ function Hero() {
         <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-12 font-montserrat">
           Launch your influencer marketing campaign in 24 hours
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
-          <Input
-            placeholder="Enter your email..."
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="h-12 font-montserrat"
-          />
-          <Button
-            className="bg-[#FF6100] hover:bg-[#FF6100]/90 h-12 px-8 font-montserrat font-bold"
-            onClick={handleSubmit}
-          >
-            Join Waitlist
-          </Button>
+        <div className="flex justify-center">
+          <a href="/login">
+            <Button className="bg-[#FF6100] hover:bg-[#FF6100]/90 h-12 px-8 font-montserrat font-bold">
+              Get started for free
+            </Button>
+          </a>
         </div>
       </div>
     </section>
