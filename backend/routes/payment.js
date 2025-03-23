@@ -174,7 +174,7 @@ ROUTER.post('/get-creators', async (req, res) => {
     // Fetch creators for the campaign
     const { data, error } = await SUPABASE_CLIENT
       .from('campaign_creators')
-      .select('id, channel_name, rate, rate_cpm, flat_paid, cpm_paid, final_approved, flat_emailed, cpm_emailed')
+      .select('id, channel_name, rate, rate_cpm, flat_paid, cpm_paid, final_approved, flat_emailed, cpm_emailed, cpm_cap')
       .eq('campaign_id', campaign_id);
 
     if (error) {
@@ -197,7 +197,7 @@ ROUTER.post('/initiate-payment', async (req, res) => {
     // Fetch creator data
     const { data: creatorData, error: creatorError } = await SUPABASE_CLIENT
       .from('campaign_creators')
-      .select('campaign_id, rate, rate_cpm, channel_name')
+      .select('campaign_id, rate, rate_cpm, channel_name, cpm_cap')
       .eq('id', creator_id)
       .single();
 
@@ -217,11 +217,12 @@ ROUTER.post('/initiate-payment', async (req, res) => {
     }
 
     // Generate modified PDF with additional parameters
-    const paymentAmount = type === 'flat' ? creatorData.rate : creatorData.rate_cpm;
+    const baseAmount = type === 'flat' ? creatorData.rate : creatorData.rate_cpm;
+    const paymentAmount = type === 'cpm' && creatorData.cpm_cap ? Math.min(baseAmount, creatorData.cpm_cap) : baseAmount;
     const modifiedPdf = await modifyPDF(
       { 
         ...campaignData,
-        type: type.toUpperCase(),  // Convert to uppercase for display
+        type: type.toUpperCase(),
         creatorName: creatorData.channel_name 
       },
       paymentAmount
