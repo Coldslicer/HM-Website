@@ -22,6 +22,18 @@ const Payment = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [formSubmitted, setFormSubmitted] = useState(false);
 
+  // Calculate CPM opens date
+  const calculateCpmOpensDate = (liveSubmitted: string) => {
+    if (!liveSubmitted) return "N/A";
+    const date = new Date(liveSubmitted);
+    date.setDate(date.getDate() + 30);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   // Handle campaign change
   useEffect(() => {
     if (currentCampaign?.status === "contract_signed") {
@@ -78,11 +90,8 @@ const Payment = () => {
 
   // Submit an email to supabase
   const submitForm = async () => {
-    if (!email) {
-      alert(
-        "Invalid entry: missing: " +
-          [email, phone, address].filter((v) => v != "")
-      );
+    if (!email || !phone || !address) {
+      alert("Please fill in all required fields");
       return;
     }
 
@@ -91,16 +100,20 @@ const Payment = () => {
 
     try {
       const { error } = await SUPABASE_CLIENT.from("campaigns")
-        .update({ payment_email: email })
+        .update({
+          payment_email: email,
+          company_phone: phone,
+          company_address: address,
+        })
         .eq("id", currentCampaign?.id);
 
       if (error) throw error;
 
-      alert("Email updated successfully!");
+      alert("Details updated successfully!");
       setFormSubmitted(true);
     } catch (error) {
-      console.error("Error updating email:", error);
-      alert("Email update failed.");
+      console.error("Error updating details:", error);
+      alert("Update failed.");
     }
 
     // Exit loading state
@@ -153,11 +166,11 @@ const Payment = () => {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Payment</h1>
 
-      {/* Submit Email */}
+      {/* Submit Details */}
       {!formSubmitted && (
         <div className="mt-8">
           <label className="block text-sm font-medium mb-2">
-            Change Invoice Recipient:
+            Enter Payment Details:
           </label>
 
           <input
@@ -165,7 +178,7 @@ const Payment = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="border p-2 rounded w-full max-w-md"
-            placeholder="Enter new email address"
+            placeholder="Invoice recipient email"
             required
           />
 
@@ -174,7 +187,7 @@ const Payment = () => {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className="border p-2 rounded w-full max-w-md mt-2"
-            placeholder="Enter phone number"
+            placeholder="Company phone number"
             required
           />
 
@@ -183,16 +196,16 @@ const Payment = () => {
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             className="border p-2 rounded w-full max-w-md mt-2"
-            placeholder="Enter address"
+            placeholder="Company address"
             required
           />
 
           <button
             onClick={submitForm}
-            disabled={loading}
+            disabled={formLoading}
             className="bg-blue-500 text-white px-4 py-2 rounded mt-2 hover:bg-blue-600"
           >
-            {loading ? "Updating..." : "Update Recipient"}
+            {formLoading ? "Saving..." : "Save Details"}
           </button>
         </div>
       )}
@@ -207,7 +220,7 @@ const Payment = () => {
                   <th className="py-3 px-4 text-left">Creator Name</th>
                   <th className="py-3 px-4 text-center">Flat Rate</th>
                   <th className="py-3 px-4 text-center">CPM Rate</th>
-                  <th className="py-3 px-4 text-center">CPM Due</th>
+                  <th className="py-3 px-4 text-center">CPM Opens</th>
                   <th className="py-3 px-4 text-center">Pay Invoice</th>
                 </tr>
               </thead>
@@ -239,11 +252,13 @@ const Payment = () => {
                         `$${formatNum(creator.rate_cpm)}`
                       )}
                     </td>
-                    <td className="py-3 px-4 text-center">N/A</td>
+                    <td className="py-3 px-4 text-center">
+                      {calculateCpmOpensDate(creator.live_submitted)}
+                    </td>
                     <td className="py-3 px-4 text-center">
                       {!formSubmitted ? (
                         <span className="text-gray-400">
-                          Enter recipient email
+                          Complete details above
                         </span>
                       ) : !creator.final_approved ? (
                         <span className="text-gray-400">Pending Approval</span>
@@ -297,11 +312,11 @@ const Payment = () => {
         </>
       )}
 
-      {/* Change Email */}
+      {/* Update Details */}
       {formSubmitted && (
         <div className="mt-8">
           <label className="block text-sm font-medium mb-2">
-            Change Invoice Recipient:
+            Update Payment Details:
           </label>
 
           <input
@@ -309,7 +324,7 @@ const Payment = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="border p-2 rounded w-full max-w-md"
-            placeholder="Enter new email address"
+            placeholder="New invoice email"
             required
           />
 
@@ -318,7 +333,7 @@ const Payment = () => {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className="border p-2 rounded w-full max-w-md mt-2"
-            placeholder="Enter phone number"
+            placeholder="New phone number"
             required
           />
 
@@ -327,16 +342,16 @@ const Payment = () => {
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             className="border p-2 rounded w-full max-w-md mt-2"
-            placeholder="Enter address"
+            placeholder="New address"
             required
           />
 
           <button
             onClick={submitForm}
-            disabled={loading}
+            disabled={formLoading}
             className="bg-blue-500 text-white px-4 py-2 rounded mt-2 hover:bg-blue-600"
           >
-            {loading ? "Updating..." : "Update Recipient"}
+            {formLoading ? "Updating..." : "Update Details"}
           </button>
         </div>
       )}
