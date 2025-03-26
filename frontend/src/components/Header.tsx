@@ -23,8 +23,8 @@ function Header() {
           <a href="/" className="text-sm font-medium">
             Home
           </a>
-          <a href="/beta" className="text-sm font-medium">
-            Beta Tester
+          <a href="https://hotslicer.com/" className="text-sm font-medium">
+            Hotslicer Media
           </a>
         </nav>
         <a href="/login">

@@ -1,17 +1,16 @@
 /* ================ [ IMPORTS ] ================ */
 
-// React components
-import { useState } from "react";
-
 // UI components
 import { Button } from "./ui/Button";
-import { Input } from "./ui/Input";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "./ui/Accordion";
+
+// Icons
+import { ArrowRight } from "lucide-react";
 
 /* ================ [ COMPONENT ] ================ */
 
@@ -71,8 +70,6 @@ const faqs = [
 
 // FAQ component
 function FAQ() {
-  const [email, setEmail] = useState("");
-
   return (
     <section className="py-16 px-4">
       <div className="container mx-auto max-w-5xl">
@@ -84,16 +81,11 @@ function FAQ() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto mb-24">
-          <Input
-            placeholder="Enter your email..."
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="h-12 font-montserrat"
-          />
-          <Button className="bg-[#FF6100] hover:bg-[#FF6100]/90 h-12 px-8 font-montserrat font-bold">
-            Join Waitlist
-          </Button>
+          <a href="/login">
+            <Button className="bg-[#FF6100] hover:bg-[#FF6100]/90 h-12 px-8 font-montserrat font-bold">
+              Get started for free <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </a>
         </div>
 
         <h3 className="text-2xl font-bold text-center text-gray-600 mb-8 font-montserrat">
