@@ -51,16 +51,20 @@ function Footer() {
             <ul className="space-y-4">
               <li>
                 <a
-                  href="/privacy"
+                  href="https://hotslicer.com/privacy-policy/"
                   className="text-gray-600 hover:text-gray-900 font-medium"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   Privacy Policy
                 </a>
               </li>
               <li>
                 <a
-                  href="/terms"
+                  href="https://hotslicer.com/terms-conditions/"
                   className="text-gray-600 hover:text-gray-900 font-medium"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   Terms of Service
                 </a>
@@ -76,6 +80,16 @@ function Footer() {
                   className="text-gray-600 hover:text-gray-900 font-medium"
                 >
                   Home
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://hotslicer.com/"
+                  className="text-gray-600 hover:text-gray-900 font-medium"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Hotslicer Media
                 </a>
               </li>
             </ul>
