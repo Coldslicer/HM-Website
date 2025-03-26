@@ -3,6 +3,9 @@
 // UI components
 import { Button } from "./ui/Button";
 
+// Icons
+import { ArrowRight } from "lucide-react";
+
 /* ================ [ COMPONENT ] ================ */
 
 // Hero component
@@ -23,7 +26,7 @@ function Hero() {
         <div className="flex justify-center">
           <a href="/login">
             <Button className="bg-[#FF6100] hover:bg-[#FF6100]/90 h-12 px-8 font-montserrat font-bold">
-              Get started for free
+              Get started for free <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </a>
         </div>

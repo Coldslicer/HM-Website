@@ -139,67 +139,87 @@ const Payment = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Payment</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Payment</h1>
 
       {!formSubmitted && (
-        <div className="mb-8">
-          <label className="block text-sm font-medium mb-2">
-            Invoice Details:
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="border p-2 rounded w-full max-w-md mb-2"
-            placeholder="Billing email"
-            required
-          />
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="border p-2 rounded w-full max-w-md mb-2"
-            placeholder="Company phone"
-            required
-          />
-          <input
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="border p-2 rounded w-full max-w-md"
-            placeholder="Company address"
-            required
-          />
-          <button
-            onClick={submitForm}
-            disabled={formLoading}
-            className="bg-blue-500 text-white px-4 py-2 rounded mt-2 hover:bg-blue-600"
-          >
-            {formLoading ? "Saving..." : "Save Details"}
-          </button>
+        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+          <h2 className="text-xl font-semibold mb-4">Billing Information</h2>
+          <div className="space-y-4 w-full">
+            <div>
+              <label className="block text-sm font-medium mb-1">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="border p-2 rounded w-full"
+                placeholder="Email address"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Phone</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="border p-2 rounded w-full"
+                placeholder="Phone number"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Address</label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="border p-2 rounded w-full"
+                placeholder="Full address"
+                required
+              />
+            </div>
+          </div>
+          <div className="text-left mt-6">
+            <button
+              onClick={submitForm}
+              disabled={formLoading}
+              className="bg-orange-500 text-white px-6 py-2 rounded hover:bg-orange-600 inline-block"
+            >
+              {formLoading ? "Saving..." : "Save Details"}
+            </button>
+          </div>
         </div>
       )}
 
       {creators.length > 0 && (
         <>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border">
+          <div className="overflow-x-auto rounded-lg shadow-md">
+            <table className="min-w-full bg-white border-collapse rounded-lg">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="py-3 px-4 text-left">Creator Name</th>
+                  <th className="py-3 px-4 text-left rounded-tl-lg">
+                    Creator Name
+                  </th>
                   <th className="py-3 px-4 text-center">Flat Rate</th>
                   <th className="py-3 px-4 text-center">CPM Rate</th>
                   <th className="py-3 px-4 text-center">CPM Opens</th>
-                  <th className="py-3 px-4 text-center">Pay Invoice</th>
+                  <th className="py-3 px-4 text-center rounded-tr-lg">
+                    Pay Invoice
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {creators.map((creator) => {
+                {creators.map((creator, index) => {
                   const cpmAvailable = isCpmAvailable(creator.live_submitted);
+                  const isLastRow = index === creators.length - 1;
 
                   return (
                     <tr key={creator.id} className="border-b">
-                      <td className="py-3 px-4 text-left">
+                      <td
+                        className={`py-3 px-4 text-left ${
+                          isLastRow ? "rounded-bl-lg" : ""
+                        }`}
+                      >
                         {creator.channel_name}
                       </td>
                       <td className="py-3 px-4 text-center">
@@ -227,7 +247,11 @@ const Payment = () => {
                       <td className="py-3 px-4 text-center">
                         {getCpmOpensDate(creator.live_submitted)}
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td
+                        className={`py-3 px-4 text-center ${
+                          isLastRow ? "rounded-br-lg" : ""
+                        }`}
+                      >
                         {!formSubmitted ? (
                           <span className="text-gray-400">
                             Complete details above
@@ -244,7 +268,7 @@ const Payment = () => {
                                   handlePayment(creator.id, "flat")
                                 }
                                 disabled={loading}
-                                className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 w-fit"
+                                className="bg-orange-500 text-white px-4 py-1 rounded hover:bg-orange-600 w-fit"
                               >
                                 Pay Flat
                               </button>
@@ -257,7 +281,7 @@ const Payment = () => {
                                       handlePayment(creator.id, "cpm")
                                     }
                                     disabled={loading}
-                                    className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 w-fit"
+                                    className="bg-orange-500 text-white px-4 py-1 rounded hover:bg-orange-600 w-fit"
                                   >
                                     Pay CPM
                                   </button>
@@ -313,38 +337,51 @@ const Payment = () => {
       )}
 
       {formSubmitted && (
-        <div className="mt-8">
-          <label className="block text-sm font-medium mb-2">
-            Update Billing Details:
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="border p-2 rounded w-full max-w-md mb-2"
-            placeholder="New billing email"
-          />
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="border p-2 rounded w-full max-w-md mb-2"
-            placeholder="New company phone"
-          />
-          <input
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            className="border p-2 rounded w-full max-w-md"
-            placeholder="New company address"
-          />
-          <button
-            onClick={submitForm}
-            disabled={formLoading}
-            className="bg-blue-500 text-white px-4 py-2 rounded mt-2 hover:bg-blue-600"
-          >
-            {formLoading ? "Updating..." : "Update Details"}
-          </button>
+        <div className="bg-white p-6 rounded-lg shadow-md mt-8">
+          <h2 className="text-xl font-semibold mb-4">
+            Update Billing Information
+          </h2>
+          <div className="space-y-4 w-full">
+            <div>
+              <label className="block text-sm font-medium mb-1">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="border p-2 rounded w-full"
+                placeholder="Email address"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Phone</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="border p-2 rounded w-full"
+                placeholder="Phone number"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Address</label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="border p-2 rounded w-full"
+                placeholder="Full address"
+              />
+            </div>
+          </div>
+          <div className="text-left mt-6">
+            <button
+              onClick={submitForm}
+              disabled={formLoading}
+              className="bg-orange-500 text-white px-6 py-2 rounded hover:bg-orange-600 inline-block"
+            >
+              {formLoading ? "Updating..." : "Update Details"}
+            </button>
+          </div>
         </div>
       )}
     </div>

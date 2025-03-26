@@ -78,22 +78,6 @@ function Footer() {
                   Home
                 </a>
               </li>
-              <li>
-                <a
-                  href="/beta"
-                  className="text-gray-600 hover:text-gray-900 font-medium"
-                >
-                  Beta Tester
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#waitlist"
-                  className="text-gray-600 hover:text-gray-900 font-medium"
-                >
-                  Join Waitlist
-                </a>
-              </li>
             </ul>
           </div>
           <div>

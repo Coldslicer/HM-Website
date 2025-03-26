@@ -3,9 +3,6 @@
 // UI components
 import { Button } from "./ui/Button";
 
-// Icons
-import { ArrowRight } from "lucide-react";
-
 /* ================ [ COMPONENT ] ================ */
 
 // Header component
@@ -32,7 +29,7 @@ function Header() {
         </nav>
         <a href="/login">
           <Button className="bg-[#FF6100] hover:bg-[#FF6100]/90">
-            Get started for free <ArrowRight className="ml-2 h-4 w-4" />
+            Dashboard
           </Button>
         </a>
       </div>

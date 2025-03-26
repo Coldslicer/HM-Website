@@ -57,7 +57,6 @@ function TesterApplication() {
   const handleSubmit = async () => {
     if (isStepValid()) {
       try {
-        // Insert data into Supabase `tester_applications` table
         const { error } = await SUPABASE_CLIENT.from(
           "tester_applications"
         ).insert([
@@ -200,18 +199,24 @@ function TesterApplication() {
           Help us revolutionize Influencer Marketing.
         </p>
         <Button
-          className="w-full max-w-md bg-[#FF6100] hover:bg-[#FF6100]/90 mb-4"
-          onClick={() => setIsDialogOpen(true)}
+          className="w-full max-w-md bg-gray-400 hover:bg-gray-400/90 mb-4 cursor-not-allowed"
+          disabled={true}
         >
-          Become a Beta Tester
+          Beta Tester Applications are Closed
         </Button>
         <div className="mt-4 text-sm text-gray-500">
           By continuing, you agree to Warm's{" "}
-          <a href="/terms" className="text-[#FF6100] hover:underline">
+          <a
+            href="https://hotslicer.com/warmtos/"
+            className="text-[#FF6100] hover:underline"
+          >
             Terms of Service
           </a>{" "}
           and{" "}
-          <a href="/privacy" className="text-[#FF6100] hover:underline">
+          <a
+            href="https://hotslicer.com/warmprivacypolicy/"
+            className="text-[#FF6100] hover:underline"
+          >
             Privacy Policy
           </a>
         </div>

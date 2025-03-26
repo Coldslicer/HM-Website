@@ -212,7 +212,7 @@ function Login() {
               </a>{" "}
               and{" "}
               <a
-                href="https://hotslicer.com/warmprivacypolicy"
+                href="https://hotslicer.com/warmprivacypolicy/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-orange-500 hover:underline"
