@@ -1,29 +1,22 @@
-/* ================ [ IMPORTS ] ================ */
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SUPABASE_CLIENT } from "../lib/supabase";
 import { useAuthStore } from "../store/authStore";
 import { Lock, Mail, Eye, EyeOff, Check, LogIn } from "lucide-react";
 
-/* ================ [ AUTHENTICATION ] ================ */
-
 function Login() {
-  // Helper functions
-  const { signInWithEmail, signUpWithEmail, signInWithProvider } =
-    useAuthStore();
+  const { signInWithEmail, signUpWithEmail, signInWithProvider } = useAuthStore();
   const navigate = useNavigate();
 
-  // State variables
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true); // Default to true in sign-up
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(""); // Error message state
 
-  // Session persistence
   useEffect(() => {
     SUPABASE_CLIENT.auth.getUser().then(({ data: { user } }) => {
       if (user) {
@@ -32,50 +25,65 @@ function Login() {
     });
   }, [navigate, rememberMe]);
 
-  // Handle form submission
-  const handleSubmit = async () => {
-    // Begin loading state
-    setLoading(true);
+  const clearErrorMessage = () => {
+    setTimeout(() => {
+      setErrorMessage(""); // Clear error message after timeout
+    }, 5000); // Clear after 5 seconds
+  };
 
-    // Enforce terms agreement
+  const handleSubmit = async () => {
+    setLoading(true);
+    setErrorMessage(""); // Reset previous error messages
+
     if (isSignUp && !agreeTerms) {
-      alert("Please agree to the Terms of Service and Privacy Policy first");
+      setErrorMessage("You must agree to the Terms of Service and Privacy Policy to sign up.");
+      clearErrorMessage(); // Clear after timeout
       setLoading(false);
       return;
     }
 
     try {
       if (isSignUp) {
-        await signUpWithEmail(email, password);
+        const { error } = await signUpWithEmail(email, password);
+        if (error) {
+          setErrorMessage(error.message);
+          clearErrorMessage();
+          setLoading(false);
+          return;
+        }
 
-        // Log IP address
         const ipResponse = await fetch("https://api.ipify.org?format=json");
         const { ip } = await ipResponse.json();
-
-        await SUPABASE_CLIENT.from("tos_agreements").insert([
-          { ip_address: ip },
-        ]);
+        await SUPABASE_CLIENT.from("tos_agreements").insert([{ ip_address: ip }]);
       } else {
-        await signInWithEmail(email, password);
+        const { error } = await signInWithEmail(email, password);
+        if (error) {
+          setErrorMessage(error.message);
+          clearErrorMessage();
+          setLoading(false);
+          return;
+        }
       }
 
-      // User authentication
-      SUPABASE_CLIENT.auth.getUser().then(({ data: { user } }) => {
-        if (user) {
-          navigate("/dashboard");
-        }
-      });
+      const { data: { user }, error } = await SUPABASE_CLIENT.auth.getUser();
+      if (user) {
+        navigate("/dashboard");
+      } else {
+        setErrorMessage(error?.message || "An unknown error occurred.");
+        clearErrorMessage();
+      }
     } catch (error) {
-      console.error(error);
+      console.error("Unexpected error:", error);
+      setErrorMessage("An unexpected error occurred. Please try again later.");
+      clearErrorMessage();
     }
 
-    // Exit loading state
     setLoading(false);
   };
 
   return (
     <div className="flex h-[calc(100vh-4rem)] items-start pt-12 justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-sm bg-white p-7 rounded-2xl shadow-md">
+      <div className="w-full max-w-sm bg-white p-7 rounded-2xl shadow-md overflow-hidden">
         <div className="flex justify-center mb-5">
           <LogIn className="w-11 h-11 text-orange-500" />
         </div>
@@ -84,14 +92,20 @@ function Login() {
           {isSignUp ? "Sign Up" : "Sign In"}
         </h2>
 
+        {/* Error message */}
+        {errorMessage && (
+          <div className="mb-4 text-sm text-red-500 text-center">
+            {errorMessage}
+          </div>
+        )}
+
         {/* Google and Discord auth */}
         <div className="flex flex-col space-y-4 mb-5">
           <button
             onClick={async () => {
               if (isSignUp && !agreeTerms) {
-                alert(
-                  "Please agree to the Terms of Service and Privacy Policy first"
-                );
+                setErrorMessage("You must agree to the Terms of Service and Privacy Policy first.");
+                clearErrorMessage();
                 return;
               }
               await signInWithProvider("google");
@@ -108,9 +122,8 @@ function Login() {
           <button
             onClick={async () => {
               if (isSignUp && !agreeTerms) {
-                alert(
-                  "Please agree to the Terms of Service and Privacy Policy first"
-                );
+                setErrorMessage("You must agree to the Terms of Service and Privacy Policy first.");
+                clearErrorMessage();
                 return;
               }
               await signInWithProvider("discord");
@@ -171,20 +184,22 @@ function Login() {
           </button>
         </div>
 
-        {/* Remember me */}
-        <div className="flex items-center mb-5">
-          <button
-            onClick={() => setRememberMe(!rememberMe)}
-            className={`w-5 h-5 flex items-center justify-center border rounded-md mr-2 transition ${
-              rememberMe
-                ? "bg-orange-500 border-orange-500"
-                : "bg-white border-gray-300"
-            }`}
-          >
-            {rememberMe && <Check className="w-4 h-4 text-white" />}
-          </button>
-          <span className="text-sm text-gray-700">Remember me</span>
-        </div>
+        {/* Remember me (only shown in Sign In mode) */}
+        {!isSignUp && (
+          <div className="flex items-center mb-5">
+            <button
+              onClick={() => setRememberMe(!rememberMe)}
+              className={`w-5 h-5 flex items-center justify-center border rounded-md mr-2 transition ${
+                rememberMe
+                  ? "bg-orange-500 border-orange-500"
+                  : "bg-white border-gray-300"
+              }`}
+            >
+              {rememberMe && <Check className="w-4 h-4 text-white" />}
+            </button>
+            <span className="text-sm text-gray-700">Remember me</span>
+          </div>
+        )}
 
         {/* Terms agreement (sign up) */}
         {isSignUp && (
@@ -226,8 +241,10 @@ function Login() {
         {/* Sign in button */}
         <button
           onClick={handleSubmit}
-          disabled={loading}
-          className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition mb-5 text-sm"
+          disabled={loading || (isSignUp && !agreeTerms)}
+          className={`w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition mb-5 text-sm ${
+            (isSignUp && !agreeTerms) ? "cursor-not-allowed opacity-50" : ""
+          }`}
         >
           {isSignUp ? "Sign Up" : "Sign In"}
         </button>
@@ -246,7 +263,5 @@ function Login() {
     </div>
   );
 }
-
-/* ================ [ EXPORTS ] ================ */
 
 export default Login;

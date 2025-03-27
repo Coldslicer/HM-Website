@@ -5,11 +5,13 @@ import { useSearchParams } from 'react-router-dom';
 const initialFormData = {
   campaign_id: '',
   name: '', // First and Last Name
+  email: '',
   channel_name: '', // Channel Name
   channel_url: '', // Channel Link
   deliverables: '', // Deliverables (multiple choice)
   rate: '', // Flat rate (numeric)
   rate_cpm: '', // CPM rate (numeric)
+  cpm_cap: null,
   personal_statement: '', // Personal Statement (text)
   selected: false, // Selected (bool)
   discord_id: '', // Discord ID (text)
@@ -62,6 +64,7 @@ export function CreatorForm() {
             deliverables: creator.deliverables || '',
             rate: creator.rate || '',
             rate_cpm: creator.rate_cpm || '',
+            cpm_cap: creator.cpm_cap || '',
             personal_statement: creator.personal_statement || '',
           };
         }
@@ -154,6 +157,13 @@ export function CreatorForm() {
       setError('You must agree to the terms to submit the form.');
       return;
     }
+
+    // Ensure a valid email address
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please provide a valid email address.');
+      return;
+    }
   
     // Validate rates (non-negative)
     if (parseFloat(formData.rate) < 0 || parseFloat(formData.rate_cpm) < 0) {
@@ -180,6 +190,8 @@ export function CreatorForm() {
             deliverables: formData.deliverables,
             rate: parseFloat(formData.rate), // Convert to numeric
             rate_cpm: parseFloat(formData.rate_cpm), // Convert to numeric
+            cpm_cap: (formData.cpm_cap == 0 || formData.cpm_cap == null) ? null : parseFloat(formData.cpm_cap),
+            email:formData.email,
             personal_statement: formData.personal_statement,
             selected: formData.selected,
             discord_id: formData.discord_id, // No need to convert to number
@@ -250,6 +262,20 @@ export function CreatorForm() {
             id="name"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-800">
+            Email (MUST BE A VALID EMAIL) - Ex. hi@hotslicer.com
+          </label>
+          <input
+            type="text"
+            id="name"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
             required
           />
@@ -356,10 +382,30 @@ export function CreatorForm() {
                 disabled={!pricingModel.includes('CPM (first 30d)')}
               />
             </div>
-            <span className="text-gray-800">CPM</span>
+            <span className="text-gray-800">CPM, capped at {" "}</span>
+            <div className="flex items-center flex-1">
+              <span className="mr-2">$</span>
+              <input
+                type="number"
+                id="cpm_cap"
+                value={formData.cpm_cap}
+                onChange={(e) => setFormData({ ...formData, cpm_cap: e.target.value })}
+                className={`mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5 ${
+                  !pricingModel.includes('CPM (first 30d)') ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                placeholder="CPM"
+                step="any"
+                min="0"
+                required
+                disabled={!pricingModel.includes('CPM (first 30d)')}
+              />
+            </div>
           </div>
           <p className="text-gray-600 mt-1">
             You can put whatever rate you want, but if it's too high, clients may not select you.
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Enter <span className="font-bold">0</span> for no CPM cap.
           </p>
         </div>
 

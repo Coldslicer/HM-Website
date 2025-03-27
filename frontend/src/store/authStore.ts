@@ -120,7 +120,6 @@ export const useAuthStore = create<AuthState>((set) => {
         password,
       });
       if (error) {
-        alert("Invalid login credentials!");
         console.error("Email sign-in error:", error);
       } else {
         set({ user: data.user });
@@ -135,7 +134,6 @@ export const useAuthStore = create<AuthState>((set) => {
       });
 
       if (error) {
-        alert("Sign up failed! Account might already exist.");
         console.error("Sign-up error:", error);
       } else {
         set({ user: data.user });
@@ -153,7 +151,6 @@ export const useAuthStore = create<AuthState>((set) => {
       });
 
       if (error) {
-        alert("Sign-in failed!");
         console.error("OAuth Sign-in error:", error);
       } else if (data?.url) {
         window.location.href = data.url;

@@ -10,6 +10,7 @@ import { Hero } from "./pages/Hero";
 import { Landing } from "./pages/Landing";
 import Login from "./pages/Login";
 import { CreatorSharingPage } from "./pages/CreatorSharingPage";
+import { CreatorContract } from "./pages/CreatorContract";
 
 /* ================ [ APP ] ================ */
 
@@ -39,8 +40,13 @@ function App() {
 
         <Route path="/creator-form" element={<CreatorForm />} />
         <Route
-          path="/creatorsharing/:campaignId"
+          path="/creator-sharing/:campaignId"
           element={<CreatorSharingPage />}
+        />
+
+        <Route
+          path="/creator-contract"
+          element={<CreatorContract />}
         />
 
         <Route path="/home" element={<Hero />} />

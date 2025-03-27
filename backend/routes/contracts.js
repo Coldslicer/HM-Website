@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import { SUPABASE_CLIENT } from '../util/setup.js';
+import { DISCORD_CLIENT, SUPABASE_CLIENT } from '../util/setup.js';
 
 import fs from 'fs';
 import path from 'path';
@@ -208,9 +208,8 @@ router.get('/client-form', async (req, res) => {
     });
 
     const clientEmbedSrc = response.data[0].embed_src;
-    const external_id = response.data[0].external_id;
 
-    res.json({ embed_src: clientEmbedSrc, external_id });
+    res.json({ embed_src: clientEmbedSrc, external_id: campaign_id });
 
     // Update Supabase with the contract JSON
     const { error: updateError } = await SUPABASE_CLIENT
@@ -229,6 +228,163 @@ router.get('/client-form', async (req, res) => {
     }
   }
 });
+
+router.post('/creator-forms', async (req, res) => {
+  const { campaign_id } = req.body; // Using req.body to retrieve the campaign_id
+
+  // Validate inputs
+  if (!campaign_id) {
+    console.log('query did not provide campaign_id');
+    return res.status(400).json({ error: 'Campaign ID is required' });
+  }
+
+  try {
+    // Fetch creators who are selected for the campaign
+    const { data: creatorsData, error: fetchCreatorsError } = await SUPABASE_CLIENT
+      .from('campaign_creators')
+      .select('id, campaign_id, channel_name, deliverables, rate, rate_cpm, channel_url, name, discord_id, webhook_url, email')
+      .eq('campaign_id', campaign_id)
+      .eq('selected', true); // Only selected creators
+
+    if (fetchCreatorsError) {
+      console.error('Error fetching creators data:', fetchCreatorsError.message);
+      return res.status(500).json({ error: 'Failed to fetch creator data' });
+    }
+
+    // Check if creators data exists
+    if (!creatorsData || creatorsData.length === 0) {
+      console.log('No selected creators found for the given campaign_id');
+      return res.status(400).json({ error: 'No selected creators found for the provided campaign_id' });
+    }
+
+    // Fetch campaign data using campaign_id
+    const { data: campaignData, error: fetchCampaignError } = await SUPABASE_CLIENT
+      .from('campaigns')
+      .select('date, brief_url, company_name')
+      .eq('id', campaign_id)
+      .single();
+
+    if (fetchCampaignError) {
+      console.error('Error fetching campaign data:', fetchCampaignError.message);
+      return res.status(500).json({ error: 'Failed to fetch campaign data' });
+    }
+
+    // Check if campaign data exists
+    if (!campaignData) {
+      console.log('No campaign data found for the given campaign_id');
+      return res.status(400).json({ error: 'No campaign data found for the provided campaign_id' });
+    }
+
+    // Process each selected creator and submit the contract for them
+    for (const creatorData of creatorsData) {
+      try {
+        // Prepare submission data for the creator contract
+        const submissionData = {
+          template_id: 772682,  // Assuming this template ID is correct for creator contracts
+          send_email: false,
+          external_id: creatorData.id,
+          submitters: [
+            {
+              email: process.env.AGENCY_EMAIL,  // Assuming the agency email is used here
+              role: 'agency',
+              fields: [
+                {
+                  name: 'Handle',
+                  default_value: creatorData.channel_name || 'No handle provided', // Use the creator's channel name
+                },
+                {
+                  name: 'URL',
+                  default_value: creatorData.channel_url || 'No URL provided', // Use the creator's channel URL
+                },
+                {
+                  name: 'Brand',
+                  default_value: campaignData.company_name || 'Unknown Brand',  // Use the campaign's company name
+                },
+                {
+                  name: 'Brief',
+                  default_value: campaignData.brief_url || 'No brief URL provided',  // Use the campaign's brief URL
+                },
+                {
+                  name: 'Deliverable',
+                  default_value: creatorData.deliverables || 'No deliverables specified',  // Use creator's deliverables if available
+                },
+                {
+                  name: 'Rate',
+                  default_value: creatorData.rate ? `$${creatorData.rate}` : 'TBD',  // Use creator's rate if available
+                },
+                {
+                  name: 'Platform',
+                  default_value: 'YouTube',  // Default to YouTube
+                },
+              ],
+            },
+            {
+              email: creatorData.email,
+              name: creatorData.name,
+              role: 'creator',
+              external_id: creatorData.id,
+            },
+          ],
+        };
+
+        // Make the API request to create the submission for the creator
+        const response = await axios.request({
+          method: 'POST',
+          url: 'https://api.docuseal.com/submissions',
+          headers: {
+            'X-Auth-Token': API_KEY,
+            'content-type': 'application/json',
+          },
+          data: submissionData,
+        });
+
+        // Get the embed source (link to sign)
+        const embedSrc = response.data[1]?.embed_src;
+        if (embedSrc) {
+          // Update Supabase with the contract embed link for the creator
+          const { error: updateError } = await SUPABASE_CLIENT
+            .from('campaign_creators')
+            .update({ contract_embed_link: embedSrc })
+            .eq('id', creatorData.id);
+
+          if (updateError) {
+            console.error('Error updating Supabase with embed link:', updateError.message);
+          } else {
+            console.log('Supabase updated with contract embed link successfully for creator:', creatorData.id);
+          }
+
+          // If discord_id and webhook_url exist, send the Discord ping
+          if (creatorData.discord_id && creatorData.webhook_url) {
+            const discordMessage = {
+              content: `[hidden from clients]\n<@${creatorData.discord_id}>, please review and sign the [creator contract](https://warm.hotslicer.com/creator-contract?creatorId=${creatorData.id})`,
+            };
+
+            try {
+              // Send the message to the Discord webhook
+              await axios.post(creatorData.webhook_url, discordMessage);
+              console.log('Discord ping sent successfully for creator:', creatorData.id);
+            } catch (discordError) {
+              console.error('Error sending Discord ping:', discordError.message);
+            }
+          }
+
+        } else {
+          console.error('Failed to retrieve the contract link for creator:', creatorData.id);
+        }
+      } catch (error) {
+        console.error('An error occurred while creating the contract for creator:', creatorData.id, error);
+      }
+    }
+
+    // Send a success response
+    res.json({ message: 'Contracts submitted for all selected creators successfully' });
+  } catch (error) {
+    console.error('An error occurred while processing the creator contracts:', error.message);
+    res.status(500).json({ error: 'An error occurred during contract creation for creators' });
+  }
+});
+
+
 
 
 export default router;

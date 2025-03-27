@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useCampaignStore } from '../../store/campaignStore';
 import { DocusealForm } from '@docuseal/react';
 import { SUPABASE_CLIENT } from '../../lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 export const Contract = () => {
   const { currentCampaign } = useCampaignStore();
@@ -160,7 +161,7 @@ export const Contract = () => {
               });
               currentCampaign.status = 'contract_signed';
               await SUPABASE_CLIENT.from('campaigns').update({ status: 'contract_signed' }).eq('id', currentCampaign.id);
-              
+
               if (selectedOption === 'fully_managed') {
                 await axios.post('/api/messages/sendDM', {
                   message: `FULLY MANAGED CAMPAIGN SIGNED: ${currentCampaign.name}`,
@@ -168,6 +169,10 @@ export const Contract = () => {
                   type: 'staff',
                 });
               }
+              
+              await axios.post('/api/contracts/creator-forms', {
+                campaign_id: currentCampaign.id,
+              });
             }}
           />
         </div>

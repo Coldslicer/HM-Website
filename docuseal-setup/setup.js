@@ -6,8 +6,9 @@ after running this script, you will get a document ID
 configure the document ID in the contracts script in the backend
 */
 
-const axios = require('axios');
-const fs = require('fs');
+
+import axios from 'axios';
+import fs from 'fs';
 
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -23,12 +24,13 @@ const API_KEY = process.env.DOCUSEAL_API_KEY;
 var documentId;
 
 // Read the file synchronously and encode it to base64
-const filePath = './templates/CLIENT Contract Template.pdf'; // Replace this with your file path
+const filePath = './templates/INFLUENCER CONTRACT WITH FIELDS.pdf'; // Replace this with your file path
 const fileData = fs.readFileSync(filePath, { encoding: 'base64' });
 
 axios.post('https://api.docuseal.com/templates/pdf', {
-  name: 'Client Agreement', // Template name
+  name: 'Warm Creator Contract', // Template name
   file: fileData, // Pass the encoded file data here
+  folder_name: 'Creator Contracts',
 }, {
   headers: {
     'X-Auth-Token': API_KEY,

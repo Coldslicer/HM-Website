@@ -99,11 +99,12 @@ const fetchRoles = async (serverId: string | null) => {
   
         // If there's only one server, automatically set the campaign's server_id.
         if (serversArray.length === 1) {
+          setSelectedServer(serversArray[0]);
           setFormData(prev => ({ ...prev, server_id: serversArray[0] }));
           // Optionally, update the currentCampaign if it exists.
-          if (currentCampaign && !currentCampaign.server_id) {
-            setCurrentCampaign(prev => ({ ...prev, server_id: serversArray[0] }));
-          }
+          // if (currentCampaign && !currentCampaign.server_id) {
+          //   setCurrentCampaign(prev => ({ ...prev, server_id: serversArray[0] }));
+          // }
         }
       }
     }
@@ -280,7 +281,7 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
     }));
   };
 
-  const handleRoleToggle = (value: 'regular' | 'large') => {
+  const handleRoleToggle = (value) => {
     setFormData((prev) => ({
       ...prev,
       per_influencer_budget: prev.per_influencer_budget.includes(value)
@@ -608,7 +609,7 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
         {/* Influencer Size */}
         {Array.isArray(roles) && roles.length > 0 && (
   <div>
-    <label className="block text-sm font-medium text-black-200 mb-2">Influencer Size</label>
+    <label className="block text-sm font-medium text-black-200 mb-2">Influencer Types</label>
     <div className="grid grid-cols-2 gap-4">
       {roles.map((role) => (
         <div

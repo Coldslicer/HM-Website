@@ -25,7 +25,7 @@ export const CreatorSelection: React.FC<CreatorSelectionProps> = ({ campaignId }
   const fetchCreators = async () => {
     const { data: creatorsData } = await SUPABASE_CLIENT
       .from('campaign_creators')
-      .select('id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement')
+      .select('id, channel_url, channel_name, rate, rate_cpm, cpm_cap, selected, personal_statement')
       .eq('campaign_id', campaignId || currentCampaign?.id);
 
     const creatorsWithChannelData = await Promise.all(
@@ -156,6 +156,7 @@ export const CreatorSelection: React.FC<CreatorSelectionProps> = ({ campaignId }
               <th className="py-3 px-4 text-left w-1/6">Channel Link</th>
               <th className="py-3 px-4 text-right w-1/6">Flat Rate</th>
               <th className="py-3 px-4 text-right w-1/6">CPM Rate</th>
+              <th className="py-3 px-4 text-right w-1/6">CPM Cap</th>
               <th className="py-3 px-4 text-right w-1/6">Followers/Subs</th>
               <th className="py-3 px-4 text-right w-1/6">Avg Views</th>
               <th className="py-3 px-4 text-right w-1/6">Country</th>
@@ -177,6 +178,7 @@ export const CreatorSelection: React.FC<CreatorSelectionProps> = ({ campaignId }
                 </td>
                 <td className="py-3 px-4 text-right">${formatNumber(creator.rate)}</td>
                 <td className="py-3 px-4 text-right">${formatNumber(creator.rate_cpm)}</td>
+                <td className="py-3 px-4 text-right">{creator.cpm_cap ? ('$'+formatNumber(creator.cpm_cap)) : 'None'}</td>
                 <td className="py-3 px-4 text-right">{formatNumber(creator.subscriberCount)}</td>
                 <td className="py-3 px-4 text-right">{formatNumber(creator.averageViews)}</td>
                 <td className="py-3 px-4 text-right">{creator.country}</td>
@@ -207,7 +209,11 @@ export const CreatorSelection: React.FC<CreatorSelectionProps> = ({ campaignId }
         return acc + expectedCPM;
       }, 0))
     )}
-    {' '} Expected CPM
+    {' '} Expected CPM, ${formatNumber(
+      Math.round(selectedCreators.reduce((acc, creator) => {
+        return acc + (creator.cpm_cap ? creator.cpm_cap : 0);
+      }, 0))
+    )} Total CPM Cap
   </span>
   {!campaignId && currentCampaign?.status === 'brief_submitted' && (
     <button 
@@ -243,7 +249,7 @@ export const CreatorSelection: React.FC<CreatorSelectionProps> = ({ campaignId }
   <span className="mr-2">🔗 Share this page:</span>
   <button
     onClick={() => {
-      navigator.clipboard.writeText(`${window.location.origin}/creatorsharing/${campaignId || currentCampaign?.id}`);
+      navigator.clipboard.writeText(`${window.location.origin}/creator-sharing/${campaignId || currentCampaign?.id}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     }}

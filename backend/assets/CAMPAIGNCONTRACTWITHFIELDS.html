@@ -15,7 +15,17 @@
       <p class="c22"><span class="c14 c3">Effective Date</span></p>
     </td>
     <td class="c12" colspan="1" rowspan="1" style="word-wrap: break-word; white-space: normal; max-width: 50%; text-align: center;">
-      <p class="c22"><span class="c14 c6"><%= campaign.date %></span></p>
+      <p class="c22"><span class="c14 c6"><p>
+        <date-field 
+          name="Date2" 
+          role="client" 
+          font-size="11" 
+          default="{{date}}"
+          readonly="true"
+          format="MM/DD/YYYY"
+          style="width:150px; height:11px; display:inline-block;">
+        </date-field>
+      </p></span></p>
     </td>
   </tr>
   <tr class="c19">

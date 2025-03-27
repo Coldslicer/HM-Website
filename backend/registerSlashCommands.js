@@ -32,14 +32,6 @@ const commands = [
             .setDescription('The link to your unlisted video or online draft folder')
             .setRequired(true)
     ),
-  new SlashCommandBuilder()
-    .setName('final')
-    .setDescription('Submit your final draft link')
-    .addStringOption(option => 
-      option.setName('link')
-            .setDescription('The link to your unlisted video or online draft folder')
-            .setRequired(true)
-    ),
     new SlashCommandBuilder()
     .setName('live')
     .setDescription('Submit your LIVE video link after you\'re approved for posting')
