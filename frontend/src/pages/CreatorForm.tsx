@@ -11,7 +11,7 @@ const initialFormData = {
   deliverables: '', // Deliverables (multiple choice)
   rate: '', // Flat rate (numeric)
   rate_cpm: '', // CPM rate (numeric)
-  cpm_cap: null,
+  cpm_cap: '',
   personal_statement: '', // Personal Statement (text)
   selected: false, // Selected (bool)
   discord_id: "", // Discord ID (text)
@@ -440,11 +440,36 @@ export function CreatorForm() {
                     }
                   />
                 </div>
-                <span className="text-gray-800">CPM</span>
+                <span className="text-gray-800">CPM, Capped at{" "}</span>
+                <div className="flex items-center flex-1">
+                  <span className="mr-2">$</span>
+                  <input
+                    type="number"
+                    id="cpm_cap"
+                    value={formData.cpm_cap}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cpm_cap: e.target.value })
+                    }
+                    className={`mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5 ${
+                      !pricingModel.includes("CPM (first 30d)") &&
+                      !pricingModel.includes("Hybrid")
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                    placeholder="CPM"
+                    step="any"
+                    min="0"
+                    required
+                    disabled={
+                      !pricingModel.includes("CPM (first 30d)") &&
+                      !pricingModel.includes("Hybrid")
+                    }
+                  />
+                </div>
               </div>
               <p className="text-gray-600 mt-1">
                 You can put whatever rate you want, but if it's too high,
-                clients may not select you.
+                clients may not select you. Enter 0 CPM cap for unlimited.
               </p>
             </div>
 

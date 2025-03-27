@@ -176,6 +176,7 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
               </th>
               <th className="py-3 px-4 text-center">Flat Rate</th>
               <th className="py-3 px-4 text-center">CPM Rate</th>
+              <th className="py-3 px-4 text-center">CPM Cap</th>
               <th className="py-3 px-4 text-center">Subscribers</th>
               <th className="py-3 px-4 text-center">Avg Views</th>
               <th className="py-3 px-4 text-center">Country</th>
@@ -218,6 +219,9 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
                 </td>
                 <td className="py-3 px-4 text-center">
                   ${formatNum(creator.rate_cpm)}
+                </td>
+                <td className="py-3 px-4 text-center">
+                  ${formatNum(creator.cpm_cap > 0 ? creator.cpm_cap : 'NONE')}
                 </td>
                 <td className="py-3 px-4 text-center">
                   {formatNum(creator.subscriberCount)}
