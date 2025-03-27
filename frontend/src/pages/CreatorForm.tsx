@@ -378,7 +378,8 @@ export function CreatorForm() {
                       setFormData({ ...formData, rate: e.target.value })
                     }
                     className={`mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5 ${
-                      !pricingModel.includes("Flat-rate")
+                      !pricingModel.includes("Flat-rate") &&
+                      !pricingModel.includes("Hybrid")
                         ? "opacity-50 cursor-not-allowed"
                         : ""
                     }`}
@@ -386,7 +387,10 @@ export function CreatorForm() {
                     step="any"
                     min="0"
                     required
-                    disabled={!pricingModel.includes("Flat-rate")}
+                    disabled={
+                      !pricingModel.includes("Flat-rate") &&
+                      !pricingModel.includes("Hybrid")
+                    }
                   />
                 </div>
                 <span className="text-gray-800">+</span>
@@ -400,7 +404,8 @@ export function CreatorForm() {
                       setFormData({ ...formData, rate_cpm: e.target.value })
                     }
                     className={`mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5 ${
-                      !pricingModel.includes("CPM (first 30d)")
+                      !pricingModel.includes("CPM (first 30d)") &&
+                      !pricingModel.includes("Hybrid")
                         ? "opacity-50 cursor-not-allowed"
                         : ""
                     }`}
@@ -408,7 +413,10 @@ export function CreatorForm() {
                     step="any"
                     min="0"
                     required
-                    disabled={!pricingModel.includes("CPM (first 30d)")}
+                    disabled={
+                      !pricingModel.includes("CPM (first 30d)") &&
+                      !pricingModel.includes("Hybrid")
+                    }
                   />
                 </div>
                 <span className="text-gray-800">CPM</span>
@@ -461,34 +469,24 @@ export function CreatorForm() {
                   >
                     I agree to these terms:
                   </label>
-                  <ul className="mt-2 text-sm text-gray-600 space-y-1">
-                    <li>
-                      • I will follow through with the listed rates and
-                      deliverables to the best of my ability.
-                    </li>
-                    <li>
-                      • I understand that this sponsorship is not guaranteed and
-                      is up to the brands.
-                    </li>
-                    <li>
-                      • Hotslicer Media will take a 15% cut from the
-                      sponsorship.
-                    </li>
+                  <ul className="mt-2 space-y-2 text-sm text-gray-600">
+                    <li>You are available for the campaign dates.</li>
+                    <li>You understand the deliverable requirements.</li>
+                    <li>You will work with the campaign's guidelines.</li>
                   </ul>
                 </div>
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="w-full py-2 px-4 mt-6 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-            >
-              Submit Interest
-            </button>
+            <div className="mt-6 flex justify-center">
+              <button
+                type="submit"
+                className="inline-flex justify-center items-center px-6 py-3 text-white bg-orange-500 hover:bg-orange-600 focus:ring-4 focus:ring-orange-300 focus:ring-opacity-50 rounded-md"
+              >
+                Submit
+              </button>
+            </div>
           </form>
-
-          {/* Add some empty space below the form */}
-          <div className="mt-8"></div>
         </>
       )}
     </div>

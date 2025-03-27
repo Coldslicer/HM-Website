@@ -197,7 +197,8 @@ ROUTER.post('/get-creators', async (req, res) => {
         flat_emailed,
         cpm_emailed,
         live_submitted,
-        cpm_cap
+        cpm_cap,
+        selected
       `)
       .eq('campaign_id', campaign_id);
 

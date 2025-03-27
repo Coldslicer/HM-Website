@@ -1,11 +1,11 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import CreatorSelection from "./dashboard/CreatorSelection";
+import Creators from "./dashboard/Creators";
 
 export const CreatorSharingPage: React.FC = () => {
   const { campaignId } = useParams<{ campaignId: string }>();
 
-  return <CreatorSelection campaignId={campaignId} />;
+  return <Creators campaignId={campaignId} />;
 };
 
 export default CreatorSharingPage;

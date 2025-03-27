@@ -2,10 +2,10 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Sidebar } from "../components/dashboard/Sidebar";
 import Welcome from "./dashboard/Welcome";
 import { BriefForm } from "./dashboard/BriefForm";
-import { CreatorSelection } from "./dashboard/CreatorSelection";
+import Creators from "./dashboard/Creators";
 import { Messaging } from "./dashboard/Messaging";
-import { Contract } from "./dashboard/Contract";
-import { CreatorTimeline } from "./dashboard/Timeline";
+import Contract from "./dashboard/Contract";
+import Timeline from "./dashboard/Timeline";
 import Payment from "./dashboard/Payment";
 
 export function Dashboard() {
@@ -18,10 +18,10 @@ export function Dashboard() {
 
           <Route path="welcome" element={<Welcome />} />
           <Route path="brief" element={<BriefForm />} />
-          <Route path="creators" element={<CreatorSelection />} />
+          <Route path="creators" element={<Creators />} />
           <Route path="messaging" element={<Messaging />} />
           <Route path="contract" element={<Contract />} />
-          <Route path="timeline" element={<CreatorTimeline />} />
+          <Route path="timeline" element={<Timeline />} />
           <Route path="payment" element={<Payment />} />
         </Routes>
       </div>

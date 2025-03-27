@@ -172,8 +172,6 @@ export function BriefForm() {
     formData.niches = [];
   }, [selectedServer]);
 
-  /* ================ [ HANDLERS ] ================ */
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
