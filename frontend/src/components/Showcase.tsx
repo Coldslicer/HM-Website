@@ -1,7 +1,7 @@
 /* ================ [ IMPORTS ] ================ */
 
 // React components
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 // Utility functions
 import { cn } from "../lib/utility";
@@ -64,7 +64,9 @@ function Showcase() {
                   index === currentIndex ? "opacity-100" : "opacity-0"
                 )}
               >
-                <p className="text-sm font-bold text-gray-600">{image.caption}</p>
+                <p className="text-sm font-bold text-gray-600">
+                  {image.caption}
+                </p>
               </div>
             </div>
           ))}

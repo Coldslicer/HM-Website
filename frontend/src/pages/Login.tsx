@@ -4,6 +4,8 @@ import { SUPABASE_CLIENT } from "../lib/supabase";
 import { useAuthStore } from "../store/authStore";
 import { Lock, Mail, Eye, EyeOff, Check, LogIn } from "lucide-react";
 
+/* ================ [ LOGIN ] ================ */
+
 function Login() {
   const { signInWithEmail, signUpWithEmail, signInWithProvider } = useAuthStore();
   const navigate = useNavigate();
@@ -227,7 +229,7 @@ function Login() {
               </a>{" "}
               and{" "}
               <a
-                href="https://hotslicer.com/warmprivacypolicy"
+                href="https://hotslicer.com/warmprivacypolicy/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-orange-500 hover:underline"

@@ -1,10 +1,10 @@
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
-import { Campaign } from '../types'
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { Campaign } from "../types";
 
 interface CampaignState {
-  currentCampaign: Campaign | null
-  setCurrentCampaign: (campaign: Campaign | null) => void
+  currentCampaign: Campaign | null;
+  setCurrentCampaign: (campaign: Campaign | null) => void;
 }
 
 export const useCampaignStore = create<CampaignState>()(
@@ -14,8 +14,8 @@ export const useCampaignStore = create<CampaignState>()(
       setCurrentCampaign: (campaign) => set({ currentCampaign: campaign }),
     }),
     {
-      name: 'campaign-storage',
+      name: "campaign-storage",
       storage: createJSONStorage(() => localStorage), // Forces usage of localStorage
     }
   )
-)
+);

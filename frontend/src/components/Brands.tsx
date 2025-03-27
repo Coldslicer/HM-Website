@@ -1,8 +1,3 @@
-/* ================ [ IMPORTS ] ================ */
-
-// React components
-import React from "react";
-
 /* ================ [ COMPONENT ] ================ */
 
 // Brands component
