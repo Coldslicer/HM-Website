@@ -22,7 +22,6 @@ function Login() {
   useEffect(() => {
     SUPABASE_CLIENT.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        useAuthStore.getState().setUser(user);
         navigate("/dashboard");
       }
     });
