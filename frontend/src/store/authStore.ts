@@ -38,6 +38,8 @@ export const useAuthStore = create<AuthState>((set) => {
       data: { session },
       error,
     } = await SUPABASE_CLIENT.auth.getSession();
+  
+    console.log("Session check:", session);
 
     if (error) {
       console.error("Error fetching session:", error);
@@ -49,17 +51,17 @@ export const useAuthStore = create<AuthState>((set) => {
   // Listen for auth changes
   SUPABASE_CLIENT.auth.onAuthStateChange(async (event, session) => {
     console.log(`Auth event: ${event}`, session);
-
+    
     if (session) {
-      localStorage.setItem("supabase_session", JSON.stringify(session)); // Store session manually
+      localStorage.setItem("supabase_session", JSON.stringify(session));
+      set({ user: session.user });
+  
+      if (event === "SIGNED_IN" && session.user) {
+        await ensureClientExists(session.user);
+      }
     } else {
-      localStorage.removeItem("supabase_session"); // Remove session on sign-out
-    }
-
-    set({ user: session?.user || null });
-
-    if (event === "SIGNED_IN" && session?.user) {
-      setTimeout(() => ensureClientExists(session.user), 0);
+      localStorage.removeItem("supabase_session");
+      set({ user: null });
     }
   });
 
@@ -150,14 +152,17 @@ export const useAuthStore = create<AuthState>((set) => {
         provider,
         options: {
           redirectTo: `${window.location.origin}/dashboard`,
-          skipBrowserRedirect: true,
+          skipBrowserRedirect: false,
         },
       });
+
+      console.log("OAuth response:", data, error);
 
       if (error) {
         console.error("OAuth Sign-in error:", error);
       } else if (data?.url) {
         window.location.href = data.url;
+        checkUser();
       }
 
       return { error }
