@@ -14,7 +14,7 @@ const Welcome = () => {
 
         <div className="space-y-6 w-full">
           {/* Step 1: Watch Video */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          {/*<div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">
               Watch the Introduction - 1 / 5
             </h2>
@@ -26,12 +26,12 @@ const Welcome = () => {
                 allowFullScreen
               ></iframe>
             </div>
-          </div>
+          </div> */}
 
           {/* Step 2: Schedule a Call */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">
-              Optionally Talk with our CEO - 2 / 5
+              Optionally Talk with our CEO - 1 / 4
             </h2>
             <div className="rounded-lg overflow-hidden border border-gray-300 shadow-md relative invert-calcom w-full">
               <div className="invert-calcom">
@@ -59,7 +59,7 @@ const Welcome = () => {
           {/* Step 3: Write a Brief */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">
-              Write your campaign brief - 3 / 5
+              Write your campaign brief - 2 / 4
             </h2>
             <p className="mb-4">
               Start by drafting your campaign requirements using our simple
@@ -78,7 +78,7 @@ const Welcome = () => {
           {/* Step 4: Enter Campaign Details */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">
-              Fill out our brief form - 4 / 5
+              Fill out our brief form - 3 / 4
             </h2>
             <p className="mb-4">
               Submit your finalized brief through our form to begin matching
@@ -96,7 +96,7 @@ const Welcome = () => {
           {/* Step 5: Ready to See Creators */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">
-              Explore potential creators - 5 / 5
+              Explore potential creators - 4 / 4
             </h2>
             <p className="mb-4">
               Once your brief is approved, discover and connect with creators
