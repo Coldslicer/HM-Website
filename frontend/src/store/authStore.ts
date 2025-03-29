@@ -125,6 +125,8 @@ export const useAuthStore = create<AuthState>((set) => {
         set({ user: data.user });
         localStorage.setItem("supabase_session", JSON.stringify(data.session)); // Store session
       }
+
+      return { error }
     },
 
     signUpWithEmail: async (email, password) => {
@@ -139,6 +141,8 @@ export const useAuthStore = create<AuthState>((set) => {
         set({ user: data.user });
         localStorage.setItem("supabase_session", JSON.stringify(data.session));
       }
+
+      return { error }
     },
 
     signInWithProvider: async (provider) => {
@@ -155,6 +159,8 @@ export const useAuthStore = create<AuthState>((set) => {
       } else if (data?.url) {
         window.location.href = data.url;
       }
+
+      return { error }
     },
 
     signOut: async () => {
