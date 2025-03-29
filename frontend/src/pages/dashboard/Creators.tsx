@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useCampaignStore } from "../../store/campaignStore";
 import { SUPABASE_CLIENT } from "../../lib/supabase";
-import { Eye, Youtube } from "lucide-react";
+import { Eye, Youtube, Share } from "lucide-react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { formatNum } from "../../lib/utility";
@@ -120,11 +120,12 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
 
   const handleSharePage = () => {
     navigator.clipboard.writeText(
-      `${window.location.origin}/creatorsharing/${
+      `${window.location.origin}/creator-sharing/${
         campaignId || currentCampaign?.id
       }`
     );
     setCopied(true);
+    alert("Link copied to clipboard!");
     setTimeout(() => setCopied(false), 1500);
   };
 
@@ -221,7 +222,7 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
                   ${formatNum(creator.rate_cpm)}
                 </td>
                 <td className="py-3 px-4 text-center">
-                  ${formatNum(creator.cpm_cap > 0 ? creator.cpm_cap : 'NONE')}
+                  ${formatNum(creator.cpm_cap > 0 ? creator.cpm_cap : "NONE")}
                 </td>
                 <td className="py-3 px-4 text-center">
                   {formatNum(creator.subscriberCount)}
@@ -275,15 +276,22 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
                 Finalize Creators
               </button>
             )}
-
-            {currentCampaign?.status !== "brief_submitted" && (
-              <button
-                onClick={handleSharePage}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-md transition min-w-[140px]"
-              >
-                {copied ? "Link copied!" : "Share this page"}
-              </button>
-            )}
+            <button
+              onClick={handleSharePage}
+              className={`bg-orange-500 hover:bg-orange-600 text-white rounded-md transition ${
+                currentCampaign?.status === "brief_submitted"
+                  ? "p-2"
+                  : "px-4 py-2 min-w-[140px]"
+              }`}
+            >
+              {currentCampaign?.status === "brief_submitted" ? (
+                <Share className="w-5 h-5" />
+              ) : copied ? (
+                "Link copied!"
+              ) : (
+                "Share this page"
+              )}
+            </button>
           </div>
         </div>
       </div>
