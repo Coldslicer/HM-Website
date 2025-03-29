@@ -5,7 +5,7 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import { BetaTest } from "./pages/BetaTest";
 import { CreatorForm } from "./pages/CreatorForm";
-import { Dashboard } from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard";
 import { Hero } from "./pages/Hero";
 import { Landing } from "./pages/Landing";
 import Login from "./pages/Login";
@@ -44,10 +44,7 @@ function App() {
           element={<CreatorSharingPage />}
         />
 
-        <Route
-          path="/creator-contract"
-          element={<CreatorContract />}
-        />
+        <Route path="/creator-contract" element={<CreatorContract />} />
 
         <Route path="/home" element={<Hero />} />
       </Routes>

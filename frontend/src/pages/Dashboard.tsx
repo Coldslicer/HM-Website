@@ -1,3 +1,8 @@
+/* ================ [ IMPORTS ] ================ */
+
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { SUPABASE_CLIENT } from "../lib/supabase";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Sidebar } from "../components/dashboard/Sidebar";
 import Welcome from "./dashboard/Welcome";
@@ -8,7 +13,23 @@ import Contract from "./dashboard/Contract";
 import Timeline from "./dashboard/Timeline";
 import Payment from "./dashboard/Payment";
 
-export function Dashboard() {
+/* ================ [ DASHBOARD ] ================ */
+
+function Dashboard() {
+  // Navigate hook
+  const navigate = useNavigate();
+
+  /* ================ [ METHODS ] ================ */
+
+  // Auto redirect if session doesn't exist
+  useEffect(() => {
+    SUPABASE_CLIENT.auth.getUser().then(({ data }) => {
+      if (!data.user) navigate("/login");
+    });
+  }, [navigate]);
+
+  /* ================ [ COMPONENT ] ================ */
+
   return (
     <div className="flex">
       <Sidebar />
@@ -28,3 +49,7 @@ export function Dashboard() {
     </div>
   );
 }
+
+/* ================ [ EXPORTS ] ================ */
+
+export default Dashboard;

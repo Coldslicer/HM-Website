@@ -1,3 +1,5 @@
+/* ================ [ IMPORTS ] ================ */
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SUPABASE_CLIENT } from "../lib/supabase";
@@ -7,89 +9,148 @@ import { Lock, Mail, Eye, EyeOff, Check, LogIn } from "lucide-react";
 /* ================ [ LOGIN ] ================ */
 
 function Login() {
-  const { signInWithEmail, signUpWithEmail, signInWithProvider } = useAuthStore();
+  // Navigate hook
   const navigate = useNavigate();
 
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true); // Default to true in sign-up
-  const [agreeTerms, setAgreeTerms] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState(""); // Error message state
+  // State variables
+  const [isSignUp, setIsSignUp] = useState(false); // Sign up / sign in
+  const [email, setEmail] = useState(""); // Email input
+  const [password, setPassword] = useState(""); // Password input
+  const [showPassword, setShowPassword] = useState(false); // Show / hide password
+  const [rememberMe, setRememberMe] = useState(true); // Sesssion persistance
+  const [agreeTerms, setAgreeTerms] = useState(false); // Agree to terms (sign up)
+  const [errorMessage, setErrorMessage] = useState(""); // Error message
 
+  /* ================ [ METHODS ] ================ */
+
+  // Auto redirect if session exists
   useEffect(() => {
-    SUPABASE_CLIENT.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        navigate("/dashboard");
-      }
-    });
-  }, [navigate, rememberMe]);
+    // Check for user session
+    const checkSession = async () => {
+      const { data } = await SUPABASE_CLIENT.auth.getUser();
+      
+      // Redirect to dashboard
+      if (data?.user) navigate("/dashboard");
+    };
 
-  const clearErrorMessage = () => {
+    checkSession();
+  }, [navigate]);
+
+  // Display error message with timeout
+  const displayError = (message: string) => {
+    setErrorMessage(message);
     setTimeout(() => {
-      setErrorMessage(""); // Clear error message after timeout
+      setErrorMessage("");
     }, 5000); // Clear after 5 seconds
   };
 
-  const handleSubmit = async () => {
-    setLoading(true);
-    setErrorMessage(""); // Reset previous error messages
+  // Provider login handler
+  const providerLogin = async (provider: "google" | "discord") => {
+    // Get auth response
+    const { data, error } = await SUPABASE_CLIENT.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/login`,
+        skipBrowserRedirect: true,
+      },
+    });
 
-    if (isSignUp && !agreeTerms) {
-      setErrorMessage("You must agree to the Terms of Service and Privacy Policy to sign up.");
-      clearErrorMessage(); // Clear after timeout
-      setLoading(false);
+    // Error handling
+    if (error) {
+      displayError(error.message || "An unknown error occurred, please try again later");
       return;
     }
 
-    try {
-      if (isSignUp) {
-        const { error } = await signUpWithEmail(email, password);
-        if (error) {
-          setErrorMessage(error.message);
-          clearErrorMessage();
-          setLoading(false);
-          return;
-        }
+    // Redirect to dashboard
+    if (data?.url) window.location.href = data.url;
+  };
 
-        const ipResponse = await fetch("https://api.ipify.org?format=json");
-        const { ip } = await ipResponse.json();
-        await SUPABASE_CLIENT.from("tos_agreements").insert([{ ip_address: ip }]);
-      } else {
-        const { error } = await signInWithEmail(email, password);
-        if (error) {
-          setErrorMessage(error.message);
-          clearErrorMessage();
-          setLoading(false);
-          return;
-        }
-      }
+  // Email login handler
+  const emailLogin = async () => {
+    // Supabase response
+    let response;
 
-      const { data: { user }, error } = await SUPABASE_CLIENT.auth.getUser();
-      if (user) {
-        navigate("/dashboard");
-      } else {
-        setErrorMessage(error?.message || "An unknown error occurred.");
-        clearErrorMessage();
-      }
-    } catch (error) {
-      console.error("Unexpected error:", error);
-      setErrorMessage("An unexpected error occurred. Please try again later.");
-      clearErrorMessage();
+    // Sign up / sign in
+    if (isSignUp) {
+      response = await SUPABASE_CLIENT.auth.signUp({
+        email,
+        password,
+      });
+    } else {
+      response = await SUPABASE_CLIENT.auth.signInWithPassword({
+        email,
+        password,
+      });
     }
 
-    setLoading(false);
+    // Unpack response
+    const { data, error } = response;
+
+    // Error handling
+    if (error) {
+      displayError(error.message || "An unknown error occurred, please try again later");
+      return;
+    }
+
+    // Session persistence
+    useAuthStore.getState().setUser(data.user);
+    localStorage.setItem("supabase_session", JSON.stringify(data.session));
+
+    // Log IP address (sign up)
+    if (isSignUp) {
+      const ip = await (
+        await fetch("https://api.ipify.org?format=json")
+      ).json();
+      await SUPABASE_CLIENT.from("tos_agreements").insert([{ ip_address: ip }]);
+    }
   };
+
+  // Submit handler
+  const handleSubmit = async (_event: any, provider?: "google" | "discord") => {
+    // Reset error message
+    setErrorMessage("");
+
+    // Terms confirmation (sign up)
+    if (isSignUp && !agreeTerms) {
+      displayError(
+        "Please agree to the Terms of Service and Privacy Policy first"
+      );
+      return;
+    }
+
+    // Login logic
+    try {
+      if (provider) await providerLogin(provider);
+      else await emailLogin();
+
+      // Check user session
+      const { data, error } = await SUPABASE_CLIENT.auth.getUser();
+
+      // Redirect to dashboard
+      if (data.user) navigate("/dashboard");
+
+      // Error handling
+      if (error) {
+        displayError(error.message || "An unknown error occurred, please try again later");
+        return;
+      }
+    } catch (error) {
+      displayError("An unexpected error occurred, please try again later");
+      console.error("Unexpected error:", error);
+    }
+  };
+
+  /* ================ [ COMPONENT ] ================ */
 
   return (
     <div className="flex h-[calc(100vh-4rem)] items-start pt-12 justify-center bg-gray-100 p-4">
       <div className="w-full max-w-sm bg-white p-7 rounded-2xl shadow-md overflow-hidden">
+        {/* Login icon */}
         <div className="flex justify-center mb-5">
           <LogIn className="w-11 h-11 text-orange-500" />
         </div>
 
+        {/* Login title */}
         <h2 className="text-xl font-bold text-black mb-5 text-center">
           {isSignUp ? "Sign Up" : "Sign In"}
         </h2>
@@ -104,14 +165,7 @@ function Login() {
         {/* Google and Discord auth */}
         <div className="flex flex-col space-y-4 mb-5">
           <button
-            onClick={async () => {
-              if (isSignUp && !agreeTerms) {
-                setErrorMessage("You must agree to the Terms of Service and Privacy Policy first.");
-                clearErrorMessage();
-                return;
-              }
-              await signInWithProvider("google");
-            }}
+            onClick={(e) => handleSubmit(e, "google")}
             className="w-full h-11 flex items-center justify-center rounded-lg bg-white border border-gray-300 hover:bg-gray-100 transition"
           >
             <img
@@ -122,14 +176,7 @@ function Login() {
             <span className="text-gray-700 text-sm">Sign in with Google</span>
           </button>
           <button
-            onClick={async () => {
-              if (isSignUp && !agreeTerms) {
-                setErrorMessage("You must agree to the Terms of Service and Privacy Policy first.");
-                clearErrorMessage();
-                return;
-              }
-              await signInWithProvider("discord");
-            }}
+            onClick={(e) => handleSubmit(e, "discord")}
             className="w-full h-11 flex items-center justify-center rounded-lg bg-white border border-gray-300 hover:bg-gray-100 transition"
           >
             <img
@@ -160,6 +207,7 @@ function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+            required
           />
         </div>
 
@@ -173,6 +221,7 @@ function Login() {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm tracking-widest placeholder:tracking-normal placeholder:text-sm"
             style={{ letterSpacing: "0.1em" }}
+            required
           />
           <button
             onClick={() => setShowPassword(!showPassword)}
@@ -186,7 +235,7 @@ function Login() {
           </button>
         </div>
 
-        {/* Remember me (only shown in Sign In mode) */}
+        {/* Remember me (sign in) */}
         {!isSignUp && (
           <div className="flex items-center mb-5">
             <button
@@ -243,10 +292,7 @@ function Login() {
         {/* Sign in button */}
         <button
           onClick={handleSubmit}
-          disabled={loading || (isSignUp && !agreeTerms)}
-          className={`w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition mb-5 text-sm ${
-            (isSignUp && !agreeTerms) ? "cursor-not-allowed opacity-50" : ""
-          }`}
+          className={"w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition mb-5 text-sm"}
         >
           {isSignUp ? "Sign Up" : "Sign In"}
         </button>

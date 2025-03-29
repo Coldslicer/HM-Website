@@ -1,14 +1,18 @@
+/* ================ [ IMPORTS ] ================ */
+
 import { create } from "zustand";
 import { SUPABASE_CLIENT } from "../lib/supabase";
 import { useCampaignStore } from "./campaignStore";
+
+/* ================ [ TYPES ] ================ */
 
 interface AuthState {
   user: any;
   loading: boolean;
   setUser: (user: any) => void;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
-  signUpWithEmail: (email: string, password: string) => Promise<void>;
-  signInWithProvider: (provider: "google" | "discord") => Promise<void>;
+  // signInWithEmail: (email: string, password: string) => Promise<any>;
+  // signUpWithEmail: (email: string, password: string) => Promise<any>;
+  // signInWithProvider: (provider: "google" | "discord") => Promise<any>;
   signOut: () => Promise<void>;
 }
 
@@ -114,60 +118,58 @@ export const useAuthStore = create<AuthState>((set) => {
     loading: true,
     setUser: (user) => set({ user }),
 
-    signInWithEmail: async (email, password) => {
-      const { data, error } = await SUPABASE_CLIENT.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) {
-        console.error("Email sign-in error:", error);
-      } else {
-        set({ user: data.user });
-        localStorage.setItem("supabase_session", JSON.stringify(data.session)); // Store session
-      }
+    // signInWithEmail: async (email, password) => {
+    //   const { data, error } = await SUPABASE_CLIENT.auth.signInWithPassword({
+    //     email,
+    //     password,
+    //   });
+    //   if (error) {
+    //     console.error("Email sign-in error:", error);
+    //   } else {
+    //     set({ user: data.user });
+    //     localStorage.setItem("supabase_session", JSON.stringify(data.session)); // Store session
+    //   }
 
-      return { error }
-    },
+    //   return { error }
+    // },
 
-    signUpWithEmail: async (email, password) => {
-      const { data, error } = await SUPABASE_CLIENT.auth.signUp({
-        email,
-        password,
-      });
+    // signUpWithEmail: async (email, password) => {
+    //   const { data, error } = await SUPABASE_CLIENT.auth.signUp({
+    //     email,
+    //     password,
+    //   });
 
-      if (error) {
-        console.error("Sign-up error:", error);
-      } else {
-        set({ user: data.user });
-        localStorage.setItem("supabase_session", JSON.stringify(data.session));
-      }
+    //   if (!error) {
+    //     set({ user: data.user });
+    //     localStorage.setItem("supabase_session", JSON.stringify(data.session));
+    //   }
 
-      return { error }
-    },
+    //   return { error }
+    // },
 
-    signInWithProvider: async (provider) => {
-      const { data, error } = await SUPABASE_CLIENT.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-          skipBrowserRedirect: true,
-        },
-      });
+    // signInWithProvider: async (provider) => {
+    //   const { data, error } = await SUPABASE_CLIENT.auth.signInWithOAuth({
+    //     provider,
+    //     options: {
+    //       redirectTo: `${window.location.origin}/dashboard`,
+    //       skipBrowserRedirect: true,
+    //     },
+    //   });
 
-      if (error) {
-        console.error("OAuth Sign-in error:", error);
-      } else if (data?.url) {
-        window.location.href = data.url;
-      }
+    //   if (error) {
+    //     console.error("OAuth Sign-in error:", error);
+    //   } else if (data?.url) {
+    //     window.location.href = data.url;
+    //   }
 
-      return { error }
-    },
+    //   return { error }
+    // },
 
     signOut: async () => {
       await SUPABASE_CLIENT.auth.signOut();
       useCampaignStore.getState().setCurrentCampaign(null);
       localStorage.removeItem("campaign-storage");
-      localStorage.removeItem("supabase_session"); // Remove stored session
+      localStorage.removeItem("supabase_session");
       set({ user: null });
     },
   };
