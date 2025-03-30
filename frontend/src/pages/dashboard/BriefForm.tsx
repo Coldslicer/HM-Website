@@ -101,7 +101,7 @@ export function BriefForm() {
         // If there's only one server, automatically set the campaign's server_id.
         if (serversArray.length === 1) {
           setSelectedServer(serversArray[0]);
-          setFormData(prev => ({ ...prev, server_id: serversArray[0] }));
+          setFormData((prev) => ({ ...prev, server_id: serversArray[0] }));
           setFormData((prev) => ({ ...prev, server_id: serversArray[0] }));
           // Optionally, update the currentCampaign if it exists.
           if (currentCampaign && !currentCampaign.server_id) {
@@ -335,89 +335,107 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
   // Completed brief
   if (currentCampaign != null && currentCampaign?.status !== "draft") {
     return (
-      <div className="max-w-2xl mx-auto">
-        <h2 className="text-2xl font-bold text-black mb-6">Campaign Brief</h2>
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <dl className="space-y-4">
-            <h3 className="text-2x font-bold text-black mb-6">
+      <div className="w-full p-6 space-y-6">
+        <h2 className="text-3xl font-bold text-gray-800">Campaign Brief</h2>
+
+        <div className="grid grid-cols-1 gap-8">
+          {/* Brand Information Card */}
+          <div className="bg-white p-8 rounded-lg shadow-md">
+            <h3 className="text-xl font-semibold text-gray-800 mb-6">
               Brand Information
             </h3>
 
-            {/* Company Name */}
-            <div>
-              <dt className="text-sm font-medium text-black-400">Brand Name</dt>
-              <dd className="text-black">{currentCampaign.company_name}</dd>
-            </div>
+            <dl className="space-y-4">
+              <div>
+                <dt className="text-sm font-medium text-gray-700">
+                  Brand Name
+                </dt>
+                <dd className="mt-1 text-gray-600">
+                  {currentCampaign.company_name}
+                </dd>
+              </div>
 
-            {/* Brand Website */}
-            <div>
-              <dt className="text-sm font-medium text-black-400">
-                Brand Website
-              </dt>
-              <dd className="text-black">{currentCampaign.website}</dd>
-            </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-700">
+                  Brand Website
+                </dt>
+                <dd className="mt-1 text-gray-600">
+                  {currentCampaign.website}
+                </dd>
+              </div>
 
-            {/* Brand Description */}
-            <div>
-              <dt className="text-sm font-medium text-black-400">
-                Brand Description
-              </dt>
-              <dd className="text-black">
-                {currentCampaign.company_description}
-              </dd>
-            </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-700">
+                  Brand Description
+                </dt>
+                <dd className="mt-1 text-gray-600">
+                  {currentCampaign.company_description}
+                </dd>
+              </div>
 
-            {/* Representative Name */}
-            <div>
-              <dt className="text-sm font-medium text-black-400">
-                Representative Name
-              </dt>
-              <dd className="text-black">{currentCampaign.rep_name}</dd>
-            </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-700">
+                  Representative Name
+                </dt>
+                <dd className="mt-1 text-gray-600">
+                  {currentCampaign.rep_name}
+                </dd>
+              </div>
+            </dl>
+          </div>
 
-            <h3 className="text-2x font-bold text-black mb-6">
+          {/* Campaign Information Card */}
+          <div className="bg-white p-8 rounded-lg shadow-md">
+            <h3 className="text-xl font-semibold text-gray-800 mb-6">
               Campaign Information
             </h3>
-            <div>
-              <dt className="text-sm font-medium text-black-400">
-                Campaign Name
-              </dt>
-              <dd className="text-black">{currentCampaign.name}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-black-400">
-                Posting Date
-              </dt>
-              <dd className="text-black">{currentCampaign.date}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-black-400">Channels</dt>
-              <dd className="text-black">
-                {currentCampaign.niches.join(", ")}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-black-400">
-                Per-Influencer Budget
-              </dt>
-              <dd className="text-black">
-                {currentCampaign.per_influencer_budget.join(", ")}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-black-400">Brief URL</dt>
-              <dd>
-                <a
-                  href={currentCampaign.brief_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-orange-500 hover:text-orange-400"
-                >
-                  View Brief
-                </a>
-              </dd>
-            </div>
-          </dl>
+
+            <dl className="space-y-4">
+              <div>
+                <dt className="text-sm font-medium text-gray-700">
+                  Campaign Name
+                </dt>
+                <dd className="mt-1 text-gray-600">{currentCampaign.name}</dd>
+              </div>
+
+              <div>
+                <dt className="text-sm font-medium text-gray-700">
+                  Posting Date
+                </dt>
+                <dd className="mt-1 text-gray-600">{currentCampaign.date}</dd>
+              </div>
+
+              <div>
+                <dt className="text-sm font-medium text-gray-700">Channels</dt>
+                <dd className="mt-1 text-gray-600">
+                  {currentCampaign.niches.join(", ")}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-sm font-medium text-gray-700">
+                  Per-Influencer Budget
+                </dt>
+                <dd className="mt-1 text-gray-600">
+                  {currentCampaign.per_influencer_budget.join(", ")}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-sm font-medium text-gray-700">Brief URL</dt>
+                <dd className="mt-1">
+                  <a
+                    href={currentCampaign.brief_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-orange-500 hover:text-orange-600 hover:underline transition-colors"
+                  >
+                    View Brief
+                  </a>
+                </dd>
+              </div>
+            </dl>
+          </div>
         </div>
       </div>
     );
@@ -580,7 +598,7 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
             className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
             required
           >
-            <option value="">Select a date or choose flexible</option>
+            <option value="date">Set Date</option>
             <option value="flexible">
               Flexible (influencers can post according to their upload schedule)
             </option>
@@ -656,14 +674,16 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
 
         {/* Influencer Size */}
         {Array.isArray(roles) && roles.length > 0 && (
-  <div>
-    <label className="block text-sm font-medium text-black-200 mb-2">Influencer Types</label>
-    <div className="grid grid-cols-2 gap-4">
-      {roles.map((role) => (
-        <div
-          key={role.id}
-          onClick={() => handleRoleToggle(role.id)} // Use the role key for toggle
-          className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
+          <div>
+            <label className="block text-sm font-medium text-black-200 mb-2">
+              Influencer Types
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              {roles.map((role) => (
+                <div
+                  key={role.id}
+                  onClick={() => handleRoleToggle(role.id)} // Use the role key for toggle
+                  className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
             ${
               formData.per_influencer_budget.includes(role.id)
                 ? "border-orange-500 bg-orange-50 shadow-orange-sm"

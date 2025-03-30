@@ -6,24 +6,53 @@ import { useEffect, useState } from "react";
 // Utility functions
 import { cn } from "../lib/utility";
 
+// Import images
+import welcome from "../assets/showcase-welcome.png";
+import brief from "../assets/showcase-brief.png";
+import creators from "../assets/showcase-creators.png";
+import contract from "../assets/showcase-contract.png";
+import messaging from "../assets/showcase-messaging.png";
+import timeline from "../assets/showcase-timeline.png";
+import payment from "../assets/showcase-payment.png";
+
 /* ================ [ COMPONENT ] ================ */
 
 // Image data
 const images = [
   {
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-02-13%20at%207.07.51%E2%80%AFPM-W3lbpVdvxZK0H7yImVCWdc9cE5Ke1G.png",
-    alt: "Warm Brief Interface",
+    src: welcome,
+    alt: "A WARM Welcome", // heh
+    caption: "Set up your campaign with ease",
+  },
+  {
+    src: brief,
+    alt: "WARM Brief Form",
     caption: "Submit your campaign details",
   },
   {
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-02-13%20at%207.08.05%E2%80%AFPM-Rz5LkEhL9jndjnURoy6NHLprp42Bj0.png",
-    alt: "Warm Influencer Management",
+    src: creators,
+    alt: "WARM Creator Selection",
     caption: "Select from committed influencers",
   },
   {
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-02-13%20at%207.09.39%E2%80%AFPM-4ENlK1uqqWPSLXvMCBZ4hKD619pflH.png",
-    alt: "Warm Chat Interface",
-    caption: "Run campaign with Web -> Discord Chat system",
+    src: contract,
+    alt: "WARM Contract Signing",
+    caption: "Sign a secure contract with influencers",
+  },
+  {
+    src: messaging,
+    alt: "WARM Messaging w/ Discord",
+    caption: "Run your campaign with full Discord integration",
+  },
+  {
+    src: timeline,
+    alt: "WARM Creator Timeline",
+    caption: "Track the progress of your campaign",
+  },
+  {
+    src: payment,
+    alt: "WARM Payment Invoicing",
+    caption: "Simple invoice-based payment system",
   },
 ];
 
@@ -52,7 +81,7 @@ function Showcase() {
             >
               <div className="relative w-full h-full">
                 <img
-                  src={image.src || "/placeholder.svg"}
+                  src={image.src}
                   alt={image.alt}
                   style={{ objectFit: "contain" }}
                   className="rounded-xl shadow-[0_0_60px_rgba(255,97,0,0.36)] w-full h-full"

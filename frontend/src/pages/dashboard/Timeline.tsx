@@ -49,7 +49,7 @@ const Timeline = () => {
     setSelectedCreators(sortedCreators);
   };
 
-  const isCompleted = (field: string) => field && field.trim().length > 0;
+  const isCompleted = (field: string) => { return typeof field === "string" && field.trim().length > 0 }; 
 
   const openPopup = (text: string) => setPopupContent(text);
   const closePopup = () => setPopupContent(null);
@@ -80,7 +80,7 @@ const Timeline = () => {
   };
 
   const renderTimelineItem = (creator: any) => {
-    const contractComplete = isCompleted(creator.contract_signed);
+    const contractComplete = creator.contract_signed;
     const draftComplete = isCompleted(creator.draft);
     const finalComplete = isCompleted(creator.live_url);
     const finalApproved = creator.final_approved;
@@ -109,7 +109,7 @@ const Timeline = () => {
             </h3>
           </div>
 
-          {finalComplete && (
+          {draftComplete && (
             <button
               onClick={() => handleApproval(creator.id)}
               disabled={finalApproved}

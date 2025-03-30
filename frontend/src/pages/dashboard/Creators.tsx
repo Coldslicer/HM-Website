@@ -17,7 +17,6 @@ type CreatorSelectionProps = {
 const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
   const { currentCampaign } = useCampaignStore();
   const [creators, setCreators] = useState<any[]>([]);
-  const [selectedCreators, setSelectedCreators] = useState<any[]>([]);
   const [totalRate, setTotalRate] = useState(0);
   const [totalRateCPM, setTotalRateCPM] = useState(0);
   const [selectedStatement, setSelectedStatement] = useState<string | null>(
@@ -35,7 +34,7 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
       "campaign_creators"
     )
       .select(
-        "id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement"
+        "id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement, cpm_cap",
       )
       .eq("campaign_id", campaignId || currentCampaign?.id);
 
@@ -61,7 +60,6 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
     );
     setCreators(sortedCreators);
     const selected = sortedCreators.filter((c) => c.selected);
-    setSelectedCreators(selected);
     setTotalRate(selected.reduce((acc, c) => acc + c.rate, 0));
     setTotalRateCPM(
       selected.reduce(
@@ -79,7 +77,6 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
     );
     setCreators(updatedCreators);
     const selected = updatedCreators.filter((c) => c.selected);
-    setSelectedCreators(selected);
     setTotalRate(selected.reduce((acc, c) => acc + c.rate, 0));
     setTotalRateCPM(
       selected.reduce(
@@ -222,7 +219,9 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
                   ${formatNum(creator.rate_cpm)}
                 </td>
                 <td className="py-3 px-4 text-center">
-                  ${formatNum(creator.cpm_cap > 0 ? creator.cpm_cap : "NONE")}
+                  {creator.cpm_cap > 0
+                    ? `$${formatNum(creator.cpm_cap)}`
+                    : "N/A"}
                 </td>
                 <td className="py-3 px-4 text-center">
                   {formatNum(creator.subscriberCount)}
