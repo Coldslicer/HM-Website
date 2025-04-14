@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { SUPABASE_CLIENT } from "../lib/supabase";
 import { useSearchParams } from "react-router-dom";
+import axios from "axios";
 
 const initialFormData = {
   campaign_id: '',
@@ -184,8 +185,10 @@ export function CreatorForm() {
       return;
     }
 
+
+
     try {
-      const { error } = await SUPABASE_CLIENT.from("campaign_creators") // Updated table name
+      const { data, error } = await SUPABASE_CLIENT.from("campaign_creators") // Updated table name
         .insert([
           {
             campaign_id: formData.campaign_id,
@@ -195,7 +198,7 @@ export function CreatorForm() {
             deliverables: formData.deliverables,
             rate: parseFloat(formData.rate), // Convert to numeric
             rate_cpm: parseFloat(formData.rate_cpm), // Convert to numeric
-            cpm_cap: (formData.cpm_cap == 0 || formData.cpm_cap == null) ? null : parseFloat(formData.cpm_cap),
+            cpm_cap: (parseFloat(formData.cpm_cap) == 0 || formData.cpm_cap == null) ? null : parseFloat(formData.cpm_cap),
             email:formData.email,
             personal_statement: formData.personal_statement,
             selected: formData.selected,
@@ -206,6 +209,10 @@ export function CreatorForm() {
         .single();
 
       if (error) throw error;
+
+      await axios.post('/api/campaigns/add-creator-to-discord', {
+        creatorId: data.id,
+      });
 
       // On success, set success state to true
       setSuccess(true);

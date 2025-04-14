@@ -94,22 +94,48 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
     const confirmed = window.confirm(
       "Are you sure you want to finalize the selected creators?"
     );
-    if (confirmed) {
-      try {
-        const { error } = await SUPABASE_CLIENT.from("campaigns")
-          .update({ status: "creators_selected", total_price: totalRate })
-          .eq("id", currentCampaign?.id);
-
-        if (!error) {
-          currentCampaign.status = "creators_selected";
-          alert("Creators finalized successfully!");
-        }
-      } catch (error) {
-        console.error("Error finalizing creators:", error);
+  
+    if (!confirmed) return;
+  
+    try {
+      const { error } = await SUPABASE_CLIENT.from("campaigns")
+        .update({ status: "creators_selected", total_price: totalRate })
+        .eq("id", currentCampaign?.id);
+  
+      if (error) {
+        console.error("Error updating campaign status:", error);
+        alert("Something went wrong updating the campaign status.");
+        return;
       }
+  
+      currentCampaign.status = "creators_selected";
+  
+      // Fire-and-forget: remove unselected creators from Discord
+      axios
+        .post("/api/campaigns/remove-unselected-discord-channels", {
+          campaignId: currentCampaign?.id,
+        })
+        .catch((err) =>
+          console.warn("Failed to remove unselected creators from Discord:", err)
+        );
+  
+      // Fire-and-forget: create the group chat
+      axios
+        .post("/api/campaigns/create-group-chat", {
+          campaignId: currentCampaign?.id,
+        })
+        .catch((err) =>
+          console.warn("Failed to create group chat:", err)
+        );
+  
+      alert("Creators finalized successfully!");
+      navigate("/dashboard/creators");
+    } catch (error) {
+      console.error("Error finalizing creators:", error);
+      alert("An unexpected error occurred.");
     }
-    navigate("/dashboard/creators");
   };
+  
 
   const handleOpenPopup = (statement: string) =>
     setSelectedStatement(statement);

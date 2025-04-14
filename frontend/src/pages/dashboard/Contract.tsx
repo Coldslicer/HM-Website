@@ -179,9 +179,6 @@ const Contract = () => {
               withTitle={false}
               externalId={responseData.external_id || null}
               onComplete={async () => {
-                await axios.post("/api/campaigns/setup-discord", {
-                  campaignId: currentCampaign.id,
-                });
                 currentCampaign.status = "contract_signed";
                 await SUPABASE_CLIENT.from("campaigns")
                   .update({ status: "contract_signed" })

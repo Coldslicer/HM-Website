@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
+import axios from 'axios';
 import { useAuthStore } from "../../store/authStore";
 import { useCampaignStore } from "../../store/campaignStore";
 import { SUPABASE_CLIENT } from "../../lib/supabase";
@@ -205,6 +205,14 @@ export function BriefForm() {
       };
 
       setCurrentCampaign(campaignInfo);
+
+      
+      await axios.post('/api/campaigns/init-category', {
+        campaignId: campaignInfo.id,
+      }).catch((err) => {
+        console.warn('Silent fail on one-way call:', err.message);
+      });
+      
 
       const baseUrl = window.location.origin; // Dynamically get the base URL
       let formattedMessage = "";
