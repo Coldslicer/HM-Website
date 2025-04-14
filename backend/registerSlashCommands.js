@@ -96,6 +96,18 @@ new SlashCommandBuilder()
     .setDescription('Tells you your discord ID to enter into the campaign form'),
 
     new SlashCommandBuilder()
+    .setName('editrates')
+    .setDescription('Edit your flat and CPM rates')
+    .addNumberOption(option => 
+      option.setName('flat')
+            .setDescription('The new flat rate')
+    )
+    .addNumberOption(option => 
+      option.setName('cpm')
+            .setDescription('The new CPM rate')
+    ),
+
+    new SlashCommandBuilder()
     .setName('help')
     .setDescription('Shows information about how to use Warm commands')
 ];
