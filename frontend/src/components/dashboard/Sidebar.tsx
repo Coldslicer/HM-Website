@@ -134,6 +134,23 @@ export function Sidebar() {
         </NavLink>
 
         <NavLink
+          to="/dashboard/messaging"
+          className={({ isActive }) =>
+            `flex items-center space-x-2 p-2 rounded-md ${
+              canAccess("brief_submitted")
+                ? isActive
+                  ? "bg-orange-500 text-white"
+                  : "text-black hover:bg-gray-200"
+                : "opacity-50 text-gray-500 cursor-not-allowed"
+            }`
+          }
+          onClick={(e) => !canAccess("brief_submitted") && e.preventDefault()}
+        >
+          <Send className="h-5 w-5" />
+          <span>Messaging</span>
+        </NavLink>
+
+        <NavLink
           to="/dashboard/creators"
           className={({ isActive }) =>
             `flex items-center space-x-2 p-2 rounded-md ${
@@ -165,23 +182,6 @@ export function Sidebar() {
         >
           <FileText className="h-5 w-5" />
           <span>Contract</span>
-        </NavLink>
-
-        <NavLink
-          to="/dashboard/messaging"
-          className={({ isActive }) =>
-            `flex items-center space-x-2 p-2 rounded-md ${
-              canAccess("contract_signed")
-                ? isActive
-                  ? "bg-orange-500 text-white"
-                  : "text-black hover:bg-gray-200"
-                : "opacity-50 text-gray-500 cursor-not-allowed"
-            }`
-          }
-          onClick={(e) => !canAccess("contract_signed") && e.preventDefault()}
-        >
-          <Send className="h-5 w-5" />
-          <span>Messaging</span>
         </NavLink>
 
         <NavLink

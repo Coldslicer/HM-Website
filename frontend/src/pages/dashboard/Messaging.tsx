@@ -206,17 +206,6 @@ export function Messaging() {
     return () => clearInterval(intervalId);
   }, [selectedChannel]);
 
-  if (campaignStatus !== "contract_signed") {
-    return (
-      <div className="max-w-4xl mx-auto p-4 bg-white rounded-md shadow-md">
-        <h2 className="text-2xl font-bold text-black mb-6">Messaging</h2>
-        <p className="text-gray-700">
-          You will be able to access messages after signing your contract.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-[80vh] max-w-6xl mx-auto bg-white rounded-md shadow-md overflow-hidden">
       {/* Sidebar for Channel Selection */}
