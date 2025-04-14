@@ -26,8 +26,263 @@ router.get('/validate-discord-id/:discordId', async (req, res) => {
   }
 });
 
+router.post('/remove-unselected-discord-channels', async (req, res) => {
+  const { campaignId } = req.body;
 
+  console.log('Received request to remove unselected creators’ channels for campaignId:', campaignId);
+
+  if (!campaignId) {
+    console.error('Campaign ID is missing in the request body');
+    return res.status(400).json({ error: 'Campaign ID is required' });
+  }
+
+  try {
+    // Fetch all unselected creators with channel info
+    const { data: unselectedCreators, error: fetchError } = await SUPABASE_CLIENT
+      .from('campaign_creators')
+      .select('id, discord_id, channel_id')
+      .eq('campaign_id', campaignId)
+      .eq('selected', false);
+
+    if (fetchError) {
+      console.error('Error fetching unselected creators:', fetchError);
+      return res.status(500).json({ error: 'Failed to fetch unselected creators' });
+    }
+
+    if (!unselectedCreators || unselectedCreators.length === 0) {
+      console.log('No unselected creators found, nothing to delete');
+      return res.status(200).json({ message: 'No unselected creators to remove channels for' });
+    }
+
+    // Delete Discord channels for each unselected creator
+    for (const creator of unselectedCreators) {
+      if (creator.channel_id) {
+        try {
+          const channel = await DISCORD_CLIENT.channels.fetch(creator.channel_id);
+          if (channel) {
+            await channel.delete('Removing unselected creator channel');
+            console.log(`Deleted channel ${creator.channel_id} for creator ${creator.discord_id}`);
+          }
+        } catch (err) {
+          console.warn(`Channel ${creator.channel_id} could not be deleted or was already deleted`);
+        }
+
+        // Clear channel_id and webhook_url in Supabase for this creator
+        const { error: updateError } = await SUPABASE_CLIENT
+          .from('campaign_creators')
+          .update({ channel_id: null, webhook_url: "" })
+          .eq('id', creator.id);
+
+        if (updateError) {
+          console.error(`Failed to clear channel info for creator ${creator.id}`, updateError);
+        }
+      }
+    }
+
+    res.status(200).json({ message: 'Unselected creators’ Discord channels removed' });
+
+  } catch (error) {
+    console.error('Unexpected error removing unselected Discord channels:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/init-category', async (req, res) => {
+  const { campaignId } = req.body;
+
+  if (!campaignId) {
+    return res.status(400).json({ error: 'Campaign ID is required' });
+  }
+
+  try {
+    const { data: campaign, error: campaignError } = await SUPABASE_CLIENT
+      .from('campaigns')
+      .select('id, client_id, company_name, server_id')
+      .eq('id', campaignId)
+      .single();
+
+    if (campaignError || !campaign) {
+      return res.status(500).json({ error: 'Campaign not found' });
+    }
+
+    const { data: client, error: clientError } = await SUPABASE_CLIENT
+      .from('clients')
+      .select('profile_picture')
+      .eq('id', campaign.client_id)
+      .single();
+
+    if (clientError || !client) {
+      return res.status(500).json({ error: 'Client not found' });
+    }
+
+    const guild = DISCORD_CLIENT.guilds.cache.get(campaign.server_id);
+    if (!guild) {
+      return res.status(500).json({ error: 'Discord server not found' });
+    }
+
+    const category = await guild.channels.create({
+      name: campaign.company_name,
+      type: ChannelType.GuildCategory,
+    });
+
+    const staffChannel = await guild.channels.create({
+      name: `${campaign.company_name} - Staff`,
+      type: ChannelType.GuildText,
+      parent: category.id,
+      permissionOverwrites: [
+        { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+        { id: DISCORD_CLIENT.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+      ],
+    });
+
+    const staffWebhook = await staffChannel.createWebhook({
+      name: `Staff | ${campaign.company_name}`,
+      avatar: client.profile_picture || 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png',
+    });
+
+    await SUPABASE_CLIENT.from('campaigns').update({
+      category_id: category.id,
+      staff_chat_channel_id: staffChannel.id,
+      staff_chat_webhook_url: staffWebhook.url,
+    }).eq('id', campaignId);
+
+    res.status(200).json({ message: 'Category and staff channel created successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/add-creator-to-discord', async (req, res) => {
+  const { creatorId } = req.body;
+  if (!creatorId) return res.status(400).json({ error: 'Creator ID is required' });
+
+  try {
+    const { data: creator, error: creatorError } = await SUPABASE_CLIENT
+      .from('campaign_creators')
+      .select('id, discord_id, channel_name, campaign_id')
+      .eq('id', creatorId)
+      .single();
+
+    if (creatorError || !creator) return res.status(500).json({ error: 'Creator not found' });
+
+    const { data: campaign, error: campaignError } = await SUPABASE_CLIENT
+      .from('campaigns')
+      .select('id, company_name, rep_name, category_id, server_id, client_id')
+      .eq('id', creator.campaign_id)
+      .single();
+
+    if (campaignError || !campaign) return res.status(500).json({ error: 'Campaign not found' });
+
+    const { data: client, error: clientError } = await SUPABASE_CLIENT
+      .from('clients')
+      .select('profile_picture')
+      .eq('id', campaign.client_id)
+      .single();
+
+    if (clientError || !client) return res.status(500).json({ error: 'Client not found' });
+
+    const guild = DISCORD_CLIENT.guilds.cache.get(campaign.server_id);
+    if (!guild) return res.status(500).json({ error: 'Guild not found' });
+
+    const user = await DISCORD_CLIENT.users.fetch(creator.discord_id);
+    if (!user) return res.status(500).json({ error: 'Discord user not found' });
+
+    const sanitizedChannelName = `${campaign.company_name}-${creator.channel_name}`.replace(/[^a-zA-Z0-9]/g, '');
+
+    const channel = await guild.channels.create({
+      name: sanitizedChannelName,
+      type: ChannelType.GuildText,
+      parent: campaign.category_id,
+      permissionOverwrites: [
+        { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+        { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+        { id: DISCORD_CLIENT.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+      ],
+    });
+
+    const webhook = await channel.createWebhook({
+      name: `${campaign.rep_name || ''} | ${campaign.company_name}`,
+      avatar: client.profile_picture || 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png',
+    });
+
+    await SUPABASE_CLIENT.from('campaign_creators').update({
+      channel_id: channel.id,
+      webhook_url: webhook.url,
+    }).eq('id', creatorId);
+
+    res.status(200).json({ message: 'Creator channel and webhook created' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/create-group-chat', async (req, res) => {
+  const { campaignId } = req.body;
+  if (!campaignId) return res.status(400).json({ error: 'Campaign ID is required' });
+
+  try {
+    const { data: campaign, error: campaignError } = await SUPABASE_CLIENT
+      .from('campaigns')
+      .select('id, company_name, rep_name, server_id, category_id, client_id')
+      .eq('id', campaignId)
+      .single();
+
+    if (campaignError || !campaign) return res.status(500).json({ error: 'Campaign not found' });
+
+    const { data: client, error: clientError } = await SUPABASE_CLIENT
+      .from('clients')
+      .select('profile_picture')
+      .eq('id', campaign.client_id)
+      .single();
+
+    const { data: creators, error: creatorsError } = await SUPABASE_CLIENT
+      .from('campaign_creators')
+      .select('discord_id')
+      .eq('campaign_id', campaignId)
+      .eq('selected', true);
+
+    if (creatorsError || !creators.length) return res.status(500).json({ error: 'No selected creators found' });
+
+    const guild = DISCORD_CLIENT.guilds.cache.get(campaign.server_id);
+    if (!guild) return res.status(500).json({ error: 'Guild not found' });
+
+    const channel = await guild.channels.create({
+      name: `${campaign.company_name} - Group Chat`,
+      type: ChannelType.GuildText,
+      parent: campaign.category_id,
+      permissionOverwrites: [
+        { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+        ...(await Promise.all(creators.map(async c => ({
+          id: (await DISCORD_CLIENT.users.fetch(c.discord_id)).id,
+          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+        })))),
+        { id: DISCORD_CLIENT.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+      ],
+    });
+
+    const webhook = await channel.createWebhook({
+      name: `${campaign.rep_name || ''} | ${campaign.company_name}`,
+      avatar: client.profile_picture || 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png',
+    });
+
+    await SUPABASE_CLIENT.from('campaigns').update({
+      group_chat_channel_id: channel.id,
+      webhook_url: webhook.url,
+    }).eq('id', campaignId);
+
+    res.status(200).json({ message: 'Group chat created successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+// THIS IS OLD CODE, DO NOT USE
 router.post('/setup-discord', async (req, res) => {
+  console.warn("/setup-discord is deprecated and should not be used. Replace with /init-category")
   const { campaignId } = req.body;
   console.log('Received request with campaignId:', campaignId);
 

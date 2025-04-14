@@ -246,10 +246,10 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
           : `All sponsored videos will be posted by ${formData.date}`
       }
 
-## **To Declare Your Commitment React Below and [FILL OUT THIS FORM](${baseUrl}/creator-form?campaignName=${encodeURIComponent(
+## **To Declare Your Commitment React Below and Fill out the Form** 
+### Not working? [Fill out this form instead](${baseUrl}/creator-form?campaignName=${encodeURIComponent(
         formData.name
-      )})** 
-### **OR** React to this message to get a customized link with QoL features such as prefill
+      )})
 `;
 
       // Send to selected niches' webhooks
