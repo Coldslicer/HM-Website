@@ -10,7 +10,9 @@ export const CreatorSharingPage: React.FC = () => {
   const [creators, setCreators] = useState<any[]>([]);
   const [totalRate, setTotalRate] = useState(0);
   const [totalRateCPM, setTotalRateCPM] = useState(0);
-  const [selectedStatement, setSelectedStatement] = useState<string | null>(null);
+  const [selectedStatement, setSelectedStatement] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     if (campaignId) {
@@ -19,8 +21,12 @@ export const CreatorSharingPage: React.FC = () => {
   }, [campaignId]);
 
   const fetchCreators = async (campaignId: string) => {
-    const { data: creatorsData } = await SUPABASE_CLIENT.from("campaign_creators")
-      .select("id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement, cpm_cap")
+    const { data: creatorsData } = await SUPABASE_CLIENT.from(
+      "campaign_creators"
+    )
+      .select(
+        "id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement, cpm_cap"
+      )
       .eq("campaign_id", campaignId);
 
     const creatorsWithChannelData = await Promise.all(
@@ -40,28 +46,49 @@ export const CreatorSharingPage: React.FC = () => {
       })
     );
 
-    // Filter to only show selected creators
-    const selectedCreators = creatorsWithChannelData
-      .filter(c => c.selected)
-      .sort((a, b) => b.channel_name.localeCompare(a.channel_name));
+    const sortedCreators = creatorsWithChannelData.sort(
+      (a, b) => b.selected - a.selected
+    );
+    setCreators(sortedCreators);
 
-    setCreators(selectedCreators);
-    setTotalRate(selectedCreators.reduce((acc, c) => acc + c.rate, 0));
+    const selected = sortedCreators.filter((c) => c.selected);
+    setTotalRate(selected.reduce((acc, c) => acc + c.rate, 0));
     setTotalRateCPM(
-      selectedCreators.reduce(
+      selected.reduce(
         (acc, c) => acc + (c.rate_cpm * (c.averageViews || 0)) / 1000,
         0
       )
     );
   };
 
-  const handleOpenPopup = (statement: string) => setSelectedStatement(statement);
+  const handleSelectCreator = async (creator: any) => {
+    const updatedCreators = creators.map((c) =>
+      c.id === creator.id ? { ...c, selected: !c.selected } : c
+    );
+    setCreators(updatedCreators);
+    
+    const selected = updatedCreators.filter((c) => c.selected);
+    setTotalRate(selected.reduce((acc, c) => acc + c.rate, 0));
+    setTotalRateCPM(
+      selected.reduce(
+        (acc, c) => acc + (c.rate_cpm * (c.averageViews || 0)) / 1000,
+        0
+      )
+    );
+
+    await SUPABASE_CLIENT.from("campaign_creators")
+      .update({ selected: !creator.selected })
+      .eq("id", creator.id);
+  };
+
+  const handleOpenPopup = (statement: string) =>
+    setSelectedStatement(statement);
   const handleClosePopup = () => setSelectedStatement(null);
 
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">
-        Selected Creators
+        Creator Selection
       </h1>
 
       {/* Table Section */}
@@ -69,7 +96,9 @@ export const CreatorSharingPage: React.FC = () => {
         <table className="min-w-full bg-white border-collapse rounded-lg">
           <thead>
             <tr className="bg-gray-100">
-              <th className="py-3 px-4 text-left rounded-tl-lg">Channel Name</th>
+              <th className="py-3 px-4 text-left rounded-tl-lg">
+                Channel Name
+              </th>
               <th className="py-3 px-4 text-center">Flat Rate</th>
               <th className="py-3 px-4 text-center">CPM Rate</th>
               <th className="py-3 px-4 text-center">CPM Cap</th>
@@ -83,7 +112,12 @@ export const CreatorSharingPage: React.FC = () => {
             {creators.map((creator) => (
               <tr
                 key={creator.id}
-                className="border-b"
+                onClick={() => handleSelectCreator(creator)}
+                className={`border-b cursor-pointer ${
+                  creator.selected
+                    ? "bg-orange-100 hover:bg-orange-200"
+                    : "hover:bg-gray-50"
+                }`}
               >
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-2">
@@ -92,6 +126,7 @@ export const CreatorSharingPage: React.FC = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-gray-500 hover:text-gray-600"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <Youtube className="w-5 h-5 text-red-500" />
                     </a>
@@ -107,7 +142,9 @@ export const CreatorSharingPage: React.FC = () => {
                   ${formatNum(creator.rate_cpm)}
                 </td>
                 <td className="py-3 px-4 text-center">
-                  {creator.cpm_cap > 0 ? `$${formatNum(creator.cpm_cap)}` : "N/A"}
+                  {creator.cpm_cap > 0
+                    ? `$${formatNum(creator.cpm_cap)}`
+                    : "N/A"}
                 </td>
                 <td className="py-3 px-4 text-center">
                   {formatNum(creator.subscriberCount)}
