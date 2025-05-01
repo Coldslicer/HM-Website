@@ -50,6 +50,7 @@ export function CreatorForm() {
   const [campaignNotAvailable, setCampaignNotAvailable] =
     useState<boolean>(false);
   const [pricingModel, setPricingModel] = useState<string[]>([]);
+  const [deliverables, setDeliverables] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -91,6 +92,7 @@ export function CreatorForm() {
         if (campaign) {
           campaignId = campaign.id;
           setPricingModel(campaign.desired_pricing_model);
+          setDeliverables(campaign.sponsorship_format)
         } else {
           setCampaignNotAvailable(true);
         }
@@ -134,16 +136,17 @@ export function CreatorForm() {
   const handleCampaignChange = async (campaignId: string) => {
     const campaign = campaigns.find((c) => c.id === campaignId);
     if (campaign) {
+      setCampaignNotAvailable(false);
       setPricingModel(campaign.desired_pricing_model);
 
       // Reset rates based on the new pricing model
       setFormData((prevData) => ({
         ...prevData,
         campaign_id: campaignId,
-        rate: campaign.desired_pricing_model.includes("Flat-rate")
+        rate: (campaign.desired_pricing_model.includes("Flat-rate") || campaign.desired_pricing_model.includes("Hybrid"))
           ? prevData.rate
           : "0", // Reset to 0 if Flat-rate is not supported
-        rate_cpm: campaign.desired_pricing_model.includes("CPM (first 30d)")
+        rate_cpm: (campaign.desired_pricing_model.includes("CPM (first 30d)") || campaign.desired_pricing_model.includes("Hybrid"))
           ? prevData.rate_cpm
           : "0", // Reset to 0 if CPM is not supported
       }));
@@ -209,9 +212,34 @@ export function CreatorForm() {
         .single();
 
       if (error) throw error;
-
+      await new Promise((res) => setTimeout(res, 500)); // 0.5 second delay
       await axios.post('/api/campaigns/add-creator-to-discord', {
         creatorId: data.id,
+      });
+
+      const { data: creatorWithWebhook, error: webhookError } = await SUPABASE_CLIENT
+        .from("campaign_creators")
+        .select("webhook_url")
+        .eq("id", data.id)
+        .single();
+
+      if (webhookError) throw webhookError;
+
+      if (!creatorWithWebhook?.webhook_url) {
+        setError("You're in our systems, but it seems we might have not been able to make a DM channel with you.\nPlease check discord to see if you've been pinged with a confirmation message.");
+      }
+
+      // ⚡ Post to the Discord channel via the webhook
+      await axios.post(creatorWithWebhook.webhook_url, {
+        content: `<@${formData.discord_id}> You’re IN
+
+Thank you for applying. While we cannot guarantee every creator will get selected, you have just taken a major step, which is getting your channel in front of big brands.
+If this is your first campaign, read our guide! Super important: [LINK](https://tinyurl.com/hmsponsorguide)
+
+We will message you if you get selected for the sponsorship. In the meantime if you have any questions you may DM our CEO personally: @hotslicer
+
+Thanks!
+WARM” `,
       });
 
       // On success, set success state to true
@@ -365,7 +393,7 @@ export function CreatorForm() {
                 htmlFor="deliverables"
                 className="block text-sm font-medium text-gray-800"
               >
-                Deliverables (Available options are listed on Discord)
+                Deliverables (Options shown in discord will be highly prioritized)
               </label>
               <select
                 id="deliverables"
@@ -376,6 +404,7 @@ export function CreatorForm() {
                 className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
                 required
               >
+                
                 <option value="">Select a deliverable</option>
                 <option value="Longform Integration (30s)">
                   Longform Integration (30s)
@@ -389,96 +418,92 @@ export function CreatorForm() {
             </div>
 
             <div>
-              <label
-                htmlFor="rate"
-                className="block text-sm font-medium text-gray-800"
-              >
-                Deliverables Rate
-              </label>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center flex-1">
-                  <span className="mr-2">$</span>
-                  <input
-                    type="number"
-                    id="rate"
-                    value={formData.rate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, rate: e.target.value })
-                    }
-                    className={`mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5 ${
-                      !pricingModel.includes("Flat-rate") &&
-                      !pricingModel.includes("Hybrid")
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
-                    }`}
-                    placeholder="Flat Rate"
-                    step="any"
-                    min="0"
-                    required
-                    disabled={
-                      !pricingModel.includes("Flat-rate") &&
-                      !pricingModel.includes("Hybrid")
-                    }
-                  />
-                </div>
-                <span className="text-gray-800">+</span>
-                <div className="flex items-center flex-1">
-                  <span className="mr-2">$</span>
-                  <input
-                    type="number"
-                    id="rate_cpm"
-                    value={formData.rate_cpm}
-                    onChange={(e) =>
-                      setFormData({ ...formData, rate_cpm: e.target.value })
-                    }
-                    className={`mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5 ${
-                      !pricingModel.includes("CPM (first 30d)") &&
-                      !pricingModel.includes("Hybrid")
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
-                    }`}
-                    placeholder="CPM"
-                    step="any"
-                    min="0"
-                    required
-                    disabled={
-                      !pricingModel.includes("CPM (first 30d)") &&
-                      !pricingModel.includes("Hybrid")
-                    }
-                  />
-                </div>
-                <span className="text-gray-800">CPM, Capped at{" "}</span>
-                <div className="flex items-center flex-1">
-                  <span className="mr-2">$</span>
-                  <input
-                    type="number"
-                    id="cpm_cap"
-                    value={formData.cpm_cap}
-                    onChange={(e) =>
-                      setFormData({ ...formData, cpm_cap: e.target.value })
-                    }
-                    className={`mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5 ${
-                      !pricingModel.includes("CPM (first 30d)") &&
-                      !pricingModel.includes("Hybrid")
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
-                    }`}
-                    placeholder="CPM"
-                    step="any"
-                    min="0"
-                    required
-                    disabled={
-                      !pricingModel.includes("CPM (first 30d)") &&
-                      !pricingModel.includes("Hybrid")
-                    }
-                  />
-                </div>
-              </div>
-              <p className="text-gray-600 mt-1">
-                You can put whatever rate you want, but if it's too high,
-                clients may not select you. Enter 0 CPM cap for unlimited.
-              </p>
-            </div>
+  <label
+    htmlFor="rate"
+    className="block text-sm font-medium text-gray-800"
+  >
+    Deliverables Rate
+  </label>
+  <div className="flex items-center space-x-4">
+    {/* Flat-rate Input */}
+    {(pricingModel.includes("Flat-rate") || pricingModel.includes("Hybrid")) ? (
+      <div className="flex items-center flex-1">
+        <span className="mr-2">$</span>
+        <input
+          type="number"
+          id="rate"
+          value={formData.rate}
+          onChange={(e) =>
+            setFormData({ ...formData, rate: e.target.value })
+          }
+          className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+          placeholder="Flat Rate"
+          step="any"
+          min="0"
+          required
+        />
+      </div>
+    ) : (
+      (() => {
+        if (formData.rate !== "0") {
+          setFormData((prev) => ({ ...prev, rate: "0" }));
+        }
+        return null;
+      })()
+    )}
+
+    {/* CPM + Cap */}
+    {(pricingModel.includes("CPM (first 30d)") || pricingModel.includes("Hybrid")) ? (
+      <>
+        {(pricingModel.includes("Flat-rate") || pricingModel.includes("Hybrid")) && <span className="text-gray-800">+</span>}
+        <div className="flex items-center flex-1">
+          <span className="mr-2">$</span>
+          <input
+            type="number"
+            id="rate_cpm"
+            value={formData.rate_cpm}
+            onChange={(e) =>
+              setFormData({ ...formData, rate_cpm: e.target.value })
+            }
+            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+            placeholder="CPM"
+            step="any"
+            min="0"
+            required
+          />
+        </div>
+        <span className="text-gray-800">CPM, Capped at{" "}</span>
+        <div className="flex items-center flex-1">
+          <span className="mr-2">$</span>
+          <input
+            type="number"
+            id="cpm_cap"
+            value={formData.cpm_cap}
+            onChange={(e) =>
+              setFormData({ ...formData, cpm_cap: e.target.value })
+            }
+            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+            placeholder="CPM Cap"
+            step="any"
+            min="0"
+            required
+          />
+        </div>
+      </>
+    ) : (
+      (() => {
+        if (formData.rate_cpm !== "0" || formData.cpm_cap !== "0") {
+          setFormData((prev) => ({ ...prev, rate_cpm: "0", cpm_cap: "0" }));
+        }
+        return null;
+      })()
+    )}
+  </div>
+  <p className="text-gray-600 mt-1">
+    Enter 0 CPM cap for unlimited.
+  </p>
+</div>
+
 
             <div>
               <label
@@ -523,9 +548,8 @@ export function CreatorForm() {
                     I agree to these terms:
                   </label>
                   <ul className="mt-2 space-y-2 text-sm text-gray-600">
-                    <li>You are available for the campaign dates.</li>
-                    <li>You understand the deliverable requirements.</li>
-                    <li>You will work with the campaign's guidelines.</li>
+                    <li>Hotslicer Media takes a 15% cut for bringing this sponsorship. I will receive 85% of my listed rate.</li>
+                    <li>I agree that I will follow through with the given deliverables by the given timeline if selected.</li>
                   </ul>
                 </div>
               </div>

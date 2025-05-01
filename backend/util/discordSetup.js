@@ -238,9 +238,23 @@ const handleEditRatesCommand = async (interaction) => {
   const updateData = {};
   const flatRate = interaction.options.getNumber('flat');
   const cpmRate = interaction.options.getNumber('cpm');
+  const cpmCap = interaction.options.getNumber('cap');
+
+  const { data, error: selectError } = await SUPABASE_CLIENT
+    .from('campaign_creators')
+    .select("rate, rate_cpm, cpm_cap")
+    .eq('id', creatorEntry.id);
+  
+  if (data.rate === 0 && flatRate || data.rate_cpm === 0 && cpmRate || data.cmp_cap === 0 && cpmCap) {
+    return interaction.reply({
+      content: "You can't add rates that would violate the allowed payment models. Contact support of you think this is a mistake.",
+      ephemeral: true
+    });
+  }
 
   if (flatRate !== null) updateData.rate = flatRate;
   if (cpmRate !== null) updateData.rate_cpm = cpmRate;
+  if (cpmCap !== null) updateData.cmp_cap = cmpCap;
 
   if (Object.keys(updateData).length === 0) {
     return interaction.reply({
@@ -343,4 +357,21 @@ const ON_USER_REACTION = async (reaction, user) => {
   }
 };
 
-export { ON_READY, ON_USER_INTERACTION, ON_USER_MESSAGE, ON_USER_REACTION };
+const ON_USER_JOIN = async (member) => {
+  console.log(`New member joined: ${member.user.tag}`);
+
+  try {
+    await member.send(`
+Hey ${member.user.username}, welcome to **${member.guild.name}**, so excited to have you here.
+This is **not** just a regular Discord server. It’s a **sponsorship hub**. 
+
+Comments or concerns? DM our CEO personally right now: <@655866521117130752>
+Otherwise, please check pings from the server, they are **ONLY** for sponsorship offers!
+
+Hope you have a great time here!`);
+  } catch (error) {
+    console.error(`Could not DM the user: ${error}`);
+  }
+}
+
+export { ON_READY, ON_USER_INTERACTION, ON_USER_MESSAGE, ON_USER_REACTION, ON_USER_JOIN };

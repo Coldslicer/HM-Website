@@ -97,6 +97,7 @@ new SlashCommandBuilder()
 
     new SlashCommandBuilder()
     .setName('editrates')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .setDescription('Edit your flat and CPM rates')
     .addNumberOption(option => 
       option.setName('flat')
@@ -105,6 +106,10 @@ new SlashCommandBuilder()
     .addNumberOption(option => 
       option.setName('cpm')
             .setDescription('The new CPM rate')
+    )
+    .addNumberOption(option => 
+      option.setName('cap')
+            .setDescription('The new CPM cap')
     ),
 
     new SlashCommandBuilder()

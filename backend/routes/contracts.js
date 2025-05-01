@@ -27,7 +27,7 @@ async function getCampaignDetails(campaignId) {
 }
 
 // Function to get creator details from Supabase
-async function getCreatorsForCampaign(campaignId) {
+async function getCreatorsForCampaign(campaignId, fully_managed) {
   const { data, error } = await SUPABASE_CLIENT
     .from('campaign_creators')
     .select('*')
@@ -37,6 +37,15 @@ async function getCreatorsForCampaign(campaignId) {
     console.error('Error fetching creators:', error);
     return [];
   }
+
+  if (fully_managed) {
+    data.forEach((creator) => {
+      creator.rate *= 1.15;
+      creator.rate_cpm *= 1.15;
+      creator.cpm_cap *= 1.15;
+    });
+  }
+
   return data;
 }
 
@@ -104,7 +113,7 @@ async function uploadTemplateToDocuSeal(htmlContent, campaignId) {
 }
 
 // Function to generate the contract from the template
-async function generateContract(campaignId) {
+async function generateContract(campaignId, fully_managed) {
   // Fetch campaign details
   const campaign = await getCampaignDetails(campaignId);
   if (!campaign) {
@@ -112,7 +121,7 @@ async function generateContract(campaignId) {
   }
 
   // Fetch creators for the campaign
-  const creators = await getCreatorsForCampaign(campaignId);
+  const creators = await getCreatorsForCampaign(campaignId, fully_managed);
 
   // Load the HTML template and decode HTML entities
   const htmlTemplate = loadHtmlTemplate();
@@ -174,7 +183,7 @@ router.get('/client-form', async (req, res) => {
   }
 
   try {
-    const templateId = await generateContract(campaign_id);
+    const templateId = await generateContract(campaign_id, fully_managed);
     if (!templateId) {
       res.status(500).json({ error: 'Error creating submission' });
     }
@@ -310,7 +319,16 @@ router.post('/creator-forms', async (req, res) => {
                 },
                 {
                   name: 'Rate',
-                  default_value: creatorData.rate ? `$${creatorData.rate}` : 'TBD',  // Use creator's rate if available
+                  default_value: (creatorData.rate || creatorData.rate_cpm || creatorData.cpm_cap
+                  ? [
+                      creatorData.rate ? `$${creatorData.rate} Flat` : null,
+                      creatorData.rate_cpm ? `$${creatorData.rate_cpm} CPM` : null,
+                      creatorData.cpm_cap ? `$${creatorData.cpm_cap} CPM Cap` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(', ')
+                  : 'TBD')
+                
                 },
                 {
                   name: 'Platform',

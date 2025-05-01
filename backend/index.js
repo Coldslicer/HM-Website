@@ -8,7 +8,7 @@ import "./util/setup.js";
 import express from 'express';
 import cors from 'cors';
 import { SUPABASE_CLIENT, DISCORD_CLIENT } from "./util/setup.js";
-import { ON_READY, ON_USER_INTERACTION, ON_USER_MESSAGE, ON_USER_REACTION } from "./util/discordSetup.js";
+import { ON_READY, ON_USER_INTERACTION, ON_USER_MESSAGE, ON_USER_REACTION, ON_USER_JOIN } from "./util/discordSetup.js";
 
 // Routes
 import campaignsRouter from './routes/campaigns.js';
@@ -43,6 +43,8 @@ DISCORD_CLIENT.once('ready', async() => await ON_READY());
 DISCORD_CLIENT.on('interactionCreate', async(interaction) => await ON_USER_INTERACTION(interaction));
 DISCORD_CLIENT.on('messageCreate', async(message) => await ON_USER_MESSAGE(message));
 DISCORD_CLIENT.on('messageReactionAdd', async(reaction, user) => await ON_USER_REACTION(reaction, user));
+DISCORD_CLIENT.on('guildMemberAdd', async(member) => await ON_USER_JOIN(member));
+
 
 // Login to Discord
 DISCORD_CLIENT.login(process.env.DISCORD_TOKEN); 

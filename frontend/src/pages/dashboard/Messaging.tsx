@@ -44,11 +44,19 @@ export function Messaging() {
   }, [currentCampaign]);
 
   useEffect(() => {
+
     const fetchCreators = async () => {
-      const { data, error } = await SUPABASE_CLIENT.from("campaign_creators")
+
+      const { data, error } = (currentCampaign?.status == "brief_submitted") ? (
+      await SUPABASE_CLIENT.from("campaign_creators")
         .select("id, channel_id, channel_url, channel_name, discord_id")
-        .eq("campaign_id", currentCampaign?.id)
-        .eq("selected", true);
+        .eq("campaign_id", currentCampaign?.id))
+      : (await SUPABASE_CLIENT.from("campaign_creators")
+      .select("id, channel_id, channel_url, channel_name, discord_id")
+      .eq("campaign_id", currentCampaign?.id)
+      .eq("selected", true));
+      
+        
 
       if (error) {
         console.error("Error fetching creators:", error);
@@ -226,6 +234,7 @@ export function Messaging() {
               </button>
             </li>
           )}
+          {(currentCampaign?.status != "brief_submitted" && currentCampaign?.status != "draft") &&
           <li>
             <button
               onClick={() => handleChannelChange(groupChatChannelId)}
@@ -238,6 +247,7 @@ export function Messaging() {
               All
             </button>
           </li>
+          }
           {creators.map((creator) => (
             <li key={creator.id}>
               <button

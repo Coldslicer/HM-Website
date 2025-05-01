@@ -97,7 +97,7 @@ router.post('/init-category', async (req, res) => {
   try {
     const { data: campaign, error: campaignError } = await SUPABASE_CLIENT
       .from('campaigns')
-      .select('id, client_id, company_name, server_id')
+      .select('id, client_id, company_name, server_id, rep_name')
       .eq('id', campaignId)
       .single();
 
@@ -136,7 +136,7 @@ router.post('/init-category', async (req, res) => {
     });
 
     const staffWebhook = await staffChannel.createWebhook({
-      name: `Staff | ${campaign.company_name}`,
+      name: `${campaign.rep_name || ''} | ${campaign.company_name}`,
       avatar: client.profile_picture || 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WARM%20Transparent-7Qk6aLp8aveeijQInp4caIaejfpZqP.png',
     });
 
@@ -164,7 +164,10 @@ router.post('/add-creator-to-discord', async (req, res) => {
       .eq('id', creatorId)
       .single();
 
-    if (creatorError || !creator) return res.status(500).json({ error: 'Creator not found' });
+    if (creatorError || !creator) {
+      console.error(creatorError);
+      return res.status(500).json({ error: 'Creator not found' });
+    }
 
     const { data: campaign, error: campaignError } = await SUPABASE_CLIENT
       .from('campaigns')
@@ -172,7 +175,10 @@ router.post('/add-creator-to-discord', async (req, res) => {
       .eq('id', creator.campaign_id)
       .single();
 
-    if (campaignError || !campaign) return res.status(500).json({ error: 'Campaign not found' });
+    if (campaignError || !campaign) {
+      console.error(campaignError);
+      return res.status(500).json({ error: 'Campaign not found' });
+    }
 
     const { data: client, error: clientError } = await SUPABASE_CLIENT
       .from('clients')
@@ -188,7 +194,11 @@ router.post('/add-creator-to-discord', async (req, res) => {
     const user = await DISCORD_CLIENT.users.fetch(creator.discord_id);
     if (!user) return res.status(500).json({ error: 'Discord user not found' });
 
-    const sanitizedChannelName = `${campaign.company_name}-${creator.channel_name}`.replace(/[^a-zA-Z0-9]/g, '');
+    const rawName = `${campaign.company_name}--${creator.channel_name}`;
+    const sanitizedChannelName = rawName
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, '-')   // retain intentional double dashes
+      .replace(/^-+|-+$/g, '');
 
     const channel = await guild.channels.create({
       name: sanitizedChannelName,
