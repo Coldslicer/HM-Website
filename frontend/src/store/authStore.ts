@@ -32,7 +32,7 @@ export const useAuthStore = create<AuthState>((set) => {
     }
 
     if (data) {
-      useCampaignStore.getState().setCurrentCampaign(data);
+      // useCampaignStore.getState().setCurrentCampaign(data);
     }
   };
 

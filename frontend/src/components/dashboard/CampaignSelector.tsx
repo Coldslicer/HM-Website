@@ -33,20 +33,43 @@ export function CampaignSelector({ onClose }: { onClose?: () => void }) {
 
   const handleSelectCampaign = (campaign: Campaign) => {
     setCurrentCampaign(campaign);
-    if (onClose) onClose(); // Close the popup if `onClose` is provided
+    if (onClose) onClose();
+  };
+
+  const handleNewCampaign = async () => {
+    if (!user) return;
+
+    const { data, error } = await SUPABASE_CLIENT
+      .from('campaigns')
+      .insert({
+        client_id: user.id,
+        name: 'Draft', // You can customize or prompt for this
+        status: 'draft',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating new campaign:', error);
+      return;
+    }
+
+    if (data) {
+      setCurrentCampaign(data);
+      setCampaigns((prev) => [data, ...prev]);
+      if (onClose) onClose();
+    }
   };
 
   return (
-    <div className="w-full max-w-4xl p-8 bg-white rounded-lg shadow-lg"> {/* Wider popup */}
+    <div className="w-full max-w-4xl p-8 bg-white rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Select a Campaign</h2>
 
-      {/* Campaign List with Scrollable Container */}
-      <div className="max-h-[400px] overflow-y-auto pr-4"> {/* Added max height and scrolling */}
+      <div className="max-h-[400px] overflow-y-auto pr-4">
         <div className="space-y-3">
           {campaigns.map((campaign) => (
             <div
               key={campaign.id}
-              defaultValue={currentCampaign}
               onClick={() => handleSelectCampaign(campaign)}
               className={`p-6 rounded-lg cursor-pointer transition-all
                 ${currentCampaign?.id === campaign.id
@@ -54,10 +77,8 @@ export function CampaignSelector({ onClose }: { onClose?: () => void }) {
                   : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
                 }`}
             >
-              <h3 className="text-xl font-semibold text-gray-800"> {/* Larger text */}
-                {campaign.name}
-              </h3>
-              <p className="text-sm text-gray-500 mt-2"> {/* Adjusted spacing */}
+              <h3 className="text-xl font-semibold text-gray-800">{campaign.name}</h3>
+              <p className="text-sm text-gray-500 mt-2">
                 Created: {new Date(campaign.created_at).toLocaleDateString()}
               </p>
             </div>
@@ -65,12 +86,8 @@ export function CampaignSelector({ onClose }: { onClose?: () => void }) {
         </div>
       </div>
 
-      {/* New Campaign Button */}
       <button
-        onClick={() => {
-          setCurrentCampaign(null);
-          if (onClose) onClose(); // Close the popup if `onClose` is provided
-        }}
+        onClick={handleNewCampaign}
         className="mt-6 w-full py-3 bg-orange-500 hover:bg-orange-600 text-white 
           rounded-lg font-medium transition-colors flex items-center 
           justify-center space-x-2"
