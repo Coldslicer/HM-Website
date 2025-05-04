@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+/* ================ [ IMPORTS ] ================ */
+
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useCampaignStore } from '../../store/campaignStore';
 import { DocusealForm } from '@docuseal/react';
@@ -9,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 
 const Contract = () => {
   const { currentCampaign } = useCampaignStore();
+  const navigate = useNavigate();
 
   if (
     currentCampaign?.status !== "creators_selected" &&
@@ -173,7 +176,7 @@ const Contract = () => {
 
       {responseData ? (
         <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="bg-gray-50 rounded-lg shadow-inner p-4 h-[600px]">
+          <div className="bg-gray-50 rounded-lg shadow-inner p-4 h-[800px] overflow-y-auto">
             <DocusealForm
               src={responseData.embed_src}
               withTitle={false}
@@ -184,9 +187,9 @@ const Contract = () => {
                   .update({ status: "contract_signed" })
                   .eq("id", currentCampaign.id);
 
-                  await axios.post('/api/contracts/creator-forms', {
-                    campaign_id: currentCampaign.id,
-                  });
+                await axios.post('/api/contracts/creator-forms', {
+                  campaign_id: currentCampaign.id,
+                });
 
                 if (selectedOption === "fully_managed") {
                   await axios.post("/api/messages/sendDM", {
@@ -195,6 +198,8 @@ const Contract = () => {
                     type: "staff",
                   });
                 }
+
+                navigate("/dashboard/messaging");
               }}
             />
           </div>
