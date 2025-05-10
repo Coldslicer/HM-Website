@@ -231,7 +231,7 @@ export function CreatorForm() {
 
       // ⚡ Post to the Discord channel via the webhook
       await axios.post(creatorWithWebhook.webhook_url, {
-        content: `<@${formData.discord_id}> You’re IN
+        content: `[hidden from clients]\n<@${formData.discord_id}> You’re IN
 
 Thank you for applying. While we cannot guarantee every creator will get selected, you have just taken a major step, which is getting your channel in front of big brands.
 If this is your first campaign, read our guide! Super important: [LINK](https://tinyurl.com/hmsponsorguide)

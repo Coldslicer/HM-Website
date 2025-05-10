@@ -27,7 +27,7 @@ async function getCampaignDetails(campaignId) {
 }
 
 // Function to get creator details from Supabase
-async function getCreatorsForCampaign(campaignId, fully_managed) {
+async function getCreatorsForCampaign(campaignId, fullyManaged) {
   const { data, error } = await SUPABASE_CLIENT
     .from('campaign_creators')
     .select('*')
@@ -38,11 +38,11 @@ async function getCreatorsForCampaign(campaignId, fully_managed) {
     return [];
   }
 
-  if (fully_managed) {
+  if (!!fullyManaged) {
     data.forEach((creator) => {
       creator.rate *= 1.15;
       creator.rate_cpm *= 1.15;
-      creator.cpm_cap *= 1.15;
+      creator.cpm_cap = !creator.cpm_cap ? "NONE" : creator.cpm_cap * 1.15;
     });
   }
 
@@ -113,7 +113,7 @@ async function uploadTemplateToDocuSeal(htmlContent, campaignId) {
 }
 
 // Function to generate the contract from the template
-async function generateContract(campaignId, fully_managed) {
+async function generateContract(campaignId, fullyManaged) {
   // Fetch campaign details
   const campaign = await getCampaignDetails(campaignId);
   if (!campaign) {
@@ -121,7 +121,7 @@ async function generateContract(campaignId, fully_managed) {
   }
 
   // Fetch creators for the campaign
-  const creators = await getCreatorsForCampaign(campaignId, fully_managed);
+  const creators = await getCreatorsForCampaign(campaignId, fullyManaged);
 
   // Load the HTML template and decode HTML entities
   const htmlTemplate = loadHtmlTemplate();
@@ -150,6 +150,7 @@ const router = express.Router();
 
 router.get('/client-form', async (req, res) => {
   const { campaign_id, signer_email, fully_managed } = req.query;
+  const fullyManaged = fully_managed === "true";
 
   if (!campaign_id) {
     console.log('query did not provide campaign_id');
@@ -183,9 +184,9 @@ router.get('/client-form', async (req, res) => {
   }
 
   try {
-    const templateId = await generateContract(campaign_id, fully_managed);
+    const templateId = await generateContract(campaign_id, fullyManaged);
     if (!templateId) {
-      res.status(500).json({ error: 'Error creating submission' });
+      return res.status(500).json({ error: 'Error creating submission' });
     }
     const submissionData = {
       template_id: templateId,
@@ -200,7 +201,7 @@ router.get('/client-form', async (req, res) => {
           fields: [
             {
               name: 'FullyManagedCampaign',
-              default_value: fully_managed ? "Client has opted for Fully Managed Campaign services. Client acknowledges an additional 15% fee applies to each Influencer’s rate as reflected in the table or invoice." : "Client has not opted for Fully Managed Campaign services and agrees to manage all Influencer communications and logistics.",
+              default_value: fullyManaged ? "Client has opted for Fully Managed Campaign services. Client acknowledges an additional 15% fee applies to each Influencer’s rate as reflected in the table or invoice." : "Client has not opted for Fully Managed Campaign services and agrees to manage all Influencer communications and logistics.",
               readonly: false
             },
           ]
@@ -233,7 +234,7 @@ router.get('/client-form', async (req, res) => {
     console.error('Error response:', error.response?.data || error.message);
 
     if (!res.headersSent) {
-      res.status(500).json({ error: "An error occurred during API call" });
+      return res.status(500).json({ error: "An error occurred during API call" });
     }
   }
 });
@@ -321,9 +322,9 @@ router.post('/creator-forms', async (req, res) => {
                   name: 'Rate',
                   default_value: (creatorData.rate || creatorData.rate_cpm || creatorData.cpm_cap
                   ? [
-                      creatorData.rate ? `$${creatorData.rate} Flat` : null,
-                      creatorData.rate_cpm ? `$${creatorData.rate_cpm} CPM` : null,
-                      creatorData.cpm_cap ? `$${creatorData.cpm_cap} CPM Cap` : null,
+                      creatorData.rate ? `$${creatorData.rate * 0.85} Flat` : null,
+                      creatorData.rate_cpm ? `$${creatorData.rate_cpm * 0.85} CPM` : null,
+                      creatorData.cpm_cap ? `$${creatorData.cpm_cap * 0.85} CPM Cap` : null,
                     ]
                       .filter(Boolean)
                       .join(', ')
@@ -395,10 +396,10 @@ router.post('/creator-forms', async (req, res) => {
     }
 
     // Send a success response
-    res.json({ message: 'Contracts submitted for all selected creators successfully' });
+    return res.json({ message: 'Contracts submitted for all selected creators successfully' });
   } catch (error) {
     console.error('An error occurred while processing the creator contracts:', error.message);
-    res.status(500).json({ error: 'An error occurred during contract creation for creators' });
+    return res.status(500).json({ error: 'An error occurred during contract creation for creators' });
   }
 });
 

@@ -298,6 +298,16 @@ export function BriefForm() {
           .eq("id", currentCampaign.id);
         setPendingUpdates({});
       }
+
+      const { error } = await SUPABASE_CLIENT
+        .from("campaigns")
+        .update({ status: "brief_submitted" })
+        .eq("id", currentCampaign.id);
+
+      if (error) {
+        console.error("Update failed:", error.message);
+      }
+
       
       setCurrentCampaign(campaignInfo);
       
