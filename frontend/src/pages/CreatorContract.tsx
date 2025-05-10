@@ -86,7 +86,7 @@ export const CreatorContract = () => {
       <h2 className="text-2xl font-bold text-black mb-6">Creator Contract</h2>
 
       {embedLink ? (
-        <div className="bg-white h-[500px] max-h-[80vh] overflow-auto border rounded-md shadow-md">
+        <div className="bg-white h-[800px] max-h-[80vh] overflow-auto border rounded-md shadow-md">
           <DocusealForm
             src={embedLink}
             withTitle={false}
@@ -95,7 +95,7 @@ export const CreatorContract = () => {
           />
         </div>
       ) : (
-        <div className="bg-gray-200 h-[500px] max-h-[80vh] flex items-center justify-center border rounded-md shadow-md">
+        <div className="bg-gray-200 h-[800px] max-h-[80vh] flex items-center justify-center border rounded-md shadow-md">
           <p className="text-gray-600 text-lg">Loading contract form...</p>
         </div>
       )}

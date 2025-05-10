@@ -324,13 +324,14 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
       {/* Form Link */}
       <div className="mt-4">
         <p className="text-sm text-gray-500">
-          *Love a creator but don't like their rate?{" "}
+          *Love a creator but don't like their rate? Negotiate rate changes in the{" "}
           <Link
-            to="https://docs.google.com/forms/d/1P6I3g-l7ENpU0yNHnjkmJ9lAq2uHs9Am4zadRl2tQ_I"
+            to="/dashboard/messaging"
             className="text-orange-500 hover:text-orange-600"
           >
-            Fill out this form
-          </Link>
+            Messaging
+          </Link>{" "}
+          tab!
         </p>
       </div>
 
