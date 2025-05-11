@@ -300,8 +300,7 @@ export function BriefForm() {
         setPendingUpdates({});
       }
 
-      const { error } = await SUPABASE_CLIENT
-        .from("campaigns")
+      const { error } = await SUPABASE_CLIENT.from("campaigns")
         .update({ status: "brief_submitted" })
         .eq("id", currentCampaign.id);
 
@@ -309,7 +308,6 @@ export function BriefForm() {
         console.error("Update failed:", error.message);
       }
 
-      
       setCurrentCampaign(campaignInfo);
 
       await axios

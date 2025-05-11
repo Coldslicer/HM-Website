@@ -83,16 +83,21 @@ const Analytics = () => {
   }));
 
   const handleChange = (selectedOptions: any) => {
-    const values = selectedOptions ? selectedOptions.map((o: any) => o.value) : [];
+    const values = selectedOptions
+      ? selectedOptions.map((o: any) => o.value)
+      : [];
     if (values.includes(allVideosOption.value)) {
       setSelectedVideos([allVideosOption.value]);
     } else {
-      setSelectedVideos(values.filter((v: string) => v !== allVideosOption.value));
+      setSelectedVideos(
+        values.filter((v: string) => v !== allVideosOption.value),
+      );
     }
   };
 
   const filteredVideos =
-    selectedVideos.includes(allVideosOption.value) || selectedVideos.length === 0
+    selectedVideos.includes(allVideosOption.value) ||
+    selectedVideos.length === 0
       ? videos
       : videos.filter((v) => selectedVideos.includes(v.video_id));
 
@@ -208,7 +213,10 @@ const Analytics = () => {
           });
 
           return (
-            <div key={video.video_id} className="bg-white p-6 rounded-lg shadow-md mb-8">
+            <div
+              key={video.video_id}
+              className="bg-white p-6 rounded-lg shadow-md mb-8"
+            >
               <h2 className="text-lg font-semibold mb-4">{video.title}</h2>
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart
