@@ -16,6 +16,6 @@ export const useCampaignStore = create<CampaignState>()(
     {
       name: "campaign-storage",
       storage: createJSONStorage(() => localStorage), // Forces usage of localStorage
-    }
-  )
+    },
+  ),
 );

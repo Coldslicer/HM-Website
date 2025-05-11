@@ -44,19 +44,16 @@ export function Messaging() {
   }, [currentCampaign]);
 
   useEffect(() => {
-
     const fetchCreators = async () => {
-
-      const { data, error } = (currentCampaign?.status == "brief_submitted") ? (
-      await SUPABASE_CLIENT.from("campaign_creators")
-        .select("id, channel_id, channel_url, channel_name, discord_id")
-        .eq("campaign_id", currentCampaign?.id))
-      : (await SUPABASE_CLIENT.from("campaign_creators")
-      .select("id, channel_id, channel_url, channel_name, discord_id")
-      .eq("campaign_id", currentCampaign?.id)
-      .eq("selected", true));
-      
-        
+      const { data, error } =
+        currentCampaign?.status == "brief_submitted"
+          ? await SUPABASE_CLIENT.from("campaign_creators")
+              .select("id, channel_id, channel_url, channel_name, discord_id")
+              .eq("campaign_id", currentCampaign?.id)
+          : await SUPABASE_CLIENT.from("campaign_creators")
+              .select("id, channel_id, channel_url, channel_name, discord_id")
+              .eq("campaign_id", currentCampaign?.id)
+              .eq("selected", true);
 
       if (error) {
         console.error("Error fetching creators:", error);
@@ -234,20 +231,21 @@ export function Messaging() {
               </button>
             </li>
           )}
-          {(currentCampaign?.status != "brief_submitted" && currentCampaign?.status != "draft") &&
-          <li>
-            <button
-              onClick={() => handleChannelChange(groupChatChannelId)}
-              className={`w-full text-left px-4 py-2 rounded-md ${
-                selectedChannel === groupChatChannelId
-                  ? "bg-orange-500 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              All
-            </button>
-          </li>
-          }
+          {currentCampaign?.status != "brief_submitted" &&
+            currentCampaign?.status != "draft" && (
+              <li>
+                <button
+                  onClick={() => handleChannelChange(groupChatChannelId)}
+                  className={`w-full text-left px-4 py-2 rounded-md ${
+                    selectedChannel === groupChatChannelId
+                      ? "bg-orange-500 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  All
+                </button>
+              </li>
+            )}
           {creators.map((creator) => (
             <li key={creator.id}>
               <button
@@ -300,7 +298,7 @@ export function Messaging() {
                 const previousMessage = arr[index - 1];
                 const isSameAuthor = previousMessage?.author === msg.author;
                 const previousTimestamp = new Date(
-                  previousMessage?.timestamp
+                  previousMessage?.timestamp,
                 ).getTime();
                 const currentTimestamp = new Date(msg.timestamp).getTime();
                 const timeDiff = (currentTimestamp - previousTimestamp) / 1000; // in seconds
@@ -385,8 +383,8 @@ export function Messaging() {
                     selectedChannel === groupChatChannelId
                       ? "group"
                       : selectedChannel == staffChatChannelId
-                      ? "staff"
-                      : "dm"
+                        ? "staff"
+                        : "dm",
                   );
                 }
               }}
@@ -403,8 +401,8 @@ export function Messaging() {
                   selectedChannel === groupChatChannelId
                     ? "group"
                     : selectedChannel == staffChatChannelId
-                    ? "staff"
-                    : "dm"
+                      ? "staff"
+                      : "dm",
                 );
               }}
               className="bg-orange-500 text-white p-3 rounded-md hover:bg-orange-600 transition-colors"

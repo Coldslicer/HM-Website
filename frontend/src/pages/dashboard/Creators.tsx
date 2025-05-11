@@ -20,7 +20,7 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
   const [totalRate, setTotalRate] = useState(0);
   const [totalRateCPM, setTotalRateCPM] = useState(0);
   const [selectedStatement, setSelectedStatement] = useState<string | null>(
-    null
+    null,
   );
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
 
   const fetchCreators = async () => {
     const { data: creatorsData } = await SUPABASE_CLIENT.from(
-      "campaign_creators"
+      "campaign_creators",
     )
       .select(
         "id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement, cpm_cap",
@@ -52,11 +52,11 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
           console.error("Error fetching YouTube data:", error);
           return creator;
         }
-      })
+      }),
     );
 
     const sortedCreators = creatorsWithChannelData.sort(
-      (a, b) => b.selected - a.selected
+      (a, b) => b.selected - a.selected,
     );
     setCreators(sortedCreators);
     const selected = sortedCreators.filter((c) => c.selected);
@@ -64,8 +64,8 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
     setTotalRateCPM(
       selected.reduce(
         (acc, c) => acc + (c.rate_cpm * (c.averageViews || 0)) / 1000,
-        0
-      )
+        0,
+      ),
     );
   };
 
@@ -73,7 +73,7 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
     if (currentCampaign?.status !== "brief_submitted") return;
 
     const updatedCreators = creators.map((c) =>
-      c.id === creator.id ? { ...c, selected: !c.selected } : c
+      c.id === creator.id ? { ...c, selected: !c.selected } : c,
     );
     setCreators(updatedCreators);
     const selected = updatedCreators.filter((c) => c.selected);
@@ -81,8 +81,8 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
     setTotalRateCPM(
       selected.reduce(
         (acc, c) => acc + (c.rate_cpm * (c.averageViews || 0)) / 1000,
-        0
-      )
+        0,
+      ),
     );
 
     await SUPABASE_CLIENT.from("campaign_creators")
@@ -92,42 +92,43 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
 
   const finalizeCreators = async () => {
     const confirmed = window.confirm(
-      "Are you sure you want to finalize the selected creators?"
+      "Are you sure you want to finalize the selected creators?",
     );
-  
+
     if (!confirmed) return;
-  
+
     try {
       const { error } = await SUPABASE_CLIENT.from("campaigns")
         .update({ status: "creators_selected", total_price: totalRate })
         .eq("id", currentCampaign?.id);
-  
+
       if (error) {
         console.error("Error updating campaign status:", error);
         alert("Something went wrong updating the campaign status.");
         return;
       }
-  
+
       currentCampaign.status = "creators_selected";
-  
+
       // Fire-and-forget: remove unselected creators from Discord
       axios
         .post("/api/campaigns/remove-unselected-discord-channels", {
           campaignId: currentCampaign?.id,
         })
         .catch((err) =>
-          console.warn("Failed to remove unselected creators from Discord:", err)
+          console.warn(
+            "Failed to remove unselected creators from Discord:",
+            err,
+          ),
         );
-  
+
       // Fire-and-forget: create the group chat
       axios
         .post("/api/campaigns/create-group-chat", {
           campaignId: currentCampaign?.id,
         })
-        .catch((err) =>
-          console.warn("Failed to create group chat:", err)
-        );
-  
+        .catch((err) => console.warn("Failed to create group chat:", err));
+
       alert("Creators finalized successfully!");
       navigate("/dashboard/creators");
     } catch (error) {
@@ -135,7 +136,6 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
       alert("An unexpected error occurred.");
     }
   };
-  
 
   const handleOpenPopup = (statement: string) =>
     setSelectedStatement(statement);
@@ -145,7 +145,7 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
     navigator.clipboard.writeText(
       `${window.location.origin}/creator-sharing/${
         campaignId || currentCampaign?.id
-      }`
+      }`,
     );
     setCopied(true);
     alert("Link copied to clipboard!");
@@ -324,7 +324,8 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
       {/* Form Link */}
       <div className="mt-4">
         <p className="text-sm text-gray-500">
-          *Love a creator but don't like their rate? Negotiate rate changes in the{" "}
+          *Love a creator but don't like their rate? Negotiate rate changes in
+          the{" "}
           <Link
             to="/dashboard/messaging"
             className="text-orange-500 hover:text-orange-600"

@@ -73,7 +73,7 @@ export const useAuthStore = create<AuthState>((set) => {
 
     const googleAvatar = user.user_metadata?.avatar_url ?? null;
     const discordIdentity = user.identities?.find(
-      (id: any) => id.provider === "discord"
+      (id: any) => id.provider === "discord",
     );
     const discordAvatar =
       discordIdentity?.identity_data?.id &&
@@ -92,7 +92,7 @@ export const useAuthStore = create<AuthState>((set) => {
 
       if (checkError && checkError.code !== "PGRST116") {
         throw new Error(
-          `Error checking client existence: ${checkError.message}`
+          `Error checking client existence: ${checkError.message}`,
         );
       }
 

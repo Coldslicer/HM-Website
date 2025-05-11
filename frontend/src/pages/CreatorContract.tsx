@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { DocusealForm } from '@docuseal/react';
-import { SUPABASE_CLIENT } from '../lib/supabase';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import { DocusealForm } from "@docuseal/react";
+import { SUPABASE_CLIENT } from "../lib/supabase";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export const CreatorContract = () => {
   const navigate = useNavigate();
@@ -13,32 +13,31 @@ export const CreatorContract = () => {
   useEffect(() => {
     const fetchCreatorData = async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const creatorIdParam = urlParams.get('creatorId');
-      console.log("loading form "+creatorIdParam);
-      
+      const creatorIdParam = urlParams.get("creatorId");
+      console.log("loading form " + creatorIdParam);
+
       if (!creatorIdParam) {
-        setError('Creator ID is required');
+        setError("Creator ID is required");
         return;
       }
 
       setCreatorId(creatorIdParam);
 
       // Fetch the embed link for the creator from Supabase
-      const { data, error } = await SUPABASE_CLIENT
-        .from('campaign_creators')
-        .select('contract_embed_link')
-        .eq('id', creatorIdParam)
+      const { data, error } = await SUPABASE_CLIENT.from("campaign_creators")
+        .select("contract_embed_link")
+        .eq("id", creatorIdParam)
         .single();
 
       if (error) {
-        setError('Error fetching creator data');
+        setError("Error fetching creator data");
         return;
       }
 
       if (data) {
         setEmbedLink(data.contract_embed_link);
       } else {
-        setError('No creator data found');
+        setError("No creator data found");
       }
     };
 
@@ -47,28 +46,26 @@ export const CreatorContract = () => {
 
   const handleContractCompletion = async () => {
     if (!creatorId) {
-      setError('No creator ID provided');
+      setError("No creator ID provided");
       return;
     }
 
     try {
       // Mark the creator's contract as signed in Supabase
-      const { error } = await SUPABASE_CLIENT
-        .from('campaign_creators')
+      const { error } = await SUPABASE_CLIENT.from("campaign_creators")
         .update({ contract_signed: true })
-        .eq('id', creatorId);
+        .eq("id", creatorId);
 
       if (error) {
-        setError('Failed to update contract status');
+        setError("Failed to update contract status");
         return;
       }
 
       // Optionally, notify the user that the contract has been signed
-      alert('Contract signed successfully!');
-
+      alert("Contract signed successfully!");
     } catch (error) {
-      console.error('Error completing contract:', error);
-      setError('An error occurred while completing the contract');
+      console.error("Error completing contract:", error);
+      setError("An error occurred while completing the contract");
     }
   };
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from 'axios';
+import axios from "axios";
 import { useAuthStore } from "../../store/authStore";
 import { useCampaignStore } from "../../store/campaignStore";
 import { SUPABASE_CLIENT } from "../../lib/supabase";
@@ -35,9 +35,9 @@ export function BriefForm() {
   const [hasHydrated, setHasHydrated] = useState(false);
 
   const [autosaveEnabled, setAutosaveEnabled] = useState(true);
-  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved" | "idle">("idle");
-
-
+  const [saveStatus, setSaveStatus] = useState<
+    "saved" | "saving" | "unsaved" | "idle"
+  >("idle");
 
   // State variables
   const [formData, setFormDataState] = useState(contents);
@@ -45,31 +45,35 @@ export function BriefForm() {
     { name: string | null; discord_webhook_url: string }[]
   >([]);
   const [roles, setRoles] = useState<{ value: string | null; key: string }[]>(
-    []
+    [],
   );
   const [error, setError] = useState("");
   const [clientServers, setClientServers] = useState<string[]>([]);
   const [selectedServer, setSelectedServer] = useState<string | null>(null);
-  const [pendingUpdates, setPendingUpdates] = useState<Partial<typeof contents>>({});
+  const [pendingUpdates, setPendingUpdates] = useState<
+    Partial<typeof contents>
+  >({});
 
   const setFormData = (
-    updater: Partial<typeof contents> | ((prev: typeof contents) => Partial<typeof contents>)
+    updater:
+      | Partial<typeof contents>
+      | ((prev: typeof contents) => Partial<typeof contents>),
   ) => {
     setFormDataState((prev) => {
       const updates = typeof updater === "function" ? updater(prev) : updater;
       const merged = { ...prev, ...updates };
-  
+
       const changed: Partial<typeof contents> = {};
       for (const key in updates) {
         if (updates[key] !== prev[key]) {
           changed[key] = updates[key];
         }
       }
-  
+
       if (Object.keys(changed).length > 0) {
         setPendingUpdates((prev) => ({ ...prev, ...changed }));
       }
-  
+
       return merged;
     });
   };
@@ -77,18 +81,17 @@ export function BriefForm() {
   useEffect(() => {
     const fetchCampaign = async () => {
       if (!currentCampaign?.id || hasHydrated) return;
-  
-      const { data, error } = await SUPABASE_CLIENT
-        .from("campaigns")
+
+      const { data, error } = await SUPABASE_CLIENT.from("campaigns")
         .select("*")
         .eq("id", currentCampaign.id)
         .single();
-  
+
       if (error) {
         console.error("Failed to fetch campaign:", error);
         return;
       }
-  
+
       // Hydrate form from Supabase data
       setFormData({
         company_name: data.company_name || "",
@@ -105,36 +108,37 @@ export function BriefForm() {
         niches: data.niches || [],
         brief_url: data.brief_url || "",
       });
-  
+
       if (data.server_id) {
         setSelectedServer(data.server_id);
       }
-  
+
       setHasHydrated(true);
     };
-  
+
     fetchCampaign();
   }, [hasHydrated]);
 
   useEffect(() => {
     setHasHydrated(false);
-  },[currentCampaign?.id]);
-  
-  
-  
-  
+  }, [currentCampaign?.id]);
+
   useEffect(() => {
-    if (!autosaveEnabled || Object.keys(pendingUpdates).length === 0 || !currentCampaign?.id) return;
-  
+    if (
+      !autosaveEnabled ||
+      Object.keys(pendingUpdates).length === 0 ||
+      !currentCampaign?.id
+    )
+      return;
+
     setSaveStatus("saving");
-  
+
     const timeout = setTimeout(async () => {
       try {
-        const { error } = await SUPABASE_CLIENT
-          .from("campaigns")
+        const { error } = await SUPABASE_CLIENT.from("campaigns")
           .update(pendingUpdates)
           .eq("id", currentCampaign.id);
-  
+
         if (error) {
           console.error("Failed to update campaign:", error);
           setSaveStatus("unsaved");
@@ -147,20 +151,20 @@ export function BriefForm() {
         setSaveStatus("unsaved");
       }
     }, 500); // debounce
-  
+
     return () => clearTimeout(timeout);
   }, [pendingUpdates, autosaveEnabled, currentCampaign?.id]);
 
   const handleManualSave = async () => {
-    if (!currentCampaign?.id || Object.keys(pendingUpdates).length === 0) return;
-  
+    if (!currentCampaign?.id || Object.keys(pendingUpdates).length === 0)
+      return;
+
     setSaveStatus("saving");
-  
-    const { error } = await SUPABASE_CLIENT
-      .from("campaigns")
+
+    const { error } = await SUPABASE_CLIENT.from("campaigns")
       .update(pendingUpdates)
       .eq("id", currentCampaign.id);
-  
+
     if (error) {
       console.error("Manual save failed:", error);
       setSaveStatus("unsaved");
@@ -169,8 +173,6 @@ export function BriefForm() {
       setSaveStatus("saved");
     }
   };
-  
-  
 
   // Fetch niche types
   const fetchNiches = async (serverId: string | null) => {
@@ -244,7 +246,7 @@ export function BriefForm() {
     //     niches: currentCampaign.niches || [],
     //     brief_url: currentCampaign.brief_url,
     //   });
-    // } 
+    // }
     // else {
     //   setFormData(contents);
     //   fetchMostRecentCampaign();
@@ -260,7 +262,7 @@ export function BriefForm() {
     console.log(selectedServer);
     fetchNiches(selectedServer);
     fetchRoles(selectedServer);
-    setFormData(prev => ({ ...prev, niches: [] }));
+    setFormData((prev) => ({ ...prev, niches: [] }));
   }, [selectedServer]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -284,7 +286,7 @@ export function BriefForm() {
         setError("Campaign not found.");
         return;
       }
-      
+
       const campaignInfo = {
         ...currentCampaign,
         ...formData,
@@ -292,8 +294,7 @@ export function BriefForm() {
       };
 
       if (Object.keys(pendingUpdates).length > 0) {
-        await SUPABASE_CLIENT
-          .from("campaigns")
+        await SUPABASE_CLIENT.from("campaigns")
           .update(pendingUpdates)
           .eq("id", currentCampaign.id);
         setPendingUpdates({});
@@ -310,15 +311,14 @@ export function BriefForm() {
 
       
       setCurrentCampaign(campaignInfo);
-      
 
-      
-      await axios.post('/api/campaigns/init-category', {
-        campaignId: campaignInfo.id,
-      }).catch((err) => {
-        console.warn('Silent fail on one-way call:', err.message);
-      });
-      
+      await axios
+        .post("/api/campaigns/init-category", {
+          campaignId: campaignInfo.id,
+        })
+        .catch((err) => {
+          console.warn("Silent fail on one-way call:", err.message);
+        });
 
       const baseUrl = window.location.origin; // Dynamically get the base URL
       let formattedMessage = "";
@@ -362,13 +362,13 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
 
 ## **To Declare Your Commitment React Below and Fill out the Form** 
 ### Not working? [Fill out this form instead](${baseUrl}/creator-form?campaignName=${encodeURIComponent(
-        formData.name
+        formData.name,
       )})
 `;
 
       // Send to selected niches' webhooks
       const selectedNiches = niches.filter((niche) =>
-        formData.niches.includes(niche.name!)
+        formData.niches.includes(niche.name!),
       );
       for (const niche of selectedNiches) {
         await fetch("/api/messages/send", {
@@ -383,7 +383,7 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
 
       // Additionally send to the NULL niche's webhook
       const nullChannel = niches.find(
-        (niche) => niche.name === null
+        (niche) => niche.name === null,
       )?.channel_id;
       if (nullChannel) {
         await fetch("/api/messages/send-brief", {
@@ -396,10 +396,9 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
         });
       } else {
         console.error(
-          "No webhook found for NULL niche, could not post to the all sponsorships channel."
+          "No webhook found for NULL niche, could not post to the all sponsorships channel.",
         );
       }
-      
 
       navigate("/dashboard/creators");
     } catch (error) {
@@ -426,7 +425,7 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
   };
 
   const handlePricingToggle = (
-    value: "Flat-rate" | "CPM (first 30d)" | "Hybrid"
+    value: "Flat-rate" | "CPM (first 30d)" | "Hybrid",
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -437,7 +436,7 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
   };
 
   const handleSponsorshipFormatToggle = (
-    value: "30s" | "60s" | "Shortform" | "Dedicated"
+    value: "30s" | "60s" | "Shortform" | "Dedicated",
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -558,44 +557,43 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
 
   return (
     <div className="max-w-2xl mx-auto">
+      <div className="bg-gray-100 p-6 rounded-lg shadow-md space-y-4 mb-6">
+        <h2 className="text-2xl font-bold text-black">Campaign Brief</h2>
+        {/* Autosave status and manual save button */}
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setAutosaveEnabled(!autosaveEnabled)}
+            className="text-sm font-medium text-blue-600 hover:underline focus:outline-none"
+          >
+            {autosaveEnabled ? "Autosave enabled" : "Autosave disabled"}
+          </button>
 
-<div className="bg-gray-100 p-6 rounded-lg shadow-md space-y-4 mb-6">
-<h2 className="text-2xl font-bold text-black">Campaign Brief</h2>
-  {/* Autosave status and manual save button */}
-  <div className="flex items-center space-x-3">
-    <button
-      onClick={() => setAutosaveEnabled(!autosaveEnabled)}
-      className="text-sm font-medium text-blue-600 hover:underline focus:outline-none"
-    >
-      {autosaveEnabled ? "Autosave enabled" : "Autosave disabled"}
-    </button>
+          <span className="text-gray-400">·</span>
 
-    <span className="text-gray-400">·</span>
+          <span className="text-sm text-gray-600">
+            {
+              {
+                saving: "Saving...",
+                saved: "Saved",
+                unsaved: "Unsaved changes",
+                idle: "No changes",
+              }[saveStatus]
+            }
+          </span>
 
-    <span className="text-sm text-gray-600">
-      {{
-        saving: "Saving...",
-        saved: "Saved",
-        unsaved: "Unsaved changes",
-        idle: "No changes",
-      }[saveStatus]}
-    </span>
+          <span className="text-gray-400">·</span>
 
-    <span className="text-gray-400">·</span>
+          <button
+            onClick={handleManualSave}
+            className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-xs"
+          >
+            Save now
+          </button>
+        </div>
 
-    <button
-      onClick={handleManualSave}
-      className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-xs"
-    >
-      Save now
-    </button>
-  </div>
+        {/* Campaign Brief Title */}
+      </div>
 
-  {/* Campaign Brief Title */}
-</div>
-
-
-      
       <form onSubmit={handleSubmit} className="space-y-6">
         <h3 className="text-2x font-bold text-black mb-6">Brand Information</h3>
 
@@ -693,7 +691,7 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
                 setError("");
               } else {
                 setError(
-                  "Campaign name can only contain letters, numbers, and spaces."
+                  "Campaign name can only contain letters, numbers, and spaces.",
                 );
               }
             }}
@@ -946,7 +944,7 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
           }`}
                 >
                   {formData.desired_pricing_model.includes(
-                    "CPM (first 30d)"
+                    "CPM (first 30d)",
                   ) && (
                     <svg
                       className="w-4 h-4 text-white"

@@ -1,11 +1,11 @@
 /* ================ [ IMPORTS ] ================ */
 
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useCampaignStore } from '../../store/campaignStore';
-import { DocusealForm } from '@docuseal/react';
-import { SUPABASE_CLIENT } from '../../lib/supabase';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useCampaignStore } from "../../store/campaignStore";
+import { DocusealForm } from "@docuseal/react";
+import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { useNavigate } from "react-router-dom";
 
 /* ================ [ CONTRACT ] ================ */
 
@@ -48,7 +48,7 @@ const Contract = () => {
       if (data) {
         setEmail(data.contract_email || "");
         setSelectedOption(
-          data.fully_managed ? "fully_managed" : "self_service"
+          data.fully_managed ? "fully_managed" : "self_service",
         );
       }
     };
@@ -187,7 +187,7 @@ const Contract = () => {
                   .update({ status: "contract_signed" })
                   .eq("id", currentCampaign.id);
 
-                await axios.post('/api/contracts/creator-forms', {
+                await axios.post("/api/contracts/creator-forms", {
                   campaign_id: currentCampaign.id,
                 });
 

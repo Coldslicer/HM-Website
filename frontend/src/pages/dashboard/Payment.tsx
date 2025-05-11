@@ -49,12 +49,12 @@ const Payment = () => {
       });
 
       const creators = (response.data || []).filter(
-        (creator) => creator.selected
+        (creator) => creator.selected,
       );
 
       const sortedCreators = creators.sort(
         (a: { channel_name: string }, b: { channel_name: string }) =>
-          a.channel_name.localeCompare(b.channel_name)
+          a.channel_name.localeCompare(b.channel_name),
       );
       setCreators(sortedCreators);
     } catch (error) {
@@ -100,7 +100,7 @@ const Payment = () => {
       const updatedCreators = creators.map((creator) =>
         creator.id === creatorId
           ? { ...creator, [`${type}_emailed`]: true }
-          : creator
+          : creator,
       );
       setCreators(updatedCreators);
       alert(`${type === "flat" ? "Flat" : "CPM"} payment initiated!`);

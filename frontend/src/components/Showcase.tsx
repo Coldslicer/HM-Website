@@ -76,7 +76,7 @@ function Showcase() {
               key={image.src}
               className={cn(
                 "absolute inset-0 transition-opacity duration-1000",
-                index === currentIndex ? "opacity-100" : "opacity-0"
+                index === currentIndex ? "opacity-100" : "opacity-0",
               )}
             >
               <div className="relative w-full h-full">
@@ -90,7 +90,7 @@ function Showcase() {
               <div
                 className={cn(
                   "absolute -bottom-14 left-0 right-0 text-center transition-opacity duration-1000",
-                  index === currentIndex ? "opacity-100" : "opacity-0"
+                  index === currentIndex ? "opacity-100" : "opacity-0",
                 )}
               >
                 <p className="text-sm font-bold text-gray-600">

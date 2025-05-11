@@ -19,10 +19,10 @@ const Timeline = () => {
 
   const fetchSelectedCreators = async () => {
     const { data: creatorsData } = await SUPABASE_CLIENT.from(
-      "campaign_creators"
+      "campaign_creators",
     )
       .select(
-        "id, draft, live_url, contract_signed, selected, channel_url, channel_name, final_approved, discord_id"
+        "id, draft, live_url, contract_signed, selected, channel_url, channel_name, final_approved, discord_id",
       )
       .eq("campaign_id", currentCampaign?.id)
       .eq("selected", true);
@@ -49,7 +49,9 @@ const Timeline = () => {
     setSelectedCreators(sortedCreators);
   };
 
-  const isCompleted = (field: string) => { return typeof field === "string" && field.trim().length > 0 }; 
+  const isCompleted = (field: string) => {
+    return typeof field === "string" && field.trim().length > 0;
+  };
 
   const openPopup = (text: string) => setPopupContent(text);
   const closePopup = () => setPopupContent(null);

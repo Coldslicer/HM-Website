@@ -11,7 +11,7 @@ export type Campaign = {
   niches: string[];
   per_influencer_budget: string[];
   desired_pricing_model: string[];
-  sponsorship_format: string[],
+  sponsorship_format: string[];
   brief_url: string;
   status: string;
   created_at: string;
@@ -31,8 +31,8 @@ export interface Creator {
 }
 
 export interface User {
-  id: string
-  email: string
-  companyName: string
-  role: 'client' | 'admin'
+  id: string;
+  email: string;
+  companyName: string;
+  role: "client" | "admin";
 }
