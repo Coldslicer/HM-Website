@@ -1,9 +1,19 @@
 /* ================ [ IMPORTS ] ================ */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useCampaignStore } from "../../store/campaignStore";
 import axios from "axios";
 import Select from "react-select";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
 
 /* ================ [ HELPERS ] ================ */
 
@@ -18,7 +28,7 @@ const Analytics = () => {
   // State variables
   const { currentCampaign } = useCampaignStore();
   const [videos, setVideos] = useState<any[]>([]);
-  const [selectedVideos, setSelectedVideos] = useState<any[]>([]);
+  const [selectedVideos, setSelectedVideos] = useState<string[]>(["all"]);
 
   // Fetch creator videos
   useEffect(() => {
@@ -54,8 +64,6 @@ const Analytics = () => {
         );
 
         setVideos(videoData.filter((v) => v !== null));
-
-        console.log("Videos fetched:", videoData);
       } catch (error) {
         console.error("Error fetching analytics:", error);
       }
@@ -64,10 +72,6 @@ const Analytics = () => {
     fetchAnalytics();
   }, [currentCampaign]);
 
-  const handleChange = (selectedOptions: any) => {
-    setSelectedVideos(selectedOptions || []);
-  };
-
   const allVideosOption = {
     label: "All videos",
     value: "all",
@@ -75,16 +79,58 @@ const Analytics = () => {
 
   const videoOptions = videos.map((video) => ({
     label: video.title,
-    value: video.videoId,
+    value: video.video_id,
   }));
 
-  const handleSelectAll = (selected: boolean) => {
-    if (selected) {
-      setSelectedVideos(videoOptions.map((option) => option.value));
+  const handleChange = (selectedOptions: any) => {
+    const values = selectedOptions ? selectedOptions.map((o: any) => o.value) : [];
+    if (values.includes(allVideosOption.value)) {
+      setSelectedVideos([allVideosOption.value]);
     } else {
-      setSelectedVideos([]);
+      setSelectedVideos(values.filter((v: string) => v !== allVideosOption.value));
     }
   };
+
+  const filteredVideos =
+    selectedVideos.includes(allVideosOption.value) || selectedVideos.length === 0
+      ? videos
+      : videos.filter((v) => selectedVideos.includes(v.video_id));
+
+  const chartData = useMemo(() => {
+    if (filteredVideos.length === 0) return [];
+    const days = Array.from({ length: 30 }, (_, i) => i + 1);
+    return days.map((day) => {
+      const point: any = { day };
+      filteredVideos.forEach((video) => {
+        const dv = video.daily_views || {};
+        const key = `views_${day}`;
+        let value = dv[key];
+        if (value == null) {
+          for (let d = day - 1; d >= 1; d--) {
+            const prevKey = `views_${d}`;
+            if (dv[prevKey] != null) {
+              value = dv[prevKey];
+              break;
+            }
+          }
+          if (value == null) value = 0;
+        }
+        point[video.title] = value;
+      });
+      return point;
+    });
+  }, [filteredVideos]);
+
+  const colors = [
+    "#8884d8",
+    "#82ca9d",
+    "#ffc658",
+    "#ff7300",
+    "#0088FE",
+    "#00C49F",
+    "#FFBB28",
+    "#FF8042",
+  ];
 
   return (
     <div className="p-6">
@@ -93,15 +139,104 @@ const Analytics = () => {
       <div className="bg-white p-6 rounded-lg shadow-md mb-8">
         <Select
           isMulti
-          value={selectedVideos.map((videoId) =>
-            videoOptions.find((option) => option.value === videoId),
-          )}
+          value={
+            selectedVideos.includes(allVideosOption.value)
+              ? [allVideosOption]
+              : videoOptions.filter((option) =>
+                  selectedVideos.includes(option.value),
+                )
+          }
           onChange={handleChange}
           options={[allVideosOption, ...videoOptions]}
           closeMenuOnSelect={false}
           placeholder="Select Videos"
         />
       </div>
+
+      {filteredVideos.length > 0 && (
+        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+          <h2 className="text-xl font-semibold mb-4">Selected Videos</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart
+              data={chartData}
+              margin={{ top: 20, right: 40, left: 20, bottom: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="day"
+                label={{
+                  value: "Days After Publish",
+                  position: "insideBottomRight",
+                  offset: -5,
+                }}
+              />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              {filteredVideos.map((video, idx) => (
+                <Line
+                  key={video.video_id}
+                  type="monotone"
+                  dataKey={video.title}
+                  stroke={colors[idx % colors.length]}
+                  dot={false}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {filteredVideos.length > 1 &&
+        filteredVideos.map((video, idx) => {
+          const days = Array.from({ length: 30 }, (_, i) => i + 1);
+          const singleData = days.map((day) => {
+            const dv = video.daily_views || {};
+            const key = `views_${day}`;
+            let value = dv[key];
+            if (value == null) {
+              for (let d = day - 1; d >= 1; d--) {
+                const prevKey = `views_${d}`;
+                if (dv[prevKey] != null) {
+                  value = dv[prevKey];
+                  break;
+                }
+              }
+              if (value == null) value = 0;
+            }
+            return { day, views: value };
+          });
+
+          return (
+            <div key={video.video_id} className="bg-white p-6 rounded-lg shadow-md mb-8">
+              <h2 className="text-lg font-semibold mb-4">{video.title}</h2>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart
+                  data={singleData}
+                  margin={{ top: 20, right: 40, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="day"
+                    label={{
+                      value: "Days After Publish",
+                      position: "insideBottomRight",
+                      offset: -5,
+                    }}
+                  />
+                  <YAxis />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="views"
+                    stroke={colors[idx % colors.length]}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        })}
     </div>
   );
 };

@@ -50,12 +50,12 @@ const fetchVideoDetails = async (videoId) => {
     const channelRes = await (await axios.get(channelURL)).data.items?.[0];
     const channelData = channelRes?.snippet;
 
-    title = videoData.title;
-    channel = channelData.handle || channelData.customUrl;
-    datePublished = videoData.publishedAt;
+    title = videoData?.title;
+    channel = channelData?.handle || channelData?.customUrl || "";
+    datePublished = videoData?.publishedAt;
 
     // Insert metadata into Supabase
-    await SUPABASE_CLIENT
+    const {error } = await SUPABASE_CLIENT
       .from('video_data')
       .insert({
         video_id: videoId,
@@ -63,6 +63,11 @@ const fetchVideoDetails = async (videoId) => {
         channel,
         date_published: datePublished,
       });
+    
+    if (error) {
+      console.error('Error inserting video data:', error);
+      return res.status(500).json({ error: 'Failed to insert video data' });
+    }
   }
 
   // Grab daily views
