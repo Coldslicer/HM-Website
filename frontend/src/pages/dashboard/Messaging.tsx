@@ -284,7 +284,7 @@ export function Messaging() {
                   .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                   .join(" ");
 
-                let contentLines = msg.content.split("\n");
+                const contentLines = msg.content.split("\n");
                 if (
                   contentLines.length > 1 &&
                   (contentLines[0].startsWith("<@") ||

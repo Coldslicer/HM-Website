@@ -16,6 +16,7 @@ const contents = {
   company_description: "",
   company_phone: "",
   name: "",
+
   rep_name: "",
   date: "",
   per_influencer_budget: [] as string[],

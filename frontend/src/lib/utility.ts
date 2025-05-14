@@ -11,7 +11,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 // Format number
-function formatNum(num: number) {
+function formatNum(num: number | null | undefined = 0) {
   return num?.toLocaleString() || "0";
 }
 

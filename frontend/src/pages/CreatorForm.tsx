@@ -44,13 +44,22 @@ export function CreatorForm() {
     discord_id: prefilledDiscordID,
   });
 
-  const [campaigns, setCampaigns] = useState<any[]>([]);
+  interface Campaign {
+    id: string;
+    name: string;
+    status: string;
+    desired_pricing_model: string[];
+    sponsorship_format: string[];
+    created_at: string;
+  }
+
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<boolean>(false);
   const [campaignNotAvailable, setCampaignNotAvailable] =
     useState<boolean>(false);
   const [pricingModel, setPricingModel] = useState<string[]>([]);
-  const [deliverables, setDeliverables] = useState<string[]>([]);
+  const [setDeliverables] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {

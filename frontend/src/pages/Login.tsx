@@ -1,6 +1,6 @@
 /* ================ [ IMPORTS ] ================ */
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SUPABASE_CLIENT } from "../lib/supabase";
 import { useAuthStore } from "../store/authStore";
@@ -110,7 +110,7 @@ function Login() {
   };
 
   // Submit handler
-  const handleSubmit = async (_event: any, provider?: "google" | "discord") => {
+  const handleSubmit = async (_event: React.MouseEvent<HTMLButtonElement>, provider?: "google" | "discord") => {
     // Reset error message
     setErrorMessage("");
 
