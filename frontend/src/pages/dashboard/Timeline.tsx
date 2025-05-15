@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { SUPABASE_CLIENT } from "../../lib/supabase";
 import { useCampaignStore } from "../../store/campaignStore";
 import { AnimatePresence, motion } from "framer-motion";
+import { ReviewMessaging } from "./ReviewMessaging.tsx";
 import { Youtube } from "lucide-react";
 
 /* ================ [ TIMELINE ] ================ */
@@ -12,10 +13,26 @@ const Timeline = () => {
   const { currentCampaign } = useCampaignStore();
   const [selectedCreators, setSelectedCreators] = useState<any[]>([]);
   const [popupContent, setPopupContent] = useState<string | null>(null);
+  const [popupCreatorId, setPopupCreatorId] = useState<string | null>(null);
+  const [popupIsDraft, setPopupIsDraft] = useState<boolean>(false);
 
   useEffect(() => {
     fetchSelectedCreators();
   }, [currentCampaign]);
+
+  const isURL = (str: string) =>
+    typeof str === "string" && /^https?:\/\//.test(str.trim());
+
+  const getEmbedURL = (url: string) => {
+    if (!isURL(url)) return null;
+
+    const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+    if (ytMatch) {
+      return `https://www.youtube.com/embed/${ytMatch[1]}`;
+    }
+
+    return url; // fallback for non-YouTube links
+  };
 
   const fetchSelectedCreators = async () => {
     const { data: creatorsData } = await SUPABASE_CLIENT.from(
@@ -49,10 +66,20 @@ const Timeline = () => {
     setSelectedCreators(sortedCreators);
   };
 
-  const isCompleted = (field: string) => { return typeof field === "string" && field.trim().length > 0 }; 
+  const isCompleted = (field: string) =>
+    typeof field === "string" && field.trim().length > 0;
 
-  const openPopup = (text: string) => setPopupContent(text);
-  const closePopup = () => setPopupContent(null);
+  // Updated to accept both URL and creator ID
+  const openPopup = (url: string, creatorId: string, isDraft: boolean) => {
+    setPopupContent(url);
+    setPopupCreatorId(creatorId);
+    setPopupIsDraft(isDraft);
+  };
+  const closePopup = () => {
+    setPopupContent(null);
+    setPopupCreatorId(null);
+    setPopupIsDraft(false);
+  };
 
   const handleApproval = async (creatorId: string) => {
     const { data: creator } = await SUPABASE_CLIENT.from("campaign_creators")
@@ -109,19 +136,7 @@ const Timeline = () => {
             </h3>
           </div>
 
-          {draftComplete && (
-            <button
-              onClick={() => handleApproval(creator.id)}
-              disabled={finalApproved}
-              className={`px-4 py-2 rounded-md text-sm ${
-                finalApproved
-                  ? "bg-orange-400 text-white cursor-not-allowed"
-                  : "bg-orange-500 hover:bg-orange-600 text-white"
-              }`}
-            >
-              {finalApproved ? "Draft Approved" : "Approve Draft"}
-            </button>
-          )}
+          {/* Removed approval button here per request, approval moved inside draft popup */}
         </div>
 
         <div className="flex items-center w-full">
@@ -133,17 +148,25 @@ const Timeline = () => {
               } bg-gray-50 text-center mx-1`}
             >
               <div className="text-sm text-gray-600 mb-1">Contract Signed</div>
-              <div
-                className={`text-sm ${
-                  contractComplete
-                    ? "text-orange-500 cursor-pointer"
-                    : "text-gray-500"
-                }`}
-                onClick={() =>
-                  contractComplete && openPopup(creator.contract_signed)
-                }
-              >
-                {contractComplete ? "Complete" : "Incomplete"}
+              <div className="text-sm text-gray-500 flex items-center justify-center gap-1">
+                {contractComplete ? (
+                  <>
+                    <span className="text-orange-500">Complete</span>
+                    <div className="relative group">
+                      <span className="text-orange-500 opacity-70 cursor-help">
+                        ?
+                      </span>
+                      <div className="absolute z-50 bottom-full mb-2 left-1/2 transform -translate-x-1/2 w-64 text-xs bg-white text-gray-700 border border-gray-300 rounded-md p-2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
+                        Creator contracts are between Hotslicer Media and
+                        creators. We don't show them to clients at this time,
+                        but be assured that this creator is contractually
+                        obligated to follow through with the campaign.
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <span>Incomplete</span>
+                )}
               </div>
             </div>
           </div>
@@ -164,16 +187,16 @@ const Timeline = () => {
               } bg-gray-50 text-center mx-1`}
             >
               <div className="text-sm text-gray-600 mb-1">Draft Submitted</div>
-              <div
-                className={`text-sm ${
-                  draftComplete
-                    ? "text-orange-500 cursor-pointer"
-                    : "text-gray-500"
-                }`}
-                onClick={() => draftComplete && openPopup(creator.draft)}
-              >
-                {draftComplete ? "Complete" : "Incomplete"}
-              </div>
+              {draftComplete ? (
+                <button
+                  className="text-orange-500 font-semibold underline cursor-pointer text-sm"
+                  onClick={() => openPopup(creator.draft, creator.id, true)}
+                >
+                  Complete
+                </button>
+              ) : (
+                <div className="text-gray-500 text-sm">Incomplete</div>
+              )}
             </div>
           </div>
 
@@ -191,16 +214,16 @@ const Timeline = () => {
               } bg-gray-50 text-center mx-1`}
             >
               <div className="text-sm text-gray-600 mb-1">Live Submitted</div>
-              <div
-                className={`text-sm ${
-                  finalComplete
-                    ? "text-orange-500 cursor-pointer"
-                    : "text-gray-500"
-                }`}
-                onClick={() => finalComplete && openPopup(creator.live_url)}
-              >
-                {finalComplete ? "Complete" : "Incomplete"}
-              </div>
+              {finalComplete ? (
+                <button
+                  className="text-orange-500 font-semibold underline cursor-pointer text-sm"
+                  onClick={() => openPopup(creator.live_url, creator.id, false)}
+                >
+                  Complete
+                </button>
+              ) : (
+                <div className="text-gray-500 text-sm">Incomplete</div>
+              )}
             </div>
           </div>
         </div>
@@ -220,19 +243,49 @@ const Timeline = () => {
         </div>
       ) : (
         <AnimatePresence>
-          <div className="space-y-6">
-            {selectedCreators.map(renderTimelineItem)}
-          </div>
+          <div className="space-y-6">{selectedCreators.map(renderTimelineItem)}</div>
         </AnimatePresence>
       )}
 
       {popupContent && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full">
-            <p className="text-gray-600 mb-4">{popupContent}</p>
+          <div className="bg-white p-8 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+
+            <div className="text-gray-600 mb-4">
+              {(() => {
+                const embedURL = getEmbedURL(popupContent);
+                return embedURL ? (
+                  <iframe
+                    src={embedURL}
+                    className="w-full h-64 rounded-md border"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <p>{popupContent}</p>
+                );
+              })()}
+            </div>
+
+            {/* Show ReviewMessaging */}
+            {popupCreatorId && <ReviewMessaging creatorId={popupCreatorId} />}
+
+            {/* Show approval button only if draft popup */}
+            {popupIsDraft && popupCreatorId && (
+              <button
+                onClick={() => {
+                  handleApproval(popupCreatorId);
+                  closePopup();
+                }}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-md transition mt-4"
+              >
+                Approve Draft
+              </button>
+            )}
+
             <button
               onClick={closePopup}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-md transition"
+              className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md transition mt-2"
             >
               Close
             </button>
