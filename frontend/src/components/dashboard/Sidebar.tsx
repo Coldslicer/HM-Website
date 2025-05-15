@@ -11,6 +11,7 @@ import {
   Clock,
   CreditCard,
   Home,
+  BarChart2,
 } from "lucide-react";
 import { useCampaignStore } from "../../store/campaignStore";
 import { SUPABASE_CLIENT } from "../../lib/supabase";
@@ -71,7 +72,7 @@ export function Sidebar() {
               },
             });
           }
-        }
+        },
       )
       .subscribe();
 
@@ -199,6 +200,23 @@ export function Sidebar() {
         >
           <Clock className="h-5 w-5" />
           <span>Timeline</span>
+        </NavLink>
+
+        <NavLink
+          to="/dashboard/analytics"
+          className={({ isActive }) =>
+            `flex items-center space-x-2 p-2 rounded-md ${
+              canAccess("contract_signed")
+                ? isActive
+                  ? "bg-orange-500 text-white"
+                  : "text-black hover:bg-gray-200"
+                : "opacity-50 text-gray-500 cursor-not-allowed"
+            }`
+          }
+          onClick={(e) => !canAccess("contract_signed") && e.preventDefault()}
+        >
+          <BarChart2 className="h-5 w-5" />
+          <span>Analytics</span>
         </NavLink>
 
         <NavLink

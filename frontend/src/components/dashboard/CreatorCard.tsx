@@ -1,6 +1,6 @@
 // src/components/CreatorCard.tsx
-import React, { useState, useEffect } from 'react';
-import { getPlatformData } from '../../util/socialMediaApi'; // Import API call logic
+import React, { useState, useEffect } from "react";
+import { getPlatformData } from "../../util/socialMediaApi"; // Import API call logic
 
 export function CreatorCard({ creator }) {
   const [platformData, setPlatformData] = useState(null);
@@ -31,8 +31,14 @@ export function CreatorCard({ creator }) {
         <p className="error-text">Could not fetch data for this creator.</p>
       ) : platformData ? (
         <div className="platform-info">
-          <p><strong>Followers: </strong>{platformData.followers}</p>
-          <p><strong>Recent Post: </strong>{platformData.recent_post}</p>
+          <p>
+            <strong>Followers: </strong>
+            {platformData.followers}
+          </p>
+          <p>
+            <strong>Recent Post: </strong>
+            {platformData.recent_post}
+          </p>
         </div>
       ) : (
         <p>Loading social media data...</p>
@@ -41,4 +47,4 @@ export function CreatorCard({ creator }) {
       <button className="chat-button">Chat with this Creator</button>
     </div>
   );
-};
+}

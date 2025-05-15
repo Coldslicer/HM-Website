@@ -4,16 +4,16 @@ import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 
 const initialFormData = {
-  campaign_id: '',
-  name: '', // First and Last Name
-  email: '',
-  channel_name: '', // Channel Name
-  channel_url: '', // Channel Link
-  deliverables: '', // Deliverables (multiple choice)
-  rate: '', // Flat rate (numeric)
-  rate_cpm: '', // CPM rate (numeric)
-  cpm_cap: '',
-  personal_statement: '', // Personal Statement (text)
+  campaign_id: "",
+  name: "", // First and Last Name
+  email: "",
+  channel_name: "", // Channel Name
+  channel_url: "", // Channel Link
+  deliverables: "", // Deliverables (multiple choice)
+  rate: "", // Flat rate (numeric)
+  rate_cpm: "", // CPM rate (numeric)
+  cpm_cap: "",
+  personal_statement: "", // Personal Statement (text)
   selected: false, // Selected (bool)
   discord_id: "", // Discord ID (text)
   agreement: false, // Agreement (bool)
@@ -60,14 +60,14 @@ export function CreatorForm() {
         const creator = await getMostRecentCampaignCreator(prefilledDiscordID); // No need to convert to number
         if (creator) {
           creatorData = {
-            name: creator.name || '',
-            channel_name: creator.channel_name || '',
-            channel_url: creator.channel_url || '',
-            deliverables: creator.deliverables || '',
-            rate: creator.rate || '',
-            rate_cpm: creator.rate_cpm || '',
-            cpm_cap: creator.cpm_cap || '',
-            personal_statement: creator.personal_statement || '',
+            name: creator.name || "",
+            channel_name: creator.channel_name || "",
+            channel_url: creator.channel_url || "",
+            deliverables: creator.deliverables || "",
+            rate: creator.rate || "",
+            rate_cpm: creator.rate_cpm || "",
+            cpm_cap: creator.cpm_cap || "",
+            personal_statement: creator.personal_statement || "",
           };
         }
       }
@@ -92,7 +92,7 @@ export function CreatorForm() {
         if (campaign) {
           campaignId = campaign.id;
           setPricingModel(campaign.desired_pricing_model);
-          setDeliverables(campaign.sponsorship_format)
+          setDeliverables(campaign.sponsorship_format);
         } else {
           setCampaignNotAvailable(true);
         }
@@ -114,13 +114,13 @@ export function CreatorForm() {
   const validateDiscordId = async (discordId: string) => {
     try {
       const response = await fetch(
-        `/api/campaigns/validate-discord-id/${discordId}`
+        `/api/campaigns/validate-discord-id/${discordId}`,
       );
       const data = await response.json();
 
       if (data.valid) {
         console.log(
-          `Valid Discord ID! User: ${data.username}#${data.discriminator}`
+          `Valid Discord ID! User: ${data.username}#${data.discriminator}`,
         );
         return true;
       } else {
@@ -143,12 +143,16 @@ export function CreatorForm() {
       setFormData((prevData) => ({
         ...prevData,
         campaign_id: campaignId,
-        rate: (campaign.desired_pricing_model.includes("Flat-rate") || campaign.desired_pricing_model.includes("Hybrid"))
-          ? prevData.rate
-          : "0", // Reset to 0 if Flat-rate is not supported
-        rate_cpm: (campaign.desired_pricing_model.includes("CPM (first 30d)") || campaign.desired_pricing_model.includes("Hybrid"))
-          ? prevData.rate_cpm
-          : "0", // Reset to 0 if CPM is not supported
+        rate:
+          campaign.desired_pricing_model.includes("Flat-rate") ||
+          campaign.desired_pricing_model.includes("Hybrid")
+            ? prevData.rate
+            : "0", // Reset to 0 if Flat-rate is not supported
+        rate_cpm:
+          campaign.desired_pricing_model.includes("CPM (first 30d)") ||
+          campaign.desired_pricing_model.includes("Hybrid")
+            ? prevData.rate_cpm
+            : "0", // Reset to 0 if CPM is not supported
       }));
     }
   };
@@ -171,10 +175,10 @@ export function CreatorForm() {
     // Ensure a valid email address
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError('Please provide a valid email address.');
+      setError("Please provide a valid email address.");
       return;
     }
-  
+
     // Validate rates (non-negative)
     if (parseFloat(formData.rate) < 0 || parseFloat(formData.rate_cpm) < 0) {
       setError("Rates cannot be negative.");
@@ -188,8 +192,6 @@ export function CreatorForm() {
       return;
     }
 
-
-
     try {
       const { data, error } = await SUPABASE_CLIENT.from("campaign_creators") // Updated table name
         .insert([
@@ -201,8 +203,11 @@ export function CreatorForm() {
             deliverables: formData.deliverables,
             rate: parseFloat(formData.rate), // Convert to numeric
             rate_cpm: parseFloat(formData.rate_cpm), // Convert to numeric
-            cpm_cap: (parseFloat(formData.cpm_cap) == 0 || formData.cpm_cap == null) ? null : parseFloat(formData.cpm_cap),
-            email:formData.email,
+            cpm_cap:
+              parseFloat(formData.cpm_cap) == 0 || formData.cpm_cap == null
+                ? null
+                : parseFloat(formData.cpm_cap),
+            email: formData.email,
             personal_statement: formData.personal_statement,
             selected: formData.selected,
             discord_id: formData.discord_id, // No need to convert to number
@@ -213,20 +218,22 @@ export function CreatorForm() {
 
       if (error) throw error;
       await new Promise((res) => setTimeout(res, 500)); // 0.5 second delay
-      await axios.post('/api/campaigns/add-creator-to-discord', {
+      await axios.post("/api/campaigns/add-creator-to-discord", {
         creatorId: data.id,
       });
 
-      const { data: creatorWithWebhook, error: webhookError } = await SUPABASE_CLIENT
-        .from("campaign_creators")
-        .select("webhook_url")
-        .eq("id", data.id)
-        .single();
+      const { data: creatorWithWebhook, error: webhookError } =
+        await SUPABASE_CLIENT.from("campaign_creators")
+          .select("webhook_url")
+          .eq("id", data.id)
+          .single();
 
       if (webhookError) throw webhookError;
 
       if (!creatorWithWebhook?.webhook_url) {
-        setError("You're in our systems, but it seems we might have not been able to make a DM channel with you.\nPlease check discord to see if you've been pinged with a confirmation message.");
+        setError(
+          "You're in our systems, but it seems we might have not been able to make a DM channel with you.\nPlease check discord to see if you've been pinged with a confirmation message.",
+        );
       }
 
       // ⚡ Post to the Discord channel via the webhook
@@ -249,7 +256,7 @@ WARM`,
     } catch (err) {
       console.error("Error submitting creator form:", err);
       setError(
-        "An error occurred while submitting your information. Please try again later."
+        "An error occurred while submitting your information. Please try again later.",
       );
     }
   };
@@ -305,33 +312,43 @@ WARM`,
               </select>
             </div>
 
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-800">
-            Name (First, Last) - Ex. John Smith
-          </label>
-          <input
-            type="text"
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
-            required
-          />
-        </div>
+            <div>
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-800"
+              >
+                Name (First, Last) - Ex. John Smith
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+                required
+              />
+            </div>
 
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-800">
-            Email (MUST BE A VALID EMAIL) - Ex. hi@hotslicer.com
-          </label>
-          <input
-            type="text"
-            id="name"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
-            required
-          />
-        </div>
+            <div>
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-800"
+              >
+                Email (MUST BE A VALID EMAIL) - Ex. hi@hotslicer.com
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+                required
+              />
+            </div>
 
             <div>
               <label
@@ -395,7 +412,8 @@ WARM`,
                 htmlFor="deliverables"
                 className="block text-sm font-medium text-gray-800"
               >
-                Deliverables (Options shown in discord will be highly prioritized)
+                Deliverables (Options shown in discord will be highly
+                prioritized)
               </label>
               <select
                 id="deliverables"
@@ -406,7 +424,6 @@ WARM`,
                 className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
                 required
               >
-                
                 <option value="">Select a deliverable</option>
                 <option value="Longform Integration (30s)">
                   Longform Integration (30s)
@@ -420,92 +437,100 @@ WARM`,
             </div>
 
             <div>
-  <label
-    htmlFor="rate"
-    className="block text-sm font-medium text-gray-800"
-  >
-    Deliverables Rate
-  </label>
-  <div className="flex items-center space-x-4">
-    {/* Flat-rate Input */}
-    {(pricingModel.includes("Flat-rate") || pricingModel.includes("Hybrid")) ? (
-      <div className="flex items-center flex-1">
-        <span className="mr-2">$</span>
-        <input
-          type="number"
-          id="rate"
-          value={formData.rate}
-          onChange={(e) =>
-            setFormData({ ...formData, rate: e.target.value })
-          }
-          className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
-          placeholder="Flat Rate"
-          step="any"
-          min="0"
-          required
-        />
-      </div>
-    ) : (
-      (() => {
-        if (formData.rate !== "0") {
-          setFormData((prev) => ({ ...prev, rate: "0" }));
-        }
-        return null;
-      })()
-    )}
+              <label
+                htmlFor="rate"
+                className="block text-sm font-medium text-gray-800"
+              >
+                Deliverables Rate
+              </label>
+              <div className="flex items-center space-x-4">
+                {/* Flat-rate Input */}
+                {pricingModel.includes("Flat-rate") ||
+                pricingModel.includes("Hybrid") ? (
+                  <div className="flex items-center flex-1">
+                    <span className="mr-2">$</span>
+                    <input
+                      type="number"
+                      id="rate"
+                      value={formData.rate}
+                      onChange={(e) =>
+                        setFormData({ ...formData, rate: e.target.value })
+                      }
+                      className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+                      placeholder="Flat Rate"
+                      step="any"
+                      min="0"
+                      required
+                    />
+                  </div>
+                ) : (
+                  (() => {
+                    if (formData.rate !== "0") {
+                      setFormData((prev) => ({ ...prev, rate: "0" }));
+                    }
+                    return null;
+                  })()
+                )}
 
-    {/* CPM + Cap */}
-    {(pricingModel.includes("CPM (first 30d)") || pricingModel.includes("Hybrid")) ? (
-      <>
-        {(pricingModel.includes("Flat-rate") || pricingModel.includes("Hybrid")) && <span className="text-gray-800">+</span>}
-        <div className="flex items-center flex-1">
-          <span className="mr-2">$</span>
-          <input
-            type="number"
-            id="rate_cpm"
-            value={formData.rate_cpm}
-            onChange={(e) =>
-              setFormData({ ...formData, rate_cpm: e.target.value })
-            }
-            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
-            placeholder="CPM"
-            step="any"
-            min="0"
-            required
-          />
-        </div>
-        <span className="text-gray-800">CPM, Capped at{" "}</span>
-        <div className="flex items-center flex-1">
-          <span className="mr-2">$</span>
-          <input
-            type="number"
-            id="cpm_cap"
-            value={formData.cpm_cap}
-            onChange={(e) =>
-              setFormData({ ...formData, cpm_cap: e.target.value })
-            }
-            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
-            placeholder="CPM Cap"
-            step="any"
-            min="0"
-            required
-          />
-        </div>
-      </>
-    ) : (
-      (() => {
-        if (formData.rate_cpm !== "0" || formData.cpm_cap !== "0") {
-          setFormData((prev) => ({ ...prev, rate_cpm: "0", cpm_cap: "0" }));
-        }
-        return null;
-      })()
-    )}
-  </div>
-  <p className="text-gray-600 mt-1">
-    Enter 0 CPM cap for unlimited.
-  </p>
-</div>
-
+                {/* CPM + Cap */}
+                {pricingModel.includes("CPM (first 30d)") ||
+                pricingModel.includes("Hybrid") ? (
+                  <>
+                    {(pricingModel.includes("Flat-rate") ||
+                      pricingModel.includes("Hybrid")) && (
+                      <span className="text-gray-800">+</span>
+                    )}
+                    <div className="flex items-center flex-1">
+                      <span className="mr-2">$</span>
+                      <input
+                        type="number"
+                        id="rate_cpm"
+                        value={formData.rate_cpm}
+                        onChange={(e) =>
+                          setFormData({ ...formData, rate_cpm: e.target.value })
+                        }
+                        className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+                        placeholder="CPM"
+                        step="any"
+                        min="0"
+                        required
+                      />
+                    </div>
+                    <span className="text-gray-800">CPM, Capped at </span>
+                    <div className="flex items-center flex-1">
+                      <span className="mr-2">$</span>
+                      <input
+                        type="number"
+                        id="cpm_cap"
+                        value={formData.cpm_cap}
+                        onChange={(e) =>
+                          setFormData({ ...formData, cpm_cap: e.target.value })
+                        }
+                        className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
+                        placeholder="CPM Cap"
+                        step="any"
+                        min="0"
+                        required
+                      />
+                    </div>
+                  </>
+                ) : (
+                  (() => {
+                    if (formData.rate_cpm !== "0" || formData.cpm_cap !== "0") {
+                      setFormData((prev) => ({
+                        ...prev,
+                        rate_cpm: "0",
+                        cpm_cap: "0",
+                      }));
+                    }
+                    return null;
+                  })()
+                )}
+              </div>
+              <p className="text-gray-600 mt-1">
+                Enter 0 CPM cap for unlimited.
+              </p>
+            </div>
 
             <div>
               <label
@@ -550,8 +575,14 @@ WARM`,
                     I agree to these terms:
                   </label>
                   <ul className="mt-2 space-y-2 text-sm text-gray-600">
-                    <li>Hotslicer Media takes a 15% cut for bringing this sponsorship. I will receive 85% of my listed rate.</li>
-                    <li>I agree that I will follow through with the given deliverables by the given timeline if selected.</li>
+                    <li>
+                      Hotslicer Media takes a 15% cut for bringing this
+                      sponsorship. I will receive 85% of my listed rate.
+                    </li>
+                    <li>
+                      I agree that I will follow through with the given
+                      deliverables by the given timeline if selected.
+                    </li>
                   </ul>
                 </div>
               </div>

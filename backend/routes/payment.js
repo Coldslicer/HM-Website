@@ -31,6 +31,12 @@ const centerPos = (text, font, size, pos) => {
   };
 };
 
+// Get video ID from URL
+const getVideoID = (url) => {
+  const match = url.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+};
+
 /* ================ [ PAYMENT ] ================ */
 
 // Router
@@ -52,22 +58,10 @@ const DIRNAME = path.dirname(FILE_PATH);
 // Fetch views on CPM video
 const getYouTubeViews = async (videoUrl) => {
   try {
-    const videoIdMatch = videoUrl.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/);
-    if (!videoIdMatch || !videoIdMatch[1]) {
-      throw new Error('Invalid YouTube URL');
-    }
-    
-    const response = await axios.get(
-      `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIdMatch[1]}&key=${process.env.YOUTUBE_API_KEY}`
-    );
-    
-    if (!response.data.items || response.data.items.length === 0) {
-      throw new Error('No video data found');
-    }
-    
-    return parseInt(response.data.items[0].statistics.viewCount);
+    const { data } = SUPABASE_CLIENT.from('video_data').select('views').eq('video_id', videoId);
+    return parseInt(data?.views);
   } catch (error) {
-    console.error('YouTube API error:', error);
+    console.error('Supabase error:', error);
     throw new Error('Failed to fetch video views');
   }
 };
@@ -198,7 +192,8 @@ ROUTER.post('/get-creators', async (req, res) => {
         cpm_emailed,
         live_submitted,
         cpm_cap,
-        selected
+        selected,
+        final
       `)
       .eq('campaign_id', campaign_id);
 

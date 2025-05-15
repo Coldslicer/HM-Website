@@ -11,7 +11,7 @@ export const CreatorSharingPage: React.FC = () => {
   const [totalRate, setTotalRate] = useState(0);
   const [totalRateCPM, setTotalRateCPM] = useState(0);
   const [selectedStatement, setSelectedStatement] = useState<string | null>(
-    null
+    null,
   );
 
   useEffect(() => {
@@ -22,10 +22,10 @@ export const CreatorSharingPage: React.FC = () => {
 
   const fetchCreators = async (campaignId: string) => {
     const { data: creatorsData } = await SUPABASE_CLIENT.from(
-      "campaign_creators"
+      "campaign_creators",
     )
       .select(
-        "id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement, cpm_cap"
+        "id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement, cpm_cap",
       )
       .eq("campaign_id", campaignId);
 
@@ -43,11 +43,11 @@ export const CreatorSharingPage: React.FC = () => {
           console.error("Error fetching YouTube data:", error);
           return creator;
         }
-      })
+      }),
     );
 
     const sortedCreators = creatorsWithChannelData.sort(
-      (a, b) => b.selected - a.selected
+      (a, b) => b.selected - a.selected,
     );
     setCreators(sortedCreators);
 
@@ -56,24 +56,24 @@ export const CreatorSharingPage: React.FC = () => {
     setTotalRateCPM(
       selected.reduce(
         (acc, c) => acc + (c.rate_cpm * (c.averageViews || 0)) / 1000,
-        0
-      )
+        0,
+      ),
     );
   };
 
   const handleSelectCreator = async (creator: any) => {
     const updatedCreators = creators.map((c) =>
-      c.id === creator.id ? { ...c, selected: !c.selected } : c
+      c.id === creator.id ? { ...c, selected: !c.selected } : c,
     );
     setCreators(updatedCreators);
-    
+
     const selected = updatedCreators.filter((c) => c.selected);
     setTotalRate(selected.reduce((acc, c) => acc + c.rate, 0));
     setTotalRateCPM(
       selected.reduce(
         (acc, c) => acc + (c.rate_cpm * (c.averageViews || 0)) / 1000,
-        0
-      )
+        0,
+      ),
     );
 
     await SUPABASE_CLIENT.from("campaign_creators")

@@ -28,7 +28,7 @@ function Login() {
     // Check for user session
     const checkSession = async () => {
       const { data } = await SUPABASE_CLIENT.auth.getUser();
-      
+
       // Redirect to dashboard
       if (data?.user) navigate("/dashboard");
     };
@@ -57,7 +57,9 @@ function Login() {
 
     // Error handling
     if (error) {
-      displayError(error.message || "An unknown error occurred, please try again later");
+      displayError(
+        error.message || "An unknown error occurred, please try again later",
+      );
       return;
     }
 
@@ -88,7 +90,9 @@ function Login() {
 
     // Error handling
     if (error) {
-      displayError(error.message || "An unknown error occurred, please try again later");
+      displayError(
+        error.message || "An unknown error occurred, please try again later",
+      );
       return;
     }
 
@@ -113,7 +117,7 @@ function Login() {
     // Terms confirmation (sign up)
     if (isSignUp && !agreeTerms) {
       displayError(
-        "Please agree to the Terms of Service and Privacy Policy first"
+        "Please agree to the Terms of Service and Privacy Policy first",
       );
       return;
     }
@@ -131,7 +135,9 @@ function Login() {
 
       // Error handling
       if (error) {
-        displayError(error.message || "An unknown error occurred, please try again later");
+        displayError(
+          error.message || "An unknown error occurred, please try again later",
+        );
         return;
       }
     } catch (error) {
@@ -292,7 +298,9 @@ function Login() {
         {/* Sign in button */}
         <button
           onClick={handleSubmit}
-          className={"w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition mb-5 text-sm"}
+          className={
+            "w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition mb-5 text-sm"
+          }
         >
           {isSignUp ? "Sign Up" : "Sign In"}
         </button>

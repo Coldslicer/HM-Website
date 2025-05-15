@@ -58,7 +58,7 @@ function TesterApplication() {
     if (isStepValid()) {
       try {
         const { error } = await SUPABASE_CLIENT.from(
-          "tester_applications"
+          "tester_applications",
         ).insert([
           {
             email: formData.email,

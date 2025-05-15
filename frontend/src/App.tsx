@@ -20,7 +20,7 @@ function App() {
 
   // Conditionally show navbar
   const showNavbar = pathsWithNavbar.some((path) =>
-    useLocation().pathname.startsWith(path)
+    useLocation().pathname.startsWith(path),
   );
 
   return (

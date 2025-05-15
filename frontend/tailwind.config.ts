@@ -1,7 +1,7 @@
 /* ================ [ IMPORTS ] ================ */
 
 // Tailwind imports
-import type { Config } from "tailwindcss"
+import type { Config } from "tailwindcss";
 
 /* ================ [ FIELDS ] ================ */
 
@@ -66,8 +66,8 @@ const config = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-} satisfies Config
+} satisfies Config;
 
 /* ================ [ EXPORTS ] ================ */
 
-export default config
+export default config;

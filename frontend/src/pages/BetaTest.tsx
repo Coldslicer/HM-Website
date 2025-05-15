@@ -21,7 +21,7 @@ function BetaTest() {
           }
         });
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
 
     document.querySelectorAll(".fade-in").forEach((el) => {

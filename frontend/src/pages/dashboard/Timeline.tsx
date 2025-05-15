@@ -36,10 +36,10 @@ const Timeline = () => {
 
   const fetchSelectedCreators = async () => {
     const { data: creatorsData } = await SUPABASE_CLIENT.from(
-      "campaign_creators"
+      "campaign_creators",
     )
       .select(
-        "id, draft, live_url, contract_signed, selected, channel_url, channel_name, final_approved, discord_id"
+        "id, draft, live_url, contract_signed, selected, channel_url, channel_name, final_approved, discord_id",
       )
       .eq("campaign_id", currentCampaign?.id)
       .eq("selected", true);
@@ -188,15 +188,16 @@ const Timeline = () => {
             >
               <div className="text-sm text-gray-600 mb-1">Draft Submitted</div>
               {draftComplete ? (
-                <button
-                  className="text-orange-500 font-semibold underline cursor-pointer text-sm"
-                  onClick={() => openPopup(creator.draft, creator.id, true)}
-                >
-                  Complete
-                </button>
-              ) : (
-                <div className="text-gray-500 text-sm">Incomplete</div>
-              )}
+  <button
+    className="text-orange-500 font-semibold underline cursor-pointer text-sm"
+    onClick={() => openPopup(creator.draft, creator.id, true)}
+  >
+    {creator.final_approved ? "Completed" : "Pending Review"}
+  </button>
+) : (
+  <div className="text-gray-500 text-sm">Incomplete</div>
+)}
+
             </div>
           </div>
 
@@ -271,17 +272,31 @@ const Timeline = () => {
             {popupCreatorId && <ReviewMessaging creatorId={popupCreatorId} />}
 
             {/* Show approval button only if draft popup */}
-            {popupIsDraft && popupCreatorId && (
-              <button
-                onClick={() => {
-                  handleApproval(popupCreatorId);
-                  closePopup();
-                }}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-md transition mt-4"
-              >
-                Approve Draft
-              </button>
-            )}
+            {popupIsDraft && popupCreatorId && (() => {
+  const creator = selectedCreators.find(c => c.id === popupCreatorId);
+  const isApproved = creator?.final_approved;
+
+  return (
+    <button
+      disabled={isApproved}
+      onClick={() => {
+        if (!isApproved) {
+          handleApproval(popupCreatorId);
+          closePopup();
+        }
+      }}
+      className={`w-full px-4 py-2 rounded-md mt-4 transition
+        ${isApproved
+          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+          : 'bg-orange-500 hover:bg-orange-600 text-white'
+        }`}
+    >
+      {isApproved ? 'Draft Already Approved' : 'Approve Draft'}
+    </button>
+  );
+})()}
+
+
 
             <button
               onClick={closePopup}

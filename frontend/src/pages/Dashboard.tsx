@@ -11,6 +11,7 @@ import Creators from "./dashboard/Creators";
 import { Messaging } from "./dashboard/Messaging";
 import Contract from "./dashboard/Contract";
 import Timeline from "./dashboard/Timeline";
+import Analytics from "./dashboard/Analytics";
 import Payment from "./dashboard/Payment";
 
 /* ================ [ DASHBOARD ] ================ */
@@ -43,6 +44,7 @@ function Dashboard() {
           <Route path="messaging" element={<Messaging />} />
           <Route path="contract" element={<Contract />} />
           <Route path="timeline" element={<Timeline />} />
+          <Route path="analytics" element={<Analytics />} />
           <Route path="payment" element={<Payment />} />
         </Routes>
       </div>
