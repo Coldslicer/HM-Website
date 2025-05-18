@@ -1,3 +1,6 @@
+import {analyzeConversationGhost, getChannelMessages, getLastClientMessageTime} from "../util/util_functions.js";
+import {DISCORD_CLIENT} from "../util/setup.js";
+
 export const accountCreationNudge = {
     id: 'accountCreationNudge',
     once: false,  // Allow repeating but with conditions.
@@ -202,93 +205,214 @@ export const reviewCreatorsNudge = {
     }
 };
 
+/**
+ * Represents a configuration object that evaluates whether to send a reminder nudge for draft submissions
+ * that require timely review within a specific time frame (48-72 hours).
+ *
+ * @property {string} id - Unique identifier for the reminder nudge configuration.
+ * @property {boolean} once - Indicates whether the nudge should only be evaluated once.
+ * @property {function} evaluate - An asynchronous function that checks a campaign's draft submission status and determines if a reminder nudge should be sent.
+ *    The function evaluates the following:
+ *    - Verifies if the campaign's status is `draft_submitted`.
+ *    - Fetches all creators associated with the campaign whose drafts have been submitted for review.
+ *    - Identifies drafts that have been waiting for review between 48 and 72 hours without a client response.
+ *    - Constructs a message to prompt the client to review the drafts if applicable.
+ *    - Returns `null` if no reminder is necessary.
+ */
 export const draftSubmissionReminderNudge = {
     id: 'draftSubmissionReminderNudge',
     once: true,
     async evaluate(campaign, supabase) {
-
         // Only proceed if it's a draft
         if (campaign.status !== 'draft_submitted') {
             return null;
         }
 
         const now = new Date();
-        const submittedAt = new Date(campaign.updated_at);
-        const hoursSinceSubmission = (now - submittedAt) / (1000 * 60 * 60);
 
-        // Check if 48-72 hours have passed
-        if (hoursSinceSubmission < 48 || hoursSinceSubmission > 72) {
-            return null;
-        }
-
-        // Check if there has been any client feedback
-        const { data: feedback, error } = await supabase
-            .from('campaign_feedback')
-            .select('id')
+        // Get all creators for this campaign
+        const {data: campaignCreators, error: creatorsError} = await supabase
+            .from('campaign_creators')
+            .select('*, campaigns(*)')
             .eq('campaign_id', campaign.id)
-            .limit(1);
-        // TODO: Fix above, there's no campaign_feedback field
+            .filter('draft_submitted_at', 'not.is', null);
 
-        if (error) {
-            console.error('Error checking feedback:', error);
+        if (creatorsError) {
+            console.error("Error fetching campaign creators:", creatorsError);
             return null;
         }
 
-        // If there's feedback, don't send reminder
-        if (feedback && feedback.length > 0) {
-            return null;
+        let creatorsNeedingReview = [];
+
+        // Process each creator's draft submission
+        for (const creator of campaignCreators) {
+            if (!creator.draft_submitted_at) continue;
+
+            const submittedAt = new Date(creator.draft_submitted_at);
+            const hoursSinceSubmission = (now - submittedAt) / (1000 * 60 * 60);
+
+            // Check if 48-72 hours have passed
+            if (hoursSinceSubmission < 48 || hoursSinceSubmission > 72) {
+                continue;
+            }
+
+            // Get last client message time for this specific creator
+            const lastClientMessageTime = await getLastClientMessageTime(campaign.id, creator);
+            const hasClientResponse = lastClientMessageTime && lastClientMessageTime > submittedAt;
+
+            if (!hasClientResponse) {
+                creatorsNeedingReview.push({
+                    name: creator.name,
+                    draft: creator.draft || 'https://warm.hotslicer.com/dashboard/campaigns'
+                });
+            }
         }
 
-        // Construct the reminder message
-        return `Hi ${campaign.client_name || 'there'}, ${campaign.creator_name || 'your creator'} submitted their draft for ${campaign.name || 'your campaign'}!
+
+        // If we found creators needing review, create message
+        if (creatorsNeedingReview.length > 0) {
+            if (creatorsNeedingReview.length === 1) {
+                const creator = creatorsNeedingReview[0];
+                return `Hi ${campaign.rep_name || 'there'}, ${creator.name} submitted their draft for ${campaign.name || 'your campaign'}!
 
 It's been 48 hours since submission. Reviewing drafts promptly ensures campaign timelines stay smooth.
 
-View the draft here: ${campaign.draft_link || 'https://warm.hotslicer.com/dashboard/campaigns'}`;
+View the draft here: ${creator.draft}`;
+            }
+
+            const creatorList = creatorsNeedingReview
+                .map(creator => `- ${creator.name}: ${creator.draft}`)
+                .join('\n');
+
+            return `Hi ${campaign.rep_name || 'there'}, multiple creators have submitted drafts for ${campaign.name || 'your campaign'} that need review!
+
+The following drafts have been waiting for 48+ hours:
+${creatorList}
+
+Reviewing drafts promptly ensures campaign timelines stay smooth.`;
+        }
+
+        return null;
     }
 };
-
+/**
+ * An evaluation module designed to identify and notify campaign representatives
+ * about selected creators who have been inactive or unresponsive within a specific time frame.
+ *
+ * @constant {Object} ghostedCreatorNudge
+ * @property {string} id - A unique identifier for the evaluation module.
+ * @property {boolean} once - Indicates whether the evaluation should run only once.
+ * @property {Function} evaluate - Asynchronous function to evaluate creator activity and generate a notification message if creators are found to be inactive or ghosting.
+ *
+ * The `evaluate` function performs the following steps:
+ * 1. Fetches the list of creators selected for a given campaign from the `campaign_creators` database table.
+ * 2. Checks the creators' activity by analyzing recent messages in their respective channels.
+ * 3. Identifies creators who have not submitted a draft or responded within the last 48 hours.
+ * 4. Sends a formatted notification message to the campaign representative, requesting input on how to proceed.
+ */
 export const ghostedCreatorNudge = {
     id: 'ghostedCreatorNudge',
-    once: true,  // Allow repeating but with conditions.
-    evaluate(campaign) {
+    once: true,
+    async evaluate(campaign, supabase) {
+        const { data: campaignCreators, error: creatorsError } = await supabase
+            .from('campaign_creators')
+            .select('*')
+            .eq('campaign_id', campaign.id)
+            .eq('selected', true);
+
+        if (creatorsError) {
+            console.error("Error fetching campaign creators:", creatorsError);
+            return null;
+        }
+
         const now = new Date();
-        const createdAt = new Date(campaign.created_at);
-        const timeDiff = now - createdAt;
-        const hoursDiff = timeDiff / (1000 * 60 * 60);  // Get hours difference
-        const daysDiff = timeDiff / (1000 * 60 * 60 * 24);  // Get days difference
+        let ghostedCreators = [];
 
-        const repName = campaign.rep_name || 'there';
-        const nudgeMessage = `Hey ${repName}, thank you so much for making an account on WARM. It seems like you have a pending campaign draft.
+        for (const creator of campaignCreators) {
+            try {
+                const formattedMessages = await getChannelMessages(creator.channel_id, 48);
+                if (!formattedMessages || formattedMessages.length === 0) continue;
 
-If you have 3 minutes, make sure to finish submitting a campaign brief and get a list of committed influencers in under 24 hours, ready to work!`;
+                const lastMessage = formattedMessages[0];
+                const hoursSinceLastMessage = (now - new Date(lastMessage.timestamp)) / (1000 * 60 * 60);
 
-        // if(/*desired condition*/)
-        //     return nudgeMessage;
+                if (hoursSinceLastMessage >= 48) {
+                    const needsResponse = await analyzeConversationGhost(formattedMessages.slice(-5));
+
+                    if (needsResponse) {
+                        ghostedCreators.push({
+                            name: creator.channel_name || creator.discord_ign || 'creator',
+                            channelId: creator.channel_id
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error(`Error processing creator ${creator.id}:`, error);
+            }
+        }
+
+        if (ghostedCreators.length > 0) {
+            const messages = ghostedCreators.map(creator =>
+                `Hey ${campaign.rep_name || 'there'}, a quick heads up — ${creator.name} hasn't replied or submitted a draft within 48 hours of being selected.
+Would you like us to intervene and follow up, or are you in touch with them directly?
+Let us know how you'd like to proceed!`
+            );
+
+            return messages.join('\n\n');
+        }
 
         return null;
     }
 };
+
+/**
+ * The `clientAbandonmentWarning` variable represents an evaluation rule that determines whether a warning
+ * message should be sent to a campaign representative due to inactivity or lack of response after the launch
+ * of a campaign. The evaluation is based on the time elapsed since the last client action or message.
+ *
+ * Properties:
+ * - `id` (string): A unique identifier for the rule.
+ * - `once` (boolean): Indicates whether the evaluation rule should run only once.
+ * - `evaluate` (async function): A method that determines whether the warning message should be triggered.
+ *   It takes the `campaign` and `supabase` objects as arguments, calculates the number of hours since the
+ *   last activity, and returns a reminder message if the inactivity threshold (48 hours) is met.
+ */
 export const clientAbandonmentWarning = {
     id: 'clientAbandonmentWarning',
-    once: true,  // Allow repeating but with conditions.
-    evaluate(campaign) {
+    once: true,
+    async evaluate(campaign, supabase) {
+        // Only check if contract is signed
+        if (campaign.status !== 'contract_signed') {
+            return null;
+        }
+
         const now = new Date();
-        const createdAt = new Date(campaign.created_at);
-        const timeDiff = now - createdAt;
-        const hoursDiff = timeDiff / (1000 * 60 * 60);  // Get hours difference
-        const daysDiff = timeDiff / (1000 * 60 * 60 * 24);  // Get days difference
+        const lastMessageTime = await getLastClientMessageTime(campaign.id);
 
-        const repName = campaign.rep_name || 'there';
-        const nudgeMessage = `Hey ${repName}, thank you so much for making an account on WARM. It seems like you have a pending campaign draft.
+        // If we have a message time, use that; otherwise fall back to campaign's updated_at
+        const lastActionTime = lastMessageTime || new Date(campaign.updated_at);
+        const hoursSinceLastAction = (now - lastActionTime) / (1000 * 60 * 60);
 
-If you have 3 minutes, make sure to finish submitting a campaign brief and get a list of committed influencers in under 24 hours, ready to work!`;
+        if (hoursSinceLastAction >= 48) {
+            const message = `Hey ${campaign.rep_name || 'there'}, important reminder: your campaign ${campaign.name || 'campaign'} has been launched but we've seen no action from your side.
 
-        // if(/*desired condition*/)
-        //     return nudgeMessage;
+Under WARM terms, you are now contractually obligated to oversee and fund this campaign.
+
+If your plans have changed, you MUST book a call with us immediately to clarify next steps and avoid any misalignment: https://warm.hotslicer.com/dashboard/welcome
+
+Want a little load off your plate? There is still time! We offer full-service campaign management for an additional 15% per influencer. Let us know ASAP if you'd like to upgrade!`;
+
+            // Update the campaign's updated_at timestamp
+            await supabase
+                .from('campaigns')
+                .update({updated_at: new Date().toISOString()})
+                .eq('id', campaign.id);
+
+            return message;
+        }
 
         return null;
     }
 };
 
-export const emailRules = [reviewCreatorsNudge, accountCreationNudge, contractNotSignedNudge, flatRatePaymentNudge, cpmPaymentNudges];
+export const emailRules = [accountCreationNudge, contractNotSignedNudge, flatRatePaymentNudge, cpmPaymentNudges];

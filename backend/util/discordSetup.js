@@ -300,14 +300,22 @@ const handleContentSubmission = async (interaction) => {
     live: 'live_url'
   };
 
+  // Create update object with the link
+  const updateData = { [columnMap[interaction.commandName]]: interaction.options.getString('link') };
+
+  // Add draft_submitted_at timestamp if this is a draft submission
+  if (interaction.commandName === 'draft') {
+    updateData.draft_submitted_at = new Date().toISOString();
+  }
+
   const { error } = await SUPABASE_CLIENT
     .from('campaign_creators')
-    .update({ [columnMap[interaction.commandName]]: interaction.options.getString('link') })
+    .update(updateData)
     .eq('id', creatorEntry.id);
 
   if (error) {
     console.error('Content submission error:', error);
-    return interaction.reply({ content: "Submission failed. Please try later.", ephemeral: true });
+    return interaction.reply({ content: "Submission failed. Please try again later.", ephemeral: true });
   }
 
   return interaction.reply({ content: "Link submitted successfully!", ephemeral: true });
