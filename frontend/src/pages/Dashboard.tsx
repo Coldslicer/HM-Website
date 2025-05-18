@@ -34,7 +34,7 @@ function Dashboard() {
   return (
     <div className="flex">
       <Sidebar />
-      <div className="flex-1 p-8">
+      <div className="flex-1 pt-8 pl-72">
         <Routes>
           <Route index element={<Navigate to="welcome" replace />} />
 
