@@ -18,8 +18,7 @@ export function ReviewMessaging({ creatorId }) {
 
   useEffect(() => {
     const fetchCreatorChannel = async () => {
-      const { data, error } = await SUPABASE_CLIENT
-        .from("campaign_creators")
+      const { data, error } = await SUPABASE_CLIENT.from("campaign_creators")
         .select("channel_id, discord_id")
         .eq("id", creatorId)
         .single();
@@ -145,7 +144,8 @@ export function ReviewMessaging({ creatorId }) {
               const contentLines = msg.content.split("\n");
               if (
                 contentLines.length > 1 &&
-                (contentLines[0].startsWith("<@") || contentLines[0].startsWith("@"))
+                (contentLines[0].startsWith("<@") ||
+                  contentLines[0].startsWith("@"))
               ) {
                 contentLines.shift();
               }
@@ -154,7 +154,8 @@ export function ReviewMessaging({ creatorId }) {
               const prevMsg = arr[index - 1];
               const shouldMerge =
                 prevMsg?.author === msg.author &&
-                (new Date(msg.timestamp) - new Date(prevMsg.timestamp)) / 1000 < 120;
+                (new Date(msg.timestamp) - new Date(prevMsg.timestamp)) / 1000 <
+                  120;
 
               const isClientMessage =
                 msg.author ===
@@ -246,4 +247,3 @@ export function ReviewMessaging({ creatorId }) {
 }
 
 export default ReviewMessaging;
-

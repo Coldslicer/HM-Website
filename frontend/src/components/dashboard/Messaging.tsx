@@ -39,13 +39,11 @@ export function Messaging() {
   };
 
   useEffect(() => {
-
     const fetchCreator = async () => {
-
-      const { data, error } = (await SUPABASE_CLIENT.from("campaign_creators")
-      .select("id, channel_id, channel_url, channel_name, discord_id")
-      .eq("id", currentCreatorId)
-      .eq("selected", true));
+      const { data, error } = await SUPABASE_CLIENT.from("campaign_creators")
+        .select("id, channel_id, channel_url, channel_name, discord_id")
+        .eq("id", currentCreatorId)
+        .eq("selected", true);
 
       if (error) {
         console.error("Error fetching creators:", error);
@@ -77,14 +75,13 @@ export function Messaging() {
 
     if (
       !creatorData.discord_id ||
-      lastMessage &&
-      lastMessage.bot &&
-      lastMessage.timestamp >= twoMinutesAgo
+      (lastMessage && lastMessage.bot && lastMessage.timestamp >= twoMinutesAgo)
     ) {
       shouldPing = false; // Don't ping if the last message was from the bot and within 2 minutes
     }
 
-    const messageWithHeader = (shouldPing ? `<@${creatorData.discord_id}>\n` : "") + message;
+    const messageWithHeader =
+      (shouldPing ? `<@${creatorData.discord_id}>\n` : "") + message;
 
     try {
       const response = await fetch("/api/messages/sendDM", {
@@ -151,7 +148,6 @@ export function Messaging() {
   }, [messages]);
 
   useEffect(() => {
-
     // Fetch initial messages for the default or first channel if needed
     refreshSelected();
 
@@ -166,7 +162,6 @@ export function Messaging() {
 
   return (
     <div className="flex h-[80vh] max-w-6xl mx-auto bg-white rounded-md shadow-md overflow-hidden">
-
       {/* Main Messaging Area */}
       <div className="flex-1 flex flex-col">
         {/* Messages Container */}
@@ -198,7 +193,7 @@ export function Messaging() {
                 const previousMessage = arr[index - 1];
                 const isSameAuthor = previousMessage?.author === msg.author;
                 const previousTimestamp = new Date(
-                  previousMessage?.timestamp
+                  previousMessage?.timestamp,
                 ).getTime();
                 const currentTimestamp = new Date(msg.timestamp).getTime();
                 const timeDiff = (currentTimestamp - previousTimestamp) / 1000; // in seconds

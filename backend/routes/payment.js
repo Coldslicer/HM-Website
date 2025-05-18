@@ -56,10 +56,25 @@ const FILE_PATH = fileURLToPath(import.meta.url);
 const DIRNAME = path.dirname(FILE_PATH);
 
 // Fetch views on CPM video
-const getYouTubeViews = async (videoUrl) => {
+const getYouTubeViews = async (videoId) => {
   try {
-    const { data } = SUPABASE_CLIENT.from('video_data').select('views').eq('video_id', videoId);
-    return parseInt(data?.views);
+    const { data, error } = await SUPABASE_CLIENT
+      .from('video_data')
+      .select(
+        Array.from({ length: 30 }, (_, i) => `views_${30 - i}`).join(', ')
+      )
+      .eq('video_id', videoId)
+      .single();
+
+    if (error) throw error;
+
+    for (let day = 30; day >= 1; day--) {
+      const key = `views_${day}`;
+      const value = data?.[key];
+      if (value != null) return parseInt(value);
+    }
+
+    return 0;
   } catch (error) {
     console.error('Supabase error:', error);
     throw new Error('Failed to fetch video views');
@@ -193,7 +208,7 @@ ROUTER.post('/get-creators', async (req, res) => {
         live_submitted,
         cpm_cap,
         selected,
-        final
+        live_url
       `)
       .eq('campaign_id', campaign_id);
 

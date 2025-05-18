@@ -26,7 +26,9 @@ const Timeline = () => {
   const getEmbedURL = (url: string) => {
     if (!isURL(url)) return null;
 
-    const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+    const ytMatch = url.match(
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/,
+    );
     if (ytMatch) {
       return `https://www.youtube.com/embed/${ytMatch[1]}`;
     }
@@ -188,16 +190,15 @@ const Timeline = () => {
             >
               <div className="text-sm text-gray-600 mb-1">Draft Submitted</div>
               {draftComplete ? (
-  <button
-    className="text-orange-500 font-semibold underline cursor-pointer text-sm"
-    onClick={() => openPopup(creator.draft, creator.id, true)}
-  >
-    {creator.final_approved ? "Completed" : "Pending Review"}
-  </button>
-) : (
-  <div className="text-gray-500 text-sm">Incomplete</div>
-)}
-
+                <button
+                  className="text-orange-500 font-semibold underline cursor-pointer text-sm"
+                  onClick={() => openPopup(creator.draft, creator.id, true)}
+                >
+                  {creator.final_approved ? "Completed" : "Pending Review"}
+                </button>
+              ) : (
+                <div className="text-gray-500 text-sm">Incomplete</div>
+              )}
             </div>
           </div>
 
@@ -244,14 +245,15 @@ const Timeline = () => {
         </div>
       ) : (
         <AnimatePresence>
-          <div className="space-y-6">{selectedCreators.map(renderTimelineItem)}</div>
+          <div className="space-y-6">
+            {selectedCreators.map(renderTimelineItem)}
+          </div>
         </AnimatePresence>
       )}
 
       {popupContent && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
-
             <div className="text-gray-600 mb-4">
               {(() => {
                 const embedURL = getEmbedURL(popupContent);
@@ -272,31 +274,34 @@ const Timeline = () => {
             {popupCreatorId && <ReviewMessaging creatorId={popupCreatorId} />}
 
             {/* Show approval button only if draft popup */}
-            {popupIsDraft && popupCreatorId && (() => {
-  const creator = selectedCreators.find(c => c.id === popupCreatorId);
-  const isApproved = creator?.final_approved;
+            {popupIsDraft &&
+              popupCreatorId &&
+              (() => {
+                const creator = selectedCreators.find(
+                  (c) => c.id === popupCreatorId,
+                );
+                const isApproved = creator?.final_approved;
 
-  return (
-    <button
-      disabled={isApproved}
-      onClick={() => {
-        if (!isApproved) {
-          handleApproval(popupCreatorId);
-          closePopup();
-        }
-      }}
-      className={`w-full px-4 py-2 rounded-md mt-4 transition
-        ${isApproved
-          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-          : 'bg-orange-500 hover:bg-orange-600 text-white'
+                return (
+                  <button
+                    disabled={isApproved}
+                    onClick={() => {
+                      if (!isApproved) {
+                        handleApproval(popupCreatorId);
+                        closePopup();
+                      }
+                    }}
+                    className={`w-full px-4 py-2 rounded-md mt-4 transition
+        ${
+          isApproved
+            ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+            : "bg-orange-500 hover:bg-orange-600 text-white"
         }`}
-    >
-      {isApproved ? 'Draft Already Approved' : 'Approve Draft'}
-    </button>
-  );
-})()}
-
-
+                  >
+                    {isApproved ? "Draft Already Approved" : "Approve Draft"}
+                  </button>
+                );
+              })()}
 
             <button
               onClick={closePopup}
