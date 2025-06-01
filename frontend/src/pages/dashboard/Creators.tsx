@@ -3,10 +3,11 @@
 import React, { useEffect, useState } from "react";
 import { useCampaignStore } from "../../store/campaignStore";
 import { SUPABASE_CLIENT } from "../../lib/supabase";
-import { Eye, Youtube, Share } from "lucide-react";
+import { Share } from "lucide-react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { formatNum } from "../../lib/utility";
+import CreatorTable from "../../components/dashboard/CreatorTable";
 
 /* ================ [ CREATOR SELECTION ] ================ */
 
@@ -23,6 +24,7 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
     null,
   );
   const [copied, setCopied] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,43 +32,48 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
   }, [currentCampaign]);
 
   const fetchCreators = async () => {
-    const { data: creatorsData } = await SUPABASE_CLIENT.from(
-      "campaign_creators",
-    )
-      .select(
-        "id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement, cpm_cap",
+    setIsLoading(true);
+    try {
+      const { data: creatorsData } = await SUPABASE_CLIENT.from(
+        "campaign_creators",
       )
-      .eq("campaign_id", campaignId || currentCampaign?.id);
+        .select(
+          "id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement, cpm_cap",
+        )
+        .eq("campaign_id", campaignId || currentCampaign?.id);
 
-    const creatorsWithChannelData = await Promise.all(
-      creatorsData.map(async (creator) => {
-        try {
-          const response = await axios.get("/api/creators/channel-data", {
-            params: { url: creator.channel_url, id: creator.id },
-          });
-          return {
-            ...creator,
-            ...response.data,
-          };
-        } catch (error) {
-          console.error("Error fetching YouTube data:", error);
-          return creator;
-        }
-      }),
-    );
+      const creatorsWithChannelData = await Promise.all(
+        creatorsData.map(async (creator) => {
+          try {
+            const response = await axios.get("/api/creators/channel-data", {
+              params: { url: creator.channel_url, id: creator.id },
+            });
+            return {
+              ...creator,
+              ...response.data,
+            };
+          } catch (error) {
+            console.error("Error fetching YouTube data:", error);
+            return creator;
+          }
+        }),
+      );
 
-    const sortedCreators = creatorsWithChannelData.sort(
-      (a, b) => b.selected - a.selected,
-    );
-    setCreators(sortedCreators);
-    const selected = sortedCreators.filter((c) => c.selected);
-    setTotalRate(selected.reduce((acc, c) => acc + c.rate, 0));
-    setTotalRateCPM(
-      selected.reduce(
-        (acc, c) => acc + (c.rate_cpm * (c.averageViews || 0)) / 1000,
-        0,
-      ),
-    );
+      const sortedCreators = creatorsWithChannelData.sort(
+        (a, b) => b.selected - a.selected,
+      );
+      setCreators(sortedCreators);
+      const selected = sortedCreators.filter((c) => c.selected);
+      setTotalRate(selected.reduce((acc, c) => acc + c.rate, 0));
+      setTotalRateCPM(
+        selected.reduce(
+          (acc, c) => acc + (c.rate_cpm * (c.averageViews || 0)) / 1000,
+          0,
+        ),
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSelectCreator = async (creator: any) => {
@@ -168,6 +175,21 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
     );
   }
 
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">
+          Creator Selection
+        </h1>
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <p className="text-gray-600">
+            Loading the creators...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (creators.length === 0) {
     return (
       <div className="p-6">
@@ -191,89 +213,12 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
       </h1>
 
       {/* Table Section */}
-      <div className="overflow-x-auto rounded-lg shadow-md mb-4">
-        <table className="min-w-full bg-white border-collapse rounded-lg">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="py-3 px-4 text-left rounded-tl-lg">
-                Channel Name
-              </th>
-              <th className="py-3 px-4 text-center">Flat Rate</th>
-              <th className="py-3 px-4 text-center">CPM Rate</th>
-              <th className="py-3 px-4 text-center">CPM Cap</th>
-              <th className="py-3 px-4 text-center">Subscribers</th>
-              <th className="py-3 px-4 text-center">Avg Views</th>
-              <th className="py-3 px-4 text-center">Country</th>
-              <th className="py-3 px-4 text-center rounded-tr-lg">Statement</th>
-            </tr>
-          </thead>
-          <tbody>
-            {creators.map((creator) => (
-              <tr
-                key={creator.id}
-                onClick={() => handleSelectCreator(creator)}
-                className={`border-b cursor-pointer ${
-                  creator.selected
-                    ? "bg-orange-100 hover:bg-orange-200"
-                    : "hover:bg-gray-50"
-                } ${
-                  currentCampaign?.status !== "brief_submitted"
-                    ? "cursor-not-allowed"
-                    : ""
-                }`}
-              >
-                <td className="py-3 px-4">
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={creator.channel_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-gray-500 hover:text-gray-600"
-                    >
-                      <Youtube className="w-5 h-5 text-red-500" />
-                    </a>
-                    <span className="text-gray-800">
-                      {creator.channel_name || creator.channelTitle || "N/A"}
-                    </span>
-                  </div>
-                </td>
-                <td className="py-3 px-4 text-center">
-                  ${formatNum(creator.rate)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  ${formatNum(creator.rate_cpm)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  {creator.cpm_cap > 0
-                    ? `$${formatNum(creator.cpm_cap)}`
-                    : "N/A"}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  {formatNum(creator.subscriberCount)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  {formatNum(creator.averageViews)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  {creator.country || "N/A"}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenPopup(creator.personal_statement);
-                    }}
-                    className="text-gray-600 hover:text-gray-800"
-                  >
-                    <Eye size={20} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <CreatorTable 
+        creators={creators}
+        onSelectCreator={handleSelectCreator}
+        onViewStatement={handleOpenPopup}
+        selectable={currentCampaign?.status === "brief_submitted"}
+      />
 
       {/* Instructions */}
       <p className="text-sm text-gray-500 mb-6">

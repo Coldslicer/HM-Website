@@ -11,6 +11,7 @@ import { Landing } from "./pages/Landing";
 import Login from "./pages/Login";
 import { CreatorSharingPage } from "./pages/CreatorSharingPage";
 import { CreatorContract } from "./pages/CreatorContract";
+import Contact from "./pages/Contact";
 
 /* ================ [ APP ] ================ */
 
@@ -47,6 +48,7 @@ function App() {
         <Route path="/creator-contract" element={<CreatorContract />} />
 
         <Route path="/home" element={<Hero />} />
+        <Route path="/contact" element={<Contact />} />
       </Routes>
     </div>
   );

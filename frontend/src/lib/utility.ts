@@ -10,9 +10,9 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Format number
+// Format number with commas based on region
 function formatNum(num: number) {
-  return num?.toLocaleString() || "0";
+  return num?.toLocaleString('en-US') || "0";
 }
 
 /* ================ [ EXPORTS ] ================ */

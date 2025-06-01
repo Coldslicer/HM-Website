@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { SUPABASE_CLIENT } from "../lib/supabase";
-import { Eye, Youtube } from "lucide-react";
 import axios from "axios";
 import { formatNum } from "../lib/utility";
+import CreatorTable from "../components/dashboard/CreatorTable";
 
 export const CreatorSharingPage: React.FC = () => {
   const { campaignId } = useParams<{ campaignId: string }>();
@@ -92,85 +92,11 @@ export const CreatorSharingPage: React.FC = () => {
       </h1>
 
       {/* Table Section */}
-      <div className="overflow-x-auto rounded-lg shadow-md mb-4">
-        <table className="min-w-full bg-white border-collapse rounded-lg">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="py-3 px-4 text-left rounded-tl-lg">
-                Channel Name
-              </th>
-              <th className="py-3 px-4 text-center">Flat Rate</th>
-              <th className="py-3 px-4 text-center">CPM Rate</th>
-              <th className="py-3 px-4 text-center">CPM Cap</th>
-              <th className="py-3 px-4 text-center">Subscribers</th>
-              <th className="py-3 px-4 text-center">Avg Views</th>
-              <th className="py-3 px-4 text-center">Country</th>
-              <th className="py-3 px-4 text-center rounded-tr-lg">Statement</th>
-            </tr>
-          </thead>
-          <tbody>
-            {creators.map((creator) => (
-              <tr
-                key={creator.id}
-                onClick={() => handleSelectCreator(creator)}
-                className={`border-b cursor-pointer ${
-                  creator.selected
-                    ? "bg-orange-100 hover:bg-orange-200"
-                    : "hover:bg-gray-50"
-                }`}
-              >
-                <td className="py-3 px-4">
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={creator.channel_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-gray-500 hover:text-gray-600"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Youtube className="w-5 h-5 text-red-500" />
-                    </a>
-                    <span className="text-gray-800">
-                      {creator.channel_name || creator.channelTitle || "N/A"}
-                    </span>
-                  </div>
-                </td>
-                <td className="py-3 px-4 text-center">
-                  ${formatNum(creator.rate)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  ${formatNum(creator.rate_cpm)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  {creator.cpm_cap > 0
-                    ? `$${formatNum(creator.cpm_cap)}`
-                    : "N/A"}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  {formatNum(creator.subscriberCount)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  {formatNum(creator.averageViews)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  {creator.country || "N/A"}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenPopup(creator.personal_statement);
-                    }}
-                    className="text-gray-600 hover:text-gray-800"
-                  >
-                    <Eye size={20} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <CreatorTable 
+        creators={creators}
+        onSelectCreator={handleSelectCreator}
+        onViewStatement={handleOpenPopup}
+      />
 
       {/* Pricing Section */}
       <div className="bg-white p-6 rounded-lg shadow-md">
