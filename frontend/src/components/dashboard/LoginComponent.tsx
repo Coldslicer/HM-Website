@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SUPABASE_CLIENT } from "../../lib/supabase.ts";
 import { useAuthStore } from "../../store/authStore.ts";
-import { Lock, Mail, Eye, EyeOff, Check, LogIn } from "lucide-react";
+import { Check, Eye, EyeOff, Lock, LogIn, Mail } from "lucide-react";
 
 interface LoginComponentProps {
   redirectUrl?: string;

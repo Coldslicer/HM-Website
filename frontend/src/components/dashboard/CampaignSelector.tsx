@@ -91,7 +91,7 @@ export function CampaignSelector({ onClose }: { onClose?: () => void }) {
 
       <button
         onClick={handleNewCampaign}
-        className="mt-6 w-full py-3 bg-orange-500 hover:bg-orange-600 text-white 
+        className="mt-6 w-full py-3 bg-orange-500 hover:bg-orange-600 text-white
           rounded-lg font-medium transition-colors flex items-center 
           justify-center space-x-2"
       >

@@ -13,6 +13,7 @@ import Contract from "./dashboard/Contract";
 import Timeline from "./dashboard/Timeline";
 import Analytics from "./dashboard/Analytics";
 import Payment from "./dashboard/Payment";
+import Contact from "./Contact.tsx";
 
 /* ================ [ DASHBOARD ] ================ */
 
@@ -46,6 +47,7 @@ function Dashboard() {
           <Route path="timeline" element={<Timeline />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="payment" element={<Payment />} />
+          <Route path="contact" element={<Contact />} />
         </Routes>
       </div>
     </div>
