@@ -10,10 +10,10 @@ interface LoginComponentProps {
   className?: string;
 }
 
-function LoginComponent({ 
-  redirectUrl = "/dashboard", 
+function LoginComponent({
+  redirectUrl = "/dashboard",
   onLoginSuccess,
-  className = ""
+  className = "",
 }: LoginComponentProps) {
   // Navigate hook
   const navigate = useNavigate();
@@ -167,7 +167,9 @@ function LoginComponent({
   /* ================ [ COMPONENT ] ================ */
 
   return (
-    <div className={`w-full max-w-sm bg-white p-7 rounded-2xl shadow-md overflow-hidden ${className}`}>
+    <div
+      className={`w-full max-w-sm bg-white p-7 rounded-2xl shadow-md overflow-hidden ${className}`}
+    >
       {/* Login icon */}
       <div className="flex justify-center mb-5">
         <LogIn className="w-11 h-11 text-orange-500" />
@@ -289,8 +291,8 @@ function LoginComponent({
             {agreeTerms && <Check className="w-4 h-4 text-white" />}
           </button>
           <div className="flex-1 text-sm text-gray-700">
-            By creating an account, I acknowledge that I have read and agree
-            to Warm's{" "}
+            By creating an account, I acknowledge that I have read and agree to
+            Warm's{" "}
             <a
               href="https://hotslicer.com/warmtos/"
               target="_blank"

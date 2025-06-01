@@ -182,9 +182,7 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
           Creator Selection
         </h1>
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <p className="text-gray-600">
-            Loading the creators...
-          </p>
+          <p className="text-gray-600">Loading the creators...</p>
         </div>
       </div>
     );
@@ -213,7 +211,7 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
       </h1>
 
       {/* Table Section */}
-      <CreatorTable 
+      <CreatorTable
         creators={creators}
         onSelectCreator={handleSelectCreator}
         onViewStatement={handleOpenPopup}

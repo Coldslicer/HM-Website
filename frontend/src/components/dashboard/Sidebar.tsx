@@ -181,7 +181,9 @@ export function Sidebar() {
                   : "opacity-50 text-gray-500 cursor-not-allowed"
               }`
             }
-            onClick={(e) => !canAccess("creators_selected") && e.preventDefault()}
+            onClick={(e) =>
+              !canAccess("creators_selected") && e.preventDefault()
+            }
           >
             <FileText className="h-5 w-5" />
             <span>Contract</span>

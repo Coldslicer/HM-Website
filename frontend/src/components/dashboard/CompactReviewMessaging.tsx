@@ -129,7 +129,10 @@ export function CompactReviewMessaging({ creatorId }) {
   };
 
   // Get only the last few messages
-  const recentMessages = messages.slice().reverse().slice(0, MAX_MESSAGES_TO_SHOW);
+  const recentMessages = messages
+    .slice()
+    .reverse()
+    .slice(0, MAX_MESSAGES_TO_SHOW);
 
   return (
     <div className="flex flex-col h-[50vh] max-w-3xl mx-auto bg-white rounded-md shadow-md">

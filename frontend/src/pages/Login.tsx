@@ -17,7 +17,7 @@ function Login() {
 
   return (
     <div className="flex h-[calc(100vh-4rem)] items-start pt-12 justify-center bg-gray-100 p-4">
-      <LoginComponent 
+      <LoginComponent
         redirectUrl="/dashboard"
         onLoginSuccess={handleLoginSuccess}
       />

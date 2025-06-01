@@ -223,10 +223,6 @@ export const draftSubmissionReminderNudge = {
     id: 'draftSubmissionReminderNudge',
     once: true,
     async evaluate(campaign, supabase) {
-        // Only proceed if it's a draft
-        if (campaign.status !== 'draft_submitted') {
-            return null;
-        }
 
         const now = new Date();
 

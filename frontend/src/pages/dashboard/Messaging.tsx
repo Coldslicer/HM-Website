@@ -88,7 +88,7 @@ export function Messaging() {
   return (
     <div className="flex h-[80vh] max-w-6xl mx-auto bg-white rounded-md shadow-md overflow-hidden">
       {/* Sidebar for Channel Selection */}
-      <ChannelSelector 
+      <ChannelSelector
         creators={creators}
         staffChatChannelId={staffChatChannelId}
         groupChatChannelId={groupChatChannelId}
@@ -100,7 +100,7 @@ export function Messaging() {
 
       {/* Main Messaging Area */}
       {selectedChannel && (
-        <MessagingComponent 
+        <MessagingComponent
           channelId={selectedChannel}
           channelType={getChannelType()}
           currentCreatorId={currentCreatorId}

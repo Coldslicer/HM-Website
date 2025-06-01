@@ -9,14 +9,13 @@ export const CampaignInfoManager = {
    * @returns {Promise<Object|null>} - The campaign info object or null if not found.
    */
   async get(campaignId) {
-    const { data, error } = await SUPABASE_CLIENT
-      .from('campaigns')
-      .select('*')
-      .eq('id', campaignId)
+    const { data, error } = await SUPABASE_CLIENT.from("campaigns")
+      .select("*")
+      .eq("id", campaignId)
       .single();
 
     if (error) {
-      console.error('Error fetching campaign info:', error);
+      console.error("Error fetching campaign info:", error);
       return null;
     }
 
@@ -30,17 +29,18 @@ export const CampaignInfoManager = {
    * @returns {Promise<boolean>} - True if successful, false otherwise.
    */
   async set(campaignId, info) {
-    const { error } = await SUPABASE_CLIENT
-      .from('campaign_info')
-      .upsert({ campaign_id: campaignId, ...info });
+    const { error } = await SUPABASE_CLIENT.from("campaign_info").upsert({
+      campaign_id: campaignId,
+      ...info,
+    });
 
     if (error) {
-      console.error('Error setting campaign info:', error);
+      console.error("Error setting campaign info:", error);
       return false;
     }
 
     return true;
-  }
+  },
 };
 
 export default CampaignInfoManager;

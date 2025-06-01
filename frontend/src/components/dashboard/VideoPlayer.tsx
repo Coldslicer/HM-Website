@@ -17,7 +17,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url }) => {
 
     const processedURL = getEmbedURL(url);
     setEmbedURL(processedURL);
-    
+
     // If we couldn't process the URL, set an error
     if (!processedURL) {
       setError(true);
@@ -43,11 +43,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ url }) => {
   if (error) {
     return (
       <div className="w-full p-4 bg-gray-100 rounded-md border border-gray-300 text-center">
-        <p className="text-gray-700 mb-2">Unable to load video from the provided URL:</p>
+        <p className="text-gray-700 mb-2">
+          Unable to load video from the provided URL:
+        </p>
         <div className="flex items-center justify-center gap-2">
-          <a 
-            href={url} 
-            target="_blank" 
+          <a
+            href={url}
+            target="_blank"
             rel="noopener noreferrer"
             className="text-orange-500 hover:text-orange-600 underline flex items-center gap-1"
           >

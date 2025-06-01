@@ -9,14 +9,13 @@ export const CreatorInfoManager = {
    * @returns {Promise<Object|null>} - The creator info object or null if not found.
    */
   async get(creatorId) {
-    const { data, error } = await SUPABASE_CLIENT
-      .from('creators')
-      .select('*')
-      .eq('creator_id', creatorId)
+    const { data, error } = await SUPABASE_CLIENT.from("creators")
+      .select("*")
+      .eq("creator_id", creatorId)
       .single();
 
     if (error) {
-      console.error('Error fetching creator info:', error);
+      console.error("Error fetching creator info:", error);
       return null;
     }
 
@@ -30,17 +29,18 @@ export const CreatorInfoManager = {
    * @returns {Promise<boolean>} - True if successful, false otherwise.
    */
   async set(creatorId, info) {
-    const { error } = await SUPABASE_CLIENT
-      .from('creators')
-      .upsert({ creator_id: creatorId, ...info });
+    const { error } = await SUPABASE_CLIENT.from("creators").upsert({
+      creator_id: creatorId,
+      ...info,
+    });
 
     if (error) {
-      console.error('Error setting creator info:', error);
+      console.error("Error setting creator info:", error);
       return false;
     }
 
     return true;
-  }
+  },
 };
 
 export default CreatorInfoManager;

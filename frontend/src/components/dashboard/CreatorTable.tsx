@@ -35,9 +35,7 @@ export const CreatorTable: React.FC<CreatorTableProps> = ({
       <table className="min-w-full bg-white border-collapse rounded-lg">
         <thead>
           <tr className="bg-gray-100">
-            <th className="py-3 px-4 text-left rounded-tl-lg">
-              Channel Name
-            </th>
+            <th className="py-3 px-4 text-left rounded-tl-lg">Channel Name</th>
             <th className="py-3 px-4 text-center">Flat Rate</th>
             <th className="py-3 px-4 text-center">CPM Rate</th>
             <th className="py-3 px-4 text-center">CPM Cap</th>
@@ -51,10 +49,10 @@ export const CreatorTable: React.FC<CreatorTableProps> = ({
           {creators.map((creator) => (
             <tr
               key={creator.id}
-              onClick={() => selectable && onSelectCreator && onSelectCreator(creator)}
-              className={`border-b ${
-                selectable ? "cursor-pointer" : ""
-              } ${
+              onClick={() =>
+                selectable && onSelectCreator && onSelectCreator(creator)
+              }
+              className={`border-b ${selectable ? "cursor-pointer" : ""} ${
                 creator.selected
                   ? "bg-orange-100 hover:bg-orange-200"
                   : "hover:bg-gray-50"
@@ -83,9 +81,7 @@ export const CreatorTable: React.FC<CreatorTableProps> = ({
                 ${formatNum(creator.rate_cpm)}
               </td>
               <td className="py-3 px-4 text-center">
-                {creator.cpm_cap > 0
-                  ? `$${formatNum(creator.cpm_cap)}`
-                  : "N/A"}
+                {creator.cpm_cap > 0 ? `$${formatNum(creator.cpm_cap)}` : "N/A"}
               </td>
               <td className="py-3 px-4 text-center">
                 {formatNum(creator.subscriberCount)}

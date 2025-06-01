@@ -45,21 +45,20 @@ export function ChannelSelector({
             </button>
           </li>
         )}
-        {campaignStatus !== "brief_submitted" &&
-          campaignStatus !== "draft" && (
-            <li>
-              <button
-                onClick={() => onChannelChange(groupChatChannelId)}
-                className={`w-full text-left px-4 py-2 rounded-md ${
-                  selectedChannel === groupChatChannelId
-                    ? "bg-orange-500 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                All
-              </button>
-            </li>
-          )}
+        {campaignStatus !== "brief_submitted" && campaignStatus !== "draft" && (
+          <li>
+            <button
+              onClick={() => onChannelChange(groupChatChannelId)}
+              className={`w-full text-left px-4 py-2 rounded-md ${
+                selectedChannel === groupChatChannelId
+                  ? "bg-orange-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              All
+            </button>
+          </li>
+        )}
         {creators.map((creator) => (
           <li key={creator.id}>
             <button

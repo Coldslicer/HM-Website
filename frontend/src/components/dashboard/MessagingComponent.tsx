@@ -205,8 +205,7 @@ export function MessagingComponent({
               const shouldMerge = isSameAuthor && timeDiff < 120;
 
               const isClientMessage =
-                msg.author ===
-                `${campaignRepName} | ${campaignCompanyName}`;
+                msg.author === `${campaignRepName} | ${campaignCompanyName}`;
 
               return (
                 <div

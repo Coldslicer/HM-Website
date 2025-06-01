@@ -23,6 +23,9 @@ fi
 echo "Sending backend files to server..."
 rsync -avz --delete --exclude 'node_modules' backend/ root@warm.hotslicer.com:/root/backend/
 
+echo "Sending scraper files to backend..."
+rsync -avz --delete scraper/ root@warm.hotslicer.com:/root/scraper/
+
 # Check if rsync was successful
 if [ $? -ne 0 ]; then
   echo "ERROR: Failed to send backend file!"
@@ -31,6 +34,7 @@ fi
 
 echo "SSHing into the server..."
 ssh -i ~/.ssh/id_rsa root@warm.hotslicer.com << 'EOF'
+
   cd /root/backend
 
   echo "Installing backend dependencies..."
@@ -43,6 +47,9 @@ ssh -i ~/.ssh/id_rsa root@warm.hotslicer.com << 'EOF'
 
   echo "Restarting backend..."
   pm2 restart backend
+
+  echo "Restarting scraper..."
+  pm2 restart scrapper
 
   if [ $? -ne 0 ]; then
     echo "ERROR: Failed to restart backend!"

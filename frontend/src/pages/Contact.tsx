@@ -23,26 +23,28 @@ const Contact = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="w-full max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">
-          Contact Us
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">Contact Us</h1>
 
         <div className="space-y-6 w-full">
           {/* Contact Information */}
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">
-              Contact Information
-            </h2>
+            <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
             <div className="space-y-4">
               <div className="flex items-center">
                 <span className="font-semibold w-24">Email:</span>
-                <a href="mailto:contact@hotslicer.com" className="text-orange-500 hover:text-orange-600">
+                <a
+                  href="mailto:contact@hotslicer.com"
+                  className="text-orange-500 hover:text-orange-600"
+                >
                   contact@hotslicer.com
                 </a>
               </div>
               <div className="flex items-center">
                 <span className="font-semibold w-24">Phone:</span>
-                <a href="tel:+12345678901" className="text-orange-500 hover:text-orange-600">
+                <a
+                  href="tel:+12345678901"
+                  className="text-orange-500 hover:text-orange-600"
+                >
                   +1-234-567-8901
                 </a>
               </div>
@@ -83,9 +85,7 @@ const Contact = () => {
 
           {/* Staff Channel Messaging */}
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">
-              Chat with our Staff
-            </h2>
+            <h2 className="text-xl font-semibold mb-4">Chat with our Staff</h2>
             {staffChatChannelId ? (
               <div className="h-[60vh] border border-gray-200 rounded-lg overflow-hidden">
                 <MessagingComponent

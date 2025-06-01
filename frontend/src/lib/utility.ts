@@ -12,7 +12,7 @@ function cn(...inputs: ClassValue[]) {
 
 // Format number with commas based on region
 function formatNum(num: number) {
-  return num?.toLocaleString('en-US') || "0";
+  return num?.toLocaleString("en-US") || "0";
 }
 
 /* ================ [ EXPORTS ] ================ */

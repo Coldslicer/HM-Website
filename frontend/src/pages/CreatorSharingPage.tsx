@@ -92,7 +92,7 @@ export const CreatorSharingPage: React.FC = () => {
       </h1>
 
       {/* Table Section */}
-      <CreatorTable 
+      <CreatorTable
         creators={creators}
         onSelectCreator={handleSelectCreator}
         onViewStatement={handleOpenPopup}

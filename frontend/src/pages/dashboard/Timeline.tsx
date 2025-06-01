@@ -20,7 +20,6 @@ const Timeline = () => {
     fetchSelectedCreators();
   }, [currentCampaign]);
 
-
   const fetchSelectedCreators = async () => {
     const { data: creatorsData } = await SUPABASE_CLIENT.from(
       "campaign_creators",
@@ -129,7 +128,10 @@ const Timeline = () => {
           isDraft={popupIsDraft}
           onClose={closePopup}
           onApprove={handleApproval}
-          isApproved={selectedCreators.find(c => c.id === popupCreatorId)?.final_approved}
+          isApproved={
+            selectedCreators.find((c) => c.id === popupCreatorId)
+              ?.final_approved
+          }
         />
       )}
     </div>
