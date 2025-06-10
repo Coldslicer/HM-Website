@@ -28,34 +28,6 @@ const Welcome = () => {
             </div>
           </div> */}
 
-          {/* Step 2: Schedule a Call */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">
-              Optionally Talk with our CEO - 1 / 4
-            </h2>
-            <div className="rounded-lg overflow-hidden border border-gray-300 shadow-md relative invert-calcom w-full">
-              <div className="invert-calcom">
-                <iframe
-                  src="https://cal.com/hotslicer/30min"
-                  className="w-full h-[600px]"
-                  title="Schedule a Call"
-                ></iframe>
-              </div>
-            </div>
-          </div>
-
-          <style>
-            {`
-              .invert-calcom {
-                background-color: black;
-                color: white;
-              }
-              .invert-calcom *:not(img):not(video):not(iframe) {
-                filter: invert(1) hue-rotate(180deg);
-              }
-            `}
-          </style>
-
           {/* Step 3: Write a Brief */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">

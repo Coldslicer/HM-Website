@@ -239,6 +239,20 @@ export function Sidebar() {
             <CreditCard className="h-5 w-5" />
             <span>Payment</span>
           </NavLink>
+
+          <NavLink
+            to="/dashboard/contacts"
+            className={({ isActive }) =>
+              `flex items-center space-x-2 p-2 rounded-md ${
+                isActive
+                  ? "bg-orange-500 text-white"
+                  : "text-black hover:bg-gray-200"
+              }`
+            }
+          >
+            <Mail className="h-5 w-5" />
+            <span>Contacts</span>
+          </NavLink>
         </nav>
       </div>
 
