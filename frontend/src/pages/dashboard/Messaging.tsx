@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { CampaignCreatorInfoManager, CampaignInfoManager } from "../../infoAbstraction/infoManagers";
 import { useCampaignStore } from "../../store/campaignStore";
 import ChannelSelector from "../../components/dashboard/ChannelSelector.tsx";
 import MessagingComponent from "../../components/dashboard/MessagingComponent.tsx";
@@ -18,14 +18,8 @@ export function Messaging() {
   useEffect(() => {
     const fetchCampaignStatus = async () => {
       if (currentCampaign) {
-        const { data, error } = await SUPABASE_CLIENT.from("campaigns")
-          .select("status, group_chat_channel_id, staff_chat_channel_id")
-          .eq("id", currentCampaign.id)
-          .single();
-
-        if (error) {
-          console.error("Error fetching campaign status:", error);
-        } else {
+        const data = await CampaignInfoManager.get(currentCampaign.id);
+        if (data) {
           setCampaignStatus(data.status);
           setGroupChatChannelId(data.group_chat_channel_id);
           setStaffChatChannelId(data.staff_chat_channel_id);
@@ -38,23 +32,14 @@ export function Messaging() {
 
   useEffect(() => {
     const fetchCreators = async () => {
-      const { data, error } =
-        currentCampaign?.status == "brief_submitted"
-          ? await SUPABASE_CLIENT.from("campaign_creators")
-              .select("id, channel_id, channel_url, channel_name, discord_id")
-              .eq("campaign_id", currentCampaign?.id)
-          : await SUPABASE_CLIENT.from("campaign_creators")
-              .select("id, channel_id, channel_url, channel_name, discord_id")
-              .eq("campaign_id", currentCampaign?.id)
-              .eq("selected", true);
-
-      if (error) {
-        console.error("Error fetching creators:", error);
-        return;
+      if (!currentCampaign?.id) return;
+      const data = await CampaignCreatorInfoManager.listByCampaign(currentCampaign.id, {
+        selected: currentCampaign.status !== "brief_submitted" ? true : undefined,
+      });
+      if (data) {
+        console.log("Fetched creators:", data);
+        setCreators(data);
       }
-
-      console.log("Fetched creators:", data);
-      setCreators(data);
     };
 
     fetchCreators();

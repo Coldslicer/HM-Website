@@ -257,7 +257,11 @@ ROUTER.post('/initiate-payment', async (req, res) => {
     if (type === 'flat') {
       paymentAmount = creatorData.rate;
     } else {
-      const views = await getYouTubeViews(creatorData.live_url);
+      const videoId = getVideoID(creatorData.live_url);
+      if (!videoId) {
+        return res.status(400).json({ error: 'Invalid live_url' });
+      }
+      const views = await getYouTubeViews(videoId);
       const calculatedAmount = (views / 1000) * creatorData.rate_cpm;
       paymentAmount = creatorData.cpm_cap ? Math.min(calculatedAmount, creatorData.cpm_cap) : calculatedAmount;
     }

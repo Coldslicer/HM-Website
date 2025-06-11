@@ -13,8 +13,14 @@ import {
   Users,
 } from "lucide-react";
 import { useCampaignStore } from "../../store/campaignStore";
+
+import { CampaignInfoManager } from "../../infoAbstraction/infoManagers";
+
+/* ================ [ SIDEBAR ] ================ */
+
 import { SUPABASE_CLIENT } from "../../lib/supabase";
 import { Campaign } from "../../types";
+
 
 export function Sidebar() {
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
@@ -63,33 +69,19 @@ export function Sidebar() {
   useEffect(() => {
     if (!currentCampaign?.id) return;
 
-    const campaignId = currentCampaign.id;
-
-    const subscription = SUPABASE_CLIENT.channel(`campaigns:${campaignId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "campaigns",
-          filter: `id=eq.${campaignId}`,
-        },
-        (payload) => {
-          if (payload.new?.status !== undefined) {
-            console.log("Campaign status updated:", payload.new.status);
-            useCampaignStore.setState({
-              currentCampaign: {
-                ...currentCampaign,
-                status: payload.new.status,
-              },
-            });
-          }
-        }
-      )
-      .subscribe();
+    const subscription = CampaignInfoManager.subscribeStatus(
+      currentCampaign.id,
+      (status) => {
+        console.log("Campaign status updated:", status);
+        setCurrentCampaign((prev) => ({ ...prev, status }));
+        useCampaignStore.setState({
+          currentCampaign: { ...currentCampaign, status },
+        });
+      },
+    );
 
     return () => {
-      SUPABASE_CLIENT.removeChannel(subscription);
+      subscription.unsubscribe();
     };
   }, [currentCampaign?.id]);
 
@@ -245,6 +237,20 @@ export function Sidebar() {
           >
             <CreditCard className="h-5 w-5" />
             <span>Payment</span>
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/contacts"
+            className={({ isActive }) =>
+              `flex items-center space-x-2 p-2 rounded-md ${
+                isActive
+                  ? "bg-orange-500 text-white"
+                  : "text-black hover:bg-gray-200"
+              }`
+            }
+          >
+            <Mail className="h-5 w-5" />
+            <span>Contacts</span>
           </NavLink>
         </nav>
       </div>
