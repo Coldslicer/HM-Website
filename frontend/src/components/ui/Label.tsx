@@ -12,8 +12,20 @@ import { cn } from "../../lib/utility";
 
 // Label variants
 const labelVariants = cva(
-  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+  "text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+  {
+    variants: {
+      weight: {
+        normal: "font-medium",
+        bold: "font-bold",
+      },
+    },
+    defaultVariants: {
+      weight: "normal",
+    },
+  }
 );
+
 
 // Label component
 const Label = React.forwardRef<

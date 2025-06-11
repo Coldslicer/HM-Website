@@ -1,14 +1,48 @@
 /* ================ [ IMPORTS ] ================ */
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo-warm.png";
 import { useAuthStore } from "../store/authStore";
+import { useCampaignStore } from "../store/campaignStore";
+import { SUPABASE_CLIENT } from "../lib/supabase";
 
 /* ================ [ NAVBAR ] ================ */
 
 function Navbar() {
-  // Login sessions
   const { user, signOut } = useAuthStore();
+  const { setCurrentCampaign } = useCampaignStore();
+  const navigate = useNavigate();
+
+
+  const handleNewCampaign = async () => {
+    if (!user) return;
+
+    const { data, error } = await SUPABASE_CLIENT.from("campaigns")
+      .insert({
+        client_id: user.id,
+        name: "Draft",
+        status: "draft",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating new campaign:", error);
+      return;
+    }
+
+    if (data) {
+      setCurrentCampaign(data);
+      navigate("/dashboard/brief");
+    } else {
+      setCurrentCampaign(null);
+    }
+  };
+
+  const handleSignOut = () => {
+    signOut();
+    navigate("/");
+  };
 
   return (
     <nav className="bg-white text-black w-full">
@@ -29,6 +63,12 @@ function Navbar() {
           <div className="flex items-center space-x-4">
             {user ? (
               <>
+                <button
+                  onClick={handleNewCampaign}
+                  className="px-4 py-2 hover:text-orange-500"
+                >
+                  New Campaign
+                </button>
                 <Link
                   to="/dashboard"
                   className="px-4 py-2 hover:text-orange-500"
@@ -36,21 +76,19 @@ function Navbar() {
                   Dashboard
                 </Link>
                 <button
-                  onClick={() => signOut()}
+                  onClick={() => handleSignOut()}
                   className="px-4 py-2 hover:text-orange-500"
                 >
                   Sign Out
                 </button>
               </>
             ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600"
-                >
-                  Get Started
-                </Link>
-              </>
+              <Link
+                to="/login"
+                className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600"
+              >
+                Get Started
+              </Link>
             )}
           </div>
         </div>

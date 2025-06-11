@@ -86,32 +86,39 @@ export function Messaging() {
   };
 
   return (
-    <div className="flex h-[80vh] max-w-6xl mx-auto bg-white rounded-md shadow-md overflow-hidden">
-      {/* Sidebar for Channel Selection */}
-      <ChannelSelector
-        creators={creators}
-        staffChatChannelId={staffChatChannelId}
-        groupChatChannelId={groupChatChannelId}
-        selectedChannel={selectedChannel}
-        campaignStatus={campaignStatus}
-        onChannelChange={handleChannelChange}
-        onCreatorChange={handleCreatorChange}
-      />
-
-      {/* Main Messaging Area */}
-      {selectedChannel && (
-        <MessagingComponent
-          channelId={selectedChannel}
-          channelType={getChannelType()}
-          currentCreatorId={currentCreatorId}
-          currentCreatorDiscordId={currentCreatorDiscordId}
-          campaignId={String(currentCampaign?.id)}
-          campaignRepName={currentCampaign?.rep_name}
-          campaignCompanyName={currentCampaign?.company_name}
+    <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
+      <h1 className="text-3xl font-bold text-gray-800 mb-6 w-full max-w-6xl text-left">
+        Messaging
+      </h1>
+      <div className="flex h-[80vh] max-w-6xl w-full bg-white rounded-md shadow-md overflow-hidden">
+        {/* Sidebar for Channel Selection */}
+        <ChannelSelector
+          creators={creators}
+          staffChatChannelId={staffChatChannelId}
+          groupChatChannelId={groupChatChannelId}
+          selectedChannel={selectedChannel}
+          campaignStatus={campaignStatus}
+          onChannelChange={handleChannelChange}
+          onCreatorChange={handleCreatorChange}
         />
-      )}
+
+        {/* Main Messaging Area */}
+        {selectedChannel && (
+          <MessagingComponent
+            channelId={selectedChannel}
+            channelType={getChannelType()}
+            currentCreatorId={currentCreatorId}
+            currentCreatorDiscordId={currentCreatorDiscordId}
+            campaignId={String(currentCampaign?.id)}
+            campaignRepName={currentCampaign?.rep_name}
+            campaignCompanyName={currentCampaign?.company_name}
+          />
+        )}
+      </div>
     </div>
   );
+
+
 }
 
 export default Messaging;
