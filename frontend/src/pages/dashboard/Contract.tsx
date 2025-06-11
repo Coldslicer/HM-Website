@@ -6,6 +6,11 @@ import { useCampaignStore } from "../../store/campaignStore";
 import { DocusealForm } from "@docuseal/react";
 import { SUPABASE_CLIENT } from "../../lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { Label } from "recharts";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { Input } from "../../components/ui/Input";
+import { RadioGroup } from "../../components/ui/RadioGroup";
 
 /* ================ [ CONTRACT ] ================ */
 
@@ -95,15 +100,18 @@ const Contract = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Client Contract</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">
+        Contract
+      </h1>
 
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <Card className="p-6 mb-6">
         <form onSubmit={handleSubmit}>
-          <div className="mb-6">
+          {/* Service Type Selection */}
+          <div>
             <h3 className="text-xl font-semibold text-gray-800 mb-4">
               Service Type
             </h3>
-            <div className="space-y-4">
+            <RadioGroup className="space-y-4">
               <label className="flex items-start p-4 rounded-md border border-gray-200 hover:border-orange-300 cursor-pointer">
                 <input
                   type="radio"
@@ -143,39 +151,42 @@ const Contract = () => {
                   </p>
                 </div>
               </label>
-            </div>
+            </RadioGroup>
           </div>
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          {/* Email Input */}
+          <div>
+            <Label className="mb-2 block text-sm font-medium text-gray-700">
               Email
-            </label>
-            <input
+            </Label>
+            <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               placeholder="Email address"
               required
               disabled={!!responseData}
             />
           </div>
 
+          {/* Submit Button */}
           {!responseData && (
-            <button
+            <Button
               type="submit"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-md transition w-full"
+              className="w-full mt-4 py-3 text-lg"
+              disabled={!!responseData}
             >
               Continue to Contract
-            </button>
+            </Button>
           )}
         </form>
 
-        {error && <div className="text-red-500 text-sm mt-4">{error}</div>}
-      </div>
+        {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+      </Card>
 
+      {/* Contract Embed */}
       {responseData ? (
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <Card className="p-6">
           <div className="bg-gray-50 rounded-lg shadow-inner p-4 h-[800px] overflow-y-auto">
             <DocusealForm
               src={responseData.embed_src}
@@ -203,17 +214,15 @@ const Contract = () => {
               }}
             />
           </div>
-        </div>
+        </Card>
       ) : (
-        <div className="bg-white rounded-lg shadow-md p-6 text-center">
-          <p className="text-gray-500">
-            Please provide your email and service preference to access the
-            contract
-          </p>
-        </div>
+        <Card className="p-6 text-center text-gray-500">
+          Please provide your email and service preference to access the contract
+        </Card>
       )}
     </div>
   );
+
 };
 
 /* ================ [ EXPORTS ] ================ */

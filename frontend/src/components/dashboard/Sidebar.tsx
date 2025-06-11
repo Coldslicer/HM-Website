@@ -1,5 +1,3 @@
-/* ================ [ IMPORTS ] ================ */
-
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { CampaignSelector } from "./CampaignSelector";
@@ -15,19 +13,24 @@ import {
   Users,
 } from "lucide-react";
 import { useCampaignStore } from "../../store/campaignStore";
+
 import { CampaignInfoManager } from "../../infoAbstraction/infoManagers";
 
 /* ================ [ SIDEBAR ] ================ */
 
+import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { Campaign } from "../../types";
+
+
 export function Sidebar() {
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const { currentCampaign, setCurrentCampaign } = useCampaignStore((state) => ({
     currentCampaign: state.currentCampaign,
     setCurrentCampaign: state.setCurrentCampaign,
   }));
 
-  const togglePopup = () => {
-    setIsPopupOpen(!isPopupOpen);
+  const toggleSelector = () => {
+    setIsSelectorOpen((prev) => !prev);
   };
 
   const statusOrder = [
@@ -44,6 +47,24 @@ export function Sidebar() {
       statusOrder.indexOf(requiredStatus)
     );
   };
+
+  // Auto-select latest campaign if none selected
+  useEffect(() => {
+    const fetchAndSetLatestCampaign = async () => {
+      const { data, error } = await SUPABASE_CLIENT.from("campaigns")
+        .select("*")
+        .order("updated_at", { ascending: false })
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        setCurrentCampaign(data[0]);
+      }
+    };
+
+    if (!currentCampaign) {
+      fetchAndSetLatestCampaign();
+    }
+  }, [currentCampaign, setCurrentCampaign]);
 
   useEffect(() => {
     if (!currentCampaign?.id) return;
@@ -62,30 +83,26 @@ export function Sidebar() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [currentCampaign?.id, setCurrentCampaign]);
+  }, [currentCampaign?.id]);
 
   return (
     <div className="bg-gray-50 w-64 fixed top-16 left-0 h-[calc(100vh-4rem)] p-4 flex flex-col justify-between">
       <div>
-        {/* Campaign Name and Popup Trigger */}
-        <div
-          className="text-lg font-semibold text-gray-800 mb-6 cursor-pointer hover:text-orange-500"
-          onClick={togglePopup}
-        >
-          {currentCampaign?.name || "New Campaign"}
-        </div>
+        {/* Campaign Name Toggle */}
+        {currentCampaign && (
+          <div
+            className="text-lg font-semibold text-gray-800 mb-2 cursor-pointer hover:text-orange-500"
+            onClick={toggleSelector}
+          >
+            {currentCampaign.name}
+          </div>
+        )}
 
-        {/* Popup Overlay and Campaign Selector */}
-        {isPopupOpen && (
-          <>
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50 z-40"
-              onClick={togglePopup}
-            ></div>
-            <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg shadow-lg z-50">
-              <CampaignSelector onClose={togglePopup} />
-            </div>
-          </>
+        {/* Inline Campaign Selector */}
+        {isSelectorOpen && (
+          <div className="mb-6">
+            <CampaignSelector onClose={toggleSelector} />
+          </div>
         )}
 
         {/* Sidebar Navigation Links */}

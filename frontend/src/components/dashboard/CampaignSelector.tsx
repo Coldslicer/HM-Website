@@ -3,7 +3,7 @@ import { useCampaignStore } from "../../store/campaignStore";
 import { CampaignInfoManager } from "../../infoAbstraction/infoManagers";
 import { Campaign } from "../../types";
 import { useAuthStore } from "../../store/authStore";
-import { Plus } from "lucide-react";
+import { Card } from "../ui/Card";
 
 export function CampaignSelector({ onClose }: { onClose?: () => void }) {
   const [campaigns, setCampaigns] = React.useState<Campaign[]>([]);
@@ -26,6 +26,7 @@ export function CampaignSelector({ onClose }: { onClose?: () => void }) {
     if (onClose) onClose();
   };
 
+
   const handleNewCampaign = async () => {
     if (!user) return;
 
@@ -42,44 +43,31 @@ export function CampaignSelector({ onClose }: { onClose?: () => void }) {
   };
 
   return (
-    <div className="w-full max-w-4xl p-8 bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        Select a Campaign
-      </h2>
+    <div className="space-y-3 mb-6">
+      <h3 className="text-sm font-semibold text-gray-500 uppercase px-1">
+        Select Campaign
+      </h3>
 
-      <div className="max-h-[400px] overflow-y-auto pr-4">
-        <div className="space-y-3">
-          {campaigns.map((campaign) => (
-            <div
-              key={campaign.id}
-              onClick={() => handleSelectCampaign(campaign)}
-              className={`p-6 rounded-lg cursor-pointer transition-all
-                ${
-                  currentCampaign?.id === campaign.id
-                    ? "bg-orange-50 border-2 border-orange-500"
-                    : "bg-gray-50 hover:bg-gray-100 border-2 border-transparent"
-                }`}
-            >
-              <h3 className="text-xl font-semibold text-gray-800">
-                {campaign.name}
-              </h3>
-              <p className="text-sm text-gray-500 mt-2">
-                Created: {new Date(campaign.created_at).toLocaleDateString()}
-              </p>
+      <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+        {campaigns.map((campaign) => (
+          <Card
+            key={campaign.id}
+            onClick={() => handleSelectCampaign(campaign)}
+            className={`p-3 cursor-pointer border transition-all text-sm ${
+              currentCampaign?.id === campaign.id
+                ? "border-orange-500 bg-orange-50"
+                : "hover:bg-gray-50"
+            }`}
+          >
+            <div className="font-medium text-gray-800 truncate">
+              {campaign.name}
             </div>
-          ))}
-        </div>
+            <div className="text-xs text-gray-500">
+              {new Date(campaign.created_at).toLocaleDateString()}
+            </div>
+          </Card>
+        ))}
       </div>
-
-      <button
-        onClick={handleNewCampaign}
-        className="mt-6 w-full py-3 bg-orange-500 hover:bg-orange-600 text-white
-          rounded-lg font-medium transition-colors flex items-center 
-          justify-center space-x-2"
-      >
-        <Plus className="w-5 h-5" />
-        <span>New Campaign</span>
-      </button>
     </div>
   );
 }

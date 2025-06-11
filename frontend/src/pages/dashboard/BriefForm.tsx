@@ -6,6 +6,14 @@ import axios from "axios";
 import { useAuthStore } from "../../store/authStore";
 import { useCampaignStore } from "../../store/campaignStore";
 import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { CampaignInfo } from "../../components/dashboard/CampaignInfo";
+import { Card } from "../../components/ui/Card";
+import { Input } from "../../components/ui/Input";
+import { Label } from "../../components/ui/Label";
+import { TextArea } from "../../components/ui/TextArea";
+import { RadioGroup, RadioGroupItem } from "../../components/ui/RadioGroup";
+import MultiSelectChips from "../../components/ui/MultiselectChips";
+import SelectableCard from "../../components/ui/SelectableCard";
 
 /* ================ [ FORM CONTENTS ] ================ */
 
@@ -22,12 +30,14 @@ const contents = {
   desired_pricing_model: [] as string[],
   sponsorship_format: [] as string[],
   niches: [] as string[],
+  server_id: "",
   brief_url: "",
 };
 
 /* ================ [ BRIEF FORM ] ================ */
 
 export function BriefForm() {
+  
   // Helper functions
   const { currentCampaign, setCurrentCampaign } = useCampaignStore();
   const { user } = useAuthStore();
@@ -49,7 +59,6 @@ export function BriefForm() {
   );
   const [error, setError] = useState("");
   const [clientServers, setClientServers] = useState<string[]>([]);
-  const [selectedServer, setSelectedServer] = useState<string | null>(null);
   const [pendingUpdates, setPendingUpdates] = useState<
     Partial<typeof contents>
   >({});
@@ -79,6 +88,27 @@ export function BriefForm() {
   };
 
   useEffect(() => {
+    const fetchClientServers = async () => {
+      if (!user) return;
+
+      const { data, error } = await SUPABASE_CLIENT.from("clients")
+        .select("servers")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching client servers:", error);
+      } else {
+        const serversArray = data?.servers || [];
+        setClientServers(serversArray);
+        if (serversArray.length === 1) {
+          setFormData((prev) => ({ ...prev, server_id: serversArray[0] }));
+        }
+      }
+    };
+
+    fetchClientServers();
+
     const fetchCampaign = async () => {
       if (!currentCampaign?.id || hasHydrated) return;
 
@@ -93,7 +123,7 @@ export function BriefForm() {
       }
 
       // Hydrate form from Supabase data
-      setFormData({
+      setFormDataState({
         company_name: data.company_name || "",
         website: data.website || "",
         company_address: data.company_address || "",
@@ -102,16 +132,14 @@ export function BriefForm() {
         name: data.name || "",
         rep_name: data.rep_name || "",
         date: data.date || "",
-        per_influencer_budget: data.per_influencer_budget || [],
+        server_id: data.server_id || clientServers[0],
+        per_influencer_budget: data.per_influencer_budget,
         desired_pricing_model: data.desired_pricing_model || [],
         sponsorship_format: data.sponsorship_format || [],
         niches: data.niches || [],
         brief_url: data.brief_url || "",
       });
-
-      if (data.server_id) {
-        setSelectedServer(data.server_id);
-      }
+      console.log(formData)
 
       setHasHydrated(true);
     };
@@ -200,70 +228,11 @@ export function BriefForm() {
   };
 
   useEffect(() => {
-    const fetchClientServers = async () => {
-      if (!user) return;
-
-      const { data, error } = await SUPABASE_CLIENT.from("clients")
-        .select("servers")
-        .eq("id", user.id)
-        .single();
-
-      if (error) {
-        console.error("Error fetching client servers:", error);
-      } else {
-        const serversArray = data?.servers || [];
-        setClientServers(serversArray);
-
-        // If there's only one server, automatically set the campaign's server_id.
-        if (serversArray.length === 1) {
-          setSelectedServer(serversArray[0]);
-          setFormData((prev) => ({ ...prev, server_id: serversArray[0] }));
-          // Optionally, update the currentCampaign if it exists.
-          if (currentCampaign && !currentCampaign.server_id) {
-            setCurrentCampaign((prev) => ({
-              ...prev,
-              server_id: serversArray[0],
-            }));
-          }
-        }
-      }
-    };
-
-    // Initialize form data
-    // if (currentCampaign) {
-    //   setFormData({
-    //     company_name: currentCampaign.company_name,
-    //     website: currentCampaign.website,
-    //     company_address: currentCampaign.company_address || "",
-    //     company_description: currentCampaign.company_description,
-    //     company_phone: currentCampaign.company_phone || "",
-    //     name: currentCampaign.name,
-    //     rep_name: currentCampaign.rep_name,
-    //     per_influencer_budget: currentCampaign.per_influencer_budget,
-    //     sponsorship_format: currentCampaign.sponsorship_format,
-    //     desired_pricing_model: currentCampaign.desired_pricing_model,
-    //     date: currentCampaign.date,
-    //     niches: currentCampaign.niches || [],
-    //     brief_url: currentCampaign.brief_url,
-    //   });
-    // }
-    // else {
-    //   setFormData(contents);
-    //   fetchMostRecentCampaign();
-    // }
-
-    fetchClientServers();
-    if (clientServers.length > 0) {
-      setSelectedServer(clientServers[0]);
-    }
-  }, [currentCampaign, user]);
-
-  useEffect(() => {
-    console.log(selectedServer);
-    fetchNiches(selectedServer);
-    fetchRoles(selectedServer);
-    setFormData((prev) => ({ ...prev, niches: [] }));
-  }, [selectedServer]);
+    console.log(formData.server_id);
+    fetchNiches(formData.server_id);
+    fetchRoles(formData.server_id);
+    // setFormData((prev) => ({ ...prev, niches: [] }));
+  }, [formData.server_id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -279,7 +248,7 @@ export function BriefForm() {
         client_id: user.id,
         ...formData,
         status: "brief_submitted",
-        server_id: selectedServer, // Keeping this from the second function
+        server_id: formData.server_id, // Keeping this from the second function
       };
 
       if (!currentCampaign) {
@@ -321,7 +290,7 @@ export function BriefForm() {
       const baseUrl = window.location.origin; // Dynamically get the base URL
       let formattedMessage = "";
       for (const role of roles) {
-        if (formData.per_influencer_budget.includes(role.id))
+        if (formData.per_influencer_budget.includes(role.id) && formData.server_id == role.server_id)
           formattedMessage += role.value + " \n";
       }
       formattedMessage += `
@@ -366,7 +335,7 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
 
       // Send to selected niches' webhooks
       const selectedNiches = niches.filter((niche) =>
-        formData.niches.includes(niche.name!),
+        formData.niches.includes(niche.name!) && formData.server_id == niche.server_id,
       );
       for (const niche of selectedNiches) {
         await fetch("/api/messages/send", {
@@ -434,7 +403,7 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
   };
 
   const handleSponsorshipFormatToggle = (
-    value: "30s" | "60s" | "Shortform" | "Dedicated",
+    value: "30s Longform Integration" | "60s Longform Integration" | "Shortform" | "Dedicated Video",
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -446,117 +415,13 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
 
   // Completed brief
   if (currentCampaign != null && currentCampaign?.status !== "draft") {
-    return (
-      <div className="w-full p-6 space-y-6">
-        <h2 className="text-3xl font-bold text-gray-800">Campaign Brief</h2>
-
-        <div className="grid grid-cols-1 gap-8">
-          {/* Brand Information Card */}
-          <div className="bg-white p-8 rounded-lg shadow-md">
-            <h3 className="text-xl font-semibold text-gray-800 mb-6">
-              Brand Information
-            </h3>
-
-            <dl className="space-y-4">
-              <div>
-                <dt className="text-sm font-medium text-gray-700">
-                  Brand Name
-                </dt>
-                <dd className="mt-1 text-gray-600">
-                  {currentCampaign.company_name}
-                </dd>
-              </div>
-
-              <div>
-                <dt className="text-sm font-medium text-gray-700">
-                  Brand Website
-                </dt>
-                <dd className="mt-1 text-gray-600">
-                  {currentCampaign.website}
-                </dd>
-              </div>
-
-              <div>
-                <dt className="text-sm font-medium text-gray-700">
-                  Brand Description
-                </dt>
-                <dd className="mt-1 text-gray-600">
-                  {currentCampaign.company_description}
-                </dd>
-              </div>
-
-              <div>
-                <dt className="text-sm font-medium text-gray-700">
-                  Representative Name
-                </dt>
-                <dd className="mt-1 text-gray-600">
-                  {currentCampaign.rep_name}
-                </dd>
-              </div>
-            </dl>
-          </div>
-
-          {/* Campaign Information Card */}
-          <div className="bg-white p-8 rounded-lg shadow-md">
-            <h3 className="text-xl font-semibold text-gray-800 mb-6">
-              Campaign Information
-            </h3>
-
-            <dl className="space-y-4">
-              <div>
-                <dt className="text-sm font-medium text-gray-700">
-                  Campaign Name
-                </dt>
-                <dd className="mt-1 text-gray-600">{currentCampaign.name}</dd>
-              </div>
-
-              <div>
-                <dt className="text-sm font-medium text-gray-700">
-                  Posting Date
-                </dt>
-                <dd className="mt-1 text-gray-600">{currentCampaign.date}</dd>
-              </div>
-
-              <div>
-                <dt className="text-sm font-medium text-gray-700">Channels</dt>
-                <dd className="mt-1 text-gray-600">
-                  {currentCampaign.niches.join(", ")}
-                </dd>
-              </div>
-
-              <div>
-                <dt className="text-sm font-medium text-gray-700">
-                  Per-Influencer Budget
-                </dt>
-                <dd className="mt-1 text-gray-600">
-                  {currentCampaign.per_influencer_budget.join(", ")}
-                </dd>
-              </div>
-
-              <div>
-                <dt className="text-sm font-medium text-gray-700">Brief URL</dt>
-                <dd className="mt-1">
-                  <a
-                    href={currentCampaign.brief_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-orange-500 hover:text-orange-600 hover:underline transition-colors"
-                  >
-                    View Brief
-                  </a>
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </div>
-      </div>
-    );
+    return <CampaignInfo currentCampaign={currentCampaign} />;
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-gray-100 p-6 rounded-lg shadow-md space-y-4 mb-6">
-        <h2 className="text-2xl font-bold text-black">Campaign Brief</h2>
+    <div className="max-w-2xl mx-auto space-y-4">
+      <h2 className="text-2xl font-bold text-black">Campaign Brief</h2>
+      <Card className="max-w-2xl mx-auto space-y-4">
         {/* Autosave status and manual save button */}
         <div className="flex items-center space-x-3">
           <button
@@ -588,601 +453,325 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
             Save now
           </button>
         </div>
-
-        {/* Campaign Brief Title */}
-      </div>
+      </Card>
+      
+      {/* Campaign Brief Title */}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <h3 className="text-2x font-bold text-black mb-6">Brand Information</h3>
 
-        {/* Company Name */}
-        <div>
-          <label className="block text-sm font-medium text-black-200">
-            Brand Name
-          </label>
-          <input
-            type="text"
-            value={formData.company_name}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, company_name: e.target.value }))
-            }
-            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            placeholder="e.g. Hotslicer Media"
-            required
-          />
-        </div>
+        <Card className="max-w-2xl mx-auto space-y-4 p-6">
+          <h3 className="text-2xl font-bold text-black mb-6">Brand Information</h3>
 
-        {/* Brand Website */}
-        <div>
-          <label className="block text-sm font-medium text-black-200">
-            Brand Website
-          </label>
-          <input
-            type="url"
-            value={formData.website}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, website: e.target.value }))
-            }
-            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            placeholder="e.g., https://www.acmecorp.com"
-            required
-          />
-        </div>
-
-        {/* Brand Description */}
-        <div>
-          <label className="block text-sm font-medium text-black-200">
-            Brand Description (Will be shown to influencers)
-          </label>
-          <textarea
-            value={formData.company_description}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                company_description: e.target.value,
-              }))
-            }
-            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            placeholder="e.g., Acme Corp is a leading provider of innovative solutions..."
-            required
-          />
-          <p className="text-sm text-black-400 mt-1">
-            This will be shown to influencers, so make sure it represents your
-            brand!
-          </p>
-        </div>
-
-        {/* Representative Name */}
-        <div>
-          <label className="block text-sm font-medium text-black-200">
-            Representative Name
-          </label>
-          <input
-            type="text"
-            value={formData.rep_name}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, rep_name: e.target.value }))
-            }
-            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            placeholder="e.g., John Doe"
-            required
-          />
-        </div>
-
-        <br />
-        <h3 className="text-2x font-bold text-black mb-6">
-          Campaign Information
-        </h3>
-
-        {/* Campaign Name */}
-        <div>
-          <label className="block text-sm font-medium text-black-200">
-            Campaign Name
-          </label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (/^[a-zA-Z0-9 ]*$/.test(value)) {
-                setFormData((prev) => ({ ...prev, name: value }));
-                setError("");
-              } else {
-                setError(
-                  "Campaign name can only contain letters, numbers, and spaces.",
-                );
+          {/* Company Name */}
+          <div>
+            <Label weight="bold" htmlFor="company_name">Brand Name</Label>
+            <Input
+              id="company_name"
+              type="text"
+              value={formData.company_name}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, company_name: e.target.value }))
               }
-            }}
-            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            placeholder="e.g. Summer 2023 Product Launch"
-            required
-          />
-          <p className="text-sm text-black-400 mt-1">
-            Should be something descriptive, only containing letters, numbers,
-            and spaces.
-          </p>
-          {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
-        </div>
-
-        {/* Brief URL */}
-        <div>
-          <label className="block text-sm font-medium text-black-200">
-            Brief URL
-          </label>
-          <input
-            type="url"
-            value={formData.brief_url}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, brief_url: e.target.value }))
-            }
-            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            placeholder="e.g., https://docs.google.com/document/d/1xAh64H5T87aQ7JCEuiBbQEYxNg9lNJ5DR7gKX-13Je0/edit?usp=sharing"
-            required
-          />
-          <p className="text-sm text-black-400 mt-1">
-            Here's a template to help you write the perfect brief:{" "}
-            <a
-              href="https://docs.google.com/document/d/1xAh64H5T87aQ7JCEuiBbQEYxNg9lNJ5DR7gKX-13Je0/edit?usp=sharing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 underline"
-            >
-              LINK
-            </a>
-          </p>
-        </div>
-
-        {/* Posting Date */}
-        <div>
-          <label className="block text-sm font-medium text-black-200">
-            Posting Date
-          </label>
-
-          <select
-            value={formData.date}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, date: e.target.value }))
-            }
-            className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            required
-          >
-            <option value="date">Set Date</option>
-            <option value="flexible">
-              Flexible (influencers can post according to their upload schedule)
-            </option>
-          </select>
-
-          {formData.date !== "flexible" && (
-            <div>
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, date: e.target.value }))
-                }
-                className="mt-1 block w-full rounded-md border-gray-700 bg-white-700 text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                required
-              />
-              <label className="text-sm text-black-400 mt-1">
-                This should be the latest date you want videos out
-              </label>
-            </div>
-          )}
-        </div>
-
-        {/* Niches */}
-        <div>
-          {clientServers.length > 1 && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-black-200">
-                Select Server
-              </label>
-              <select
-                value={selectedServer || ""}
-                onChange={(e) => {
-                  setSelectedServer(e.target.value);
-                }}
-                className="mt-1 block w-full rounded-md border-gray-700 bg-white text-black shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                required
-              >
-                <option value="">Select a server</option>
-                {clientServers.map((serverId, index) => (
-                  <option key={index} value={serverId}>
-                    {serverId}{" "}
-                    {/* You might want to display a more user-friendly name if available */}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <label className="block text-sm font-medium text-black-200 mb-2">
-            Channels
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {niches
-              .filter((niche) => niche !== null)
-              .map((niche) => (
-                <button
-                  key={niche.name}
-                  type="button"
-                  onClick={() => handleNicheToggle(niche.name!)}
-                  className={`px-4 py-2 rounded-full transition-all duration-200 border
-                  ${
-                    formData.niches.includes(niche.name!)
-                      ? "bg-orange-500 border-orange-500 text-white"
-                      : "bg-white border-gray-300 text-black hover:bg-gray-50"
-                  }`}
-                >
-                  <span className="text-sm font-medium">{niche.name}</span>
-                </button>
-              ))}
+              placeholder="e.g. Hotslicer Media"
+              required
+              className="mt-1"
+            />
           </div>
-        </div>
 
-        {/* Influencer Size */}
-        {Array.isArray(roles) && roles.length > 0 && (
+          {/* Brand Website */}
+          <div>
+            <Label weight="bold" htmlFor="website">Brand Website</Label>
+            <Input
+              id="website"
+              type="url"
+              value={formData.website}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, website: e.target.value }))
+              }
+              placeholder="e.g., https://warm.hotslicer.com"
+              required
+              className="mt-1"
+            />
+          </div>
+
+          {/* Brand Description */}
+          <div>
+            <Label weight="bold" htmlFor="company_description">
+              Brand Description (Will be shown to influencers)
+            </Label>
+            <TextArea
+              id="company_description"
+              value={formData.company_description}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  company_description: e.target.value,
+                }))
+              }
+              placeholder="e.g., Warm by Hotslicer Media is a novel system for..."
+              required
+              className="mt-1"
+              rows={4}
+            />
+            <p className="text-sm text-black-400 mt-1">
+              This will be shown to influencers, so make sure it represents your brand!
+            </p>
+          </div>
+
+          {/* Representative Name */}
+          <div>
+            <Label weight="bold" htmlFor="rep_name">Representative Name</Label>
+            <Input
+              id="rep_name"
+              type="text"
+              value={formData.rep_name}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, rep_name: e.target.value }))
+              }
+              placeholder="e.g., John Doe"
+              required
+              className="mt-1"
+            />
+          </div>
+        </Card>
+
+        <Card className="max-w-2xl mx-auto space-y-4">
+          <h3 className="text-2xl font-bold text-black mb-6">Campaign Information</h3>
+
+          {/* Campaign Name */}
+          <div>
+            <Label weight="bold" htmlFor="campaign_name">Campaign Name</Label>
+            <Input
+              id="campaign_name"
+              type="text"
+              value={formData.name}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (/^[a-zA-Z0-9 ]*$/.test(value)) {
+                  setFormData((prev) => ({ ...prev, name: value }));
+                  setError("");
+                } else {
+                  setError(
+                    "Campaign name can only contain letters, numbers, and spaces.",
+                  );
+                }
+              }}
+              placeholder="e.g. Summer 2023 Product Launch"
+              required
+              className="mt-1"
+            />
+            <p className="text-sm text-black-400 mt-1">
+              Should be something descriptive, only containing letters, numbers, and spaces.
+            </p>
+            {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
+          </div>
+
+          {/* Brief URL */}
+          <div>
+            <Label weight="bold" htmlFor="brief_url">Brief URL</Label>
+            <Input
+              id="brief_url"
+              type="url"
+              value={formData.brief_url}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, brief_url: e.target.value }))
+              }
+              placeholder="e.g., https://docs.google.com/document/d/..."
+              required
+              className="mt-1"
+            />
+            <p className="text-sm text-black-400 mt-1">
+              Here's a template to help you write the perfect brief:{" "}
+              <a
+                href="https://docs.google.com/document/d/1xAh64H5T87aQ7JCEuiBbQEYxNg9lNJ5DR7gKX-13Je0/edit?usp=sharing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 underline"
+              >
+                LINK
+              </a>
+            </p>
+          </div>
+
+          {/* Posting Date */}
+          <div>
+            <Label>Posting Date</Label>
+            <RadioGroup
+              value={formData.date === "flexible" ? "flexible" : "set_date"}
+              onValueChange={(value) => {
+                if (value === "flexible") {
+                  setFormData((prev) => ({ ...prev, date: "flexible" }));
+                } else {
+                  // default to today if switching back from flexible
+                  setFormData((prev) => ({
+                    ...prev,
+                    date: prev.date === "flexible" ? new Date().toISOString().slice(0, 10) : prev.date,
+                  }));
+                }
+              }}
+              className="mt-1"
+              aria-label="Posting Date options"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="flexible" id="flexible" />
+                <Label weight="bold" htmlFor="flexible" className="cursor-pointer select-none">
+                  Flexible (influencers can post according to their upload schedule)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="set_date" id="set_date" />
+                <Label weight="bold" htmlFor="set_date" className="cursor-pointer select-none">
+                  Set Date
+                </Label>
+              </div>
+
+            </RadioGroup>
+
+            {formData.date !== "flexible" && (
+              <div className="mt-4">
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, date: e.target.value }))
+                  }
+                  required
+                  className="mt-1"
+                />
+                <p className="text-sm text-black-400 mt-1">
+                  This should be the latest date you want videos out
+                </p>
+              </div>
+            )}
+          </div>
+        </Card>
+        
+        <Card className="max-w-2xl mx-auto space-y-4">
+          <h3 className="text-2xl font-bold text-black mb-6">Distribution Options</h3>
+          {clientServers.length > 1 && (
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-black-200 mb-2">
+      Select Server
+    </label>
+    <RadioGroup
+      value={formData.server_id || ""}
+      onValueChange={(value) => {
+        setFormData((prev) => ({ ...prev, server_id: value }));
+      }}
+      className="grid gap-2"
+      required
+    >
+      {clientServers.map((serverId) => (
+        <div key={serverId} className="flex items-center space-x-2">
+          <RadioGroupItem value={serverId} id={`server-${serverId}`} />
+          <Label htmlFor={`server-${serverId}`} className="cursor-pointer">
+            {serverId}
+          </Label>
+        </div>
+      ))}
+    </RadioGroup>
+  </div>
+)}
+          <div>
+
+            {/* Niches */}
+            <label className="block text-sm font-medium text-black-200 mb-2">
+              Channels
+            </label>
+            <MultiSelectChips
+              options={niches.filter(n => n !== null).map(n => n.name!)}
+              selected={formData.niches}
+              onToggle={handleNicheToggle}
+            />
+          </div>
+
+          {/* Influencer Size */}
+          {Array.isArray(roles) && roles.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-black-200 mb-2">
+                Influencer Types
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                {roles.map((role) => {
+                  // Ensure we're using the correct ID comparison
+                  // Convert both to strings for comparison
+                  const isSelected = formData.per_influencer_budget
+                    ?.map(String) // Convert budget items to strings
+                    .includes(String(role.id)) ?? false; // Convert role.id to string
+                  return (
+                    <SelectableCard
+                      key={role.id}
+                      selected={isSelected}
+                      onClick={() => handleRoleToggle(role.id)}
+                      title={role.title}
+                      description={role.description}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Pricing Model */}
           <div>
             <label className="block text-sm font-medium text-black-200 mb-2">
-              Influencer Types
+              Pricing Model
             </label>
-            <div className="grid grid-cols-2 gap-4">
-              {roles.map((role) => (
-                <div
-                  key={role.id}
-                  onClick={() => handleRoleToggle(role.id)} // Use the role key for toggle
-                  className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
-            ${
-              formData.per_influencer_budget.includes(role.id)
-                ? "border-orange-500 bg-orange-50 shadow-orange-sm"
-                : "border-gray-200 bg-white hover:border-orange-300"
-            }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-black font-medium">{role.title}</span>
-                    <div
-                      className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
-                ${
-                  formData.per_influencer_budget.includes(role.id)
-                    ? "bg-orange-500"
-                    : "bg-gray-100 border-2 border-gray-300"
-                }`}
-                    >
-                      {formData.per_influencer_budget.includes(role.id) && (
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-2">
-                    {role.description}
-                  </p>
-                </div>
-              ))}
+            <div className="grid grid-cols-3 gap-4">
+              <SelectableCard
+                selected={formData.desired_pricing_model.includes("Flat-rate")}
+                onClick={() => handlePricingToggle("Flat-rate")}
+                title="Flat-rate"
+                description="Fixed payment for the campaign"
+              />
+              <SelectableCard
+                selected={formData.desired_pricing_model.includes("CPM (first 30d)")}
+                onClick={() => handlePricingToggle("CPM (first 30d)")}
+                title="CPM (first 30d)"
+                description="Cost per thousand views for the first 30 days"
+              />
+              <SelectableCard
+                selected={formData.desired_pricing_model.includes("Hybrid")}
+                onClick={() => handlePricingToggle("Hybrid")}
+                title="Hybrid"
+                description="Combination of flat-rate and CPM pricing"
+              />
             </div>
           </div>
-        )}
 
-        <div>
-          <label className="block text-sm font-medium text-black-200 mb-2">
-            Pricing Model
-          </label>
-          <div className="grid grid-cols-3 gap-4">
-            {/* Flat-rate Card */}
-            <div
-              onClick={() => handlePricingToggle("Flat-rate")}
-              className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
-        ${
-          formData.desired_pricing_model.includes("Flat-rate")
-            ? "border-orange-500 bg-orange-50 shadow-orange-sm"
-            : "border-gray-200 bg-white hover:border-orange-300"
-        }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-black font-medium">Flat-rate</span>
-                <div
-                  className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
-          ${
-            formData.desired_pricing_model.includes("Flat-rate")
-              ? "bg-orange-500"
-              : "bg-gray-100 border-2 border-gray-300"
-          }`}
-                >
-                  {formData.desired_pricing_model.includes("Flat-rate") && (
-                    <svg
-                      className="w-4 h-4 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Fixed payment for the campaign
-              </p>
-            </div>
-
-            {/* CPM (first 30d) Card */}
-            <div
-              onClick={() => handlePricingToggle("CPM (first 30d)")}
-              className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
-        ${
-          formData.desired_pricing_model.includes("CPM (first 30d)")
-            ? "border-orange-500 bg-orange-50 shadow-orange-sm"
-            : "border-gray-200 bg-white hover:border-orange-300"
-        }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-black font-medium">CPM (first 30d)</span>
-                <div
-                  className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
-          ${
-            formData.desired_pricing_model.includes("CPM (first 30d)")
-              ? "bg-orange-500"
-              : "bg-gray-100 border-2 border-gray-300"
-          }`}
-                >
-                  {formData.desired_pricing_model.includes(
-                    "CPM (first 30d)",
-                  ) && (
-                    <svg
-                      className="w-4 h-4 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Cost per thousand views for the first 30 days
-              </p>
-            </div>
-
-            {/* Hybrid Card */}
-            <div
-              onClick={() => handlePricingToggle("Hybrid")}
-              className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
-        ${
-          formData.desired_pricing_model.includes("Hybrid")
-            ? "border-orange-500 bg-orange-50 shadow-orange-sm"
-            : "border-gray-200 bg-white hover:border-orange-300"
-        }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-black font-medium">Hybrid</span>
-                <div
-                  className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
-          ${
-            formData.desired_pricing_model.includes("Hybrid")
-              ? "bg-orange-500"
-              : "bg-gray-100 border-2 border-gray-300"
-          }`}
-                >
-                  {formData.desired_pricing_model.includes("Hybrid") && (
-                    <svg
-                      className="w-4 h-4 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Combination of flat-rate and CPM pricing
-              </p>
+          {/* Sponsorship Types */}
+          <div>
+            <label className="block text-sm font-medium text-black-200 mb-2">
+              Sponsorship Types
+            </label>
+            <div className="grid grid-cols-4 gap-4">
+              <SelectableCard
+                selected={formData.sponsorship_format.includes("30s Longform Integration")}
+                onClick={() => handleSponsorshipFormatToggle("30s Longform Integration")}
+                title="30s Integration"
+                description="30 second sponsored segment in a long form video"
+              />
+              <SelectableCard
+                selected={formData.sponsorship_format.includes("60s Longform Integration")}
+                onClick={() => handleSponsorshipFormatToggle("60s Longform Integration")}
+                title="60s Integration"
+                description="60 second sponsored segment in a long form video"
+              />
+              <SelectableCard
+                selected={formData.sponsorship_format.includes("Shortform")}
+                onClick={() => handleSponsorshipFormatToggle("Shortform")}
+                title="Shortform"
+                description="A short-form (scrolling) format video about your product or service"
+              />
+              <SelectableCard
+                selected={formData.sponsorship_format.includes("Dedicated Video")}
+                onClick={() => handleSponsorshipFormatToggle("Dedicated Video")}
+                title="Dedicated Video"
+                description="A full length video about your product or service!"
+              />
             </div>
           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-black-200 mb-2">
-            Sponsorship Types
-          </label>
-          <div className="grid grid-cols-4 gap-4">
-            {/* 30 s */}
-            <div
-              onClick={() => handleSponsorshipFormatToggle("30s")}
-              className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
-        ${
-          formData.sponsorship_format.includes("30s")
-            ? "border-orange-500 bg-orange-50 shadow-orange-sm"
-            : "border-gray-200 bg-white hover:border-orange-300"
-        }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-black font-medium">30s Integration</span>
-                <div
-                  className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
-          ${
-            formData.sponsorship_format.includes("30s")
-              ? "bg-orange-500"
-              : "bg-gray-100 border-2 border-gray-300"
-          }`}
-                >
-                  {formData.sponsorship_format.includes("30s") && (
-                    <svg
-                      className="w-4 h-4 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                30 second sponsored segment in a long form video
-              </p>
-            </div>
-
-            {/* 60 s*/}
-            <div
-              onClick={() => handleSponsorshipFormatToggle("60s")}
-              className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
-        ${
-          formData.sponsorship_format.includes("60s")
-            ? "border-orange-500 bg-orange-50 shadow-orange-sm"
-            : "border-gray-200 bg-white hover:border-orange-300"
-        }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-black font-medium">60s Integration</span>
-                <div
-                  className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
-          ${
-            formData.sponsorship_format.includes("60s")
-              ? "bg-orange-500"
-              : "bg-gray-100 border-2 border-gray-300"
-          }`}
-                >
-                  {formData.sponsorship_format.includes("60s") && (
-                    <svg
-                      className="w-4 h-4 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                60 second sponsored segment in a long form video
-              </p>
-            </div>
-
-            {/*Shortform */}
-            <div
-              onClick={() => handleSponsorshipFormatToggle("Shortform")}
-              className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
-        ${
-          formData.sponsorship_format.includes("Shortform")
-            ? "border-orange-500 bg-orange-50 shadow-orange-sm"
-            : "border-gray-200 bg-white hover:border-orange-300"
-        }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-black font-medium">Shortform</span>
-                <div
-                  className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
-          ${
-            formData.sponsorship_format.includes("Shortform")
-              ? "bg-orange-500"
-              : "bg-gray-100 border-2 border-gray-300"
-          }`}
-                >
-                  {formData.sponsorship_format.includes("Shortform") && (
-                    <svg
-                      className="w-4 h-4 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                A short-form (scrolling) format video about your product or
-                service
-              </p>
-            </div>
-            {/*Dedicated */}
-            <div
-              onClick={() => handleSponsorshipFormatToggle("Dedicated")}
-              className={`p-4 rounded-lg border cursor-pointer transition-all duration-200
-        ${
-          formData.sponsorship_format.includes("Dedicated")
-            ? "border-orange-500 bg-orange-50 shadow-orange-sm"
-            : "border-gray-200 bg-white hover:border-orange-300"
-        }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-black font-medium">Dedicated Video</span>
-                <div
-                  className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors
-          ${
-            formData.sponsorship_format.includes("Dedicated")
-              ? "bg-orange-500"
-              : "bg-gray-100 border-2 border-gray-300"
-          }`}
-                >
-                  {formData.sponsorship_format.includes("Dedicated") && (
-                    <svg
-                      className="w-4 h-4 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                A full length video about your product or service!
-              </p>
-            </div>
-          </div>
-        </div>
+        </Card>
 
         <button
           type="submit"

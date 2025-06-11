@@ -49,7 +49,7 @@ ssh -i ~/.ssh/id_rsa root@warm.hotslicer.com << 'EOF'
   pm2 restart backend
 
   echo "Restarting scraper..."
-  pm2 restart scrapper
+  pm2 restart scraper
 
   if [ $? -ne 0 ]; then
     echo "ERROR: Failed to restart backend!"
