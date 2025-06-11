@@ -31,7 +31,7 @@ const Welcome = () => {
           {/* Step 3: Write a Brief */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">
-              Write your campaign brief - 2 / 4
+              Write your campaign brief - 1 / 3
             </h2>
             <p className="mb-4">
               Start by drafting your campaign requirements using our simple
@@ -50,7 +50,7 @@ const Welcome = () => {
           {/* Step 4: Enter Campaign Details */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">
-              Fill out our brief form - 3 / 4
+              Fill out our brief form - 2 / 3
             </h2>
             <p className="mb-4">
               Submit your finalized brief through our form to begin matching
@@ -68,7 +68,7 @@ const Welcome = () => {
           {/* Step 5: Ready to See Creators */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold mb-4">
-              Explore potential creators - 4 / 4
+              Explore potential creators - 3 / 3
             </h2>
             <p className="mb-4">
               Once your brief is approved, discover and connect with creators
