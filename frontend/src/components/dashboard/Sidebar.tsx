@@ -250,7 +250,7 @@ export function Sidebar() {
             }
           >
             <Mail className="h-5 w-5" />
-            <span>Contacts</span>
+            <span>Contact</span>
           </NavLink>
         </nav>
       </div>
