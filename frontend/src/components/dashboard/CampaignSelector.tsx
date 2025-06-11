@@ -1,6 +1,6 @@
 import React from "react";
 import { useCampaignStore } from "../../store/campaignStore";
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { CampaignInfoManager } from "../../infoAbstraction/infoManagers";
 import { Campaign } from "../../types";
 import { useAuthStore } from "../../store/authStore";
 import { Plus } from "lucide-react";
@@ -14,17 +14,8 @@ export function CampaignSelector({ onClose }: { onClose?: () => void }) {
     if (!user) return;
 
     const fetchCampaigns = async () => {
-      const { data, error } = await SUPABASE_CLIENT.from("campaigns")
-        .select("*")
-        .eq("client_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching campaigns:", error);
-        return;
-      }
-
-      setCampaigns(data || []);
+      const data = await CampaignInfoManager.listByClient(user.id);
+      if (data) setCampaigns(data);
     };
 
     fetchCampaigns();
@@ -38,19 +29,10 @@ export function CampaignSelector({ onClose }: { onClose?: () => void }) {
   const handleNewCampaign = async () => {
     if (!user) return;
 
-    const { data, error } = await SUPABASE_CLIENT.from("campaigns")
-      .insert({
-        client_id: user.id,
-        name: "Draft", // You can customize or prompt for this
-        status: "draft",
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error creating new campaign:", error);
-      return;
-    }
+    const data = await CampaignInfoManager.create(user.id, {
+      name: "Draft",
+      status: "draft",
+    });
 
     if (data) {
       setCurrentCampaign(data);

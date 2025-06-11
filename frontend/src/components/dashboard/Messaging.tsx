@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { CampaignCreatorInfoManager } from "../../infoAbstraction/infoManagers";
 import { useCampaignStore } from "../../store/campaignStore";
 import { FaPaperPlane } from "react-icons/fa";
 import { useSearchParams } from "react-router-dom";
@@ -40,19 +40,11 @@ export function Messaging() {
 
   useEffect(() => {
     const fetchCreator = async () => {
-      const { data, error } = await SUPABASE_CLIENT.from("campaign_creators")
-        .select("id, channel_id, channel_url, channel_name, discord_id")
-        .eq("id", currentCreatorId)
-        .eq("selected", true);
-
-      if (error) {
-        console.error("Error fetching creators:", error);
-        return;
+      const data = await CampaignCreatorInfoManager.get(currentCreatorId);
+      if (data && data.selected) {
+        setCreatorData(data);
+        console.log("Fetched creators:", data);
       }
-
-      setCreatorData(data);
-
-      console.log("Fetched creators:", data);
     };
 
     fetchCreator();
