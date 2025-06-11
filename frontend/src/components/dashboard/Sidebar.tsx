@@ -15,7 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { useCampaignStore } from "../../store/campaignStore";
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { CampaignInfoManager } from "../../infoAbstraction/infoManagers";
 
 /* ================ [ SIDEBAR ] ================ */
 
@@ -48,37 +48,19 @@ export function Sidebar() {
   useEffect(() => {
     if (!currentCampaign?.id) return;
 
-    const campaignId = currentCampaign.id;
-
-    const subscription = SUPABASE_CLIENT.channel(`campaigns:${campaignId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "campaigns",
-          filter: `id=eq.${campaignId}`,
-        },
-        (payload) => {
-          if (payload.new?.status !== undefined) {
-            console.log("Campaign status updated:", payload.new.status);
-            setCurrentCampaign((prev) => ({
-              ...prev,
-              status: payload.new.status,
-            }));
-            useCampaignStore.setState({
-              currentCampaign: {
-                ...currentCampaign,
-                status: payload.new.status,
-              },
-            });
-          }
-        },
-      )
-      .subscribe();
+    const subscription = CampaignInfoManager.subscribeStatus(
+      currentCampaign.id,
+      (status) => {
+        console.log("Campaign status updated:", status);
+        setCurrentCampaign((prev) => ({ ...prev, status }));
+        useCampaignStore.setState({
+          currentCampaign: { ...currentCampaign, status },
+        });
+      },
+    );
 
     return () => {
-      SUPABASE_CLIENT.removeChannel(subscription);
+      subscription.unsubscribe();
     };
   }, [currentCampaign?.id, setCurrentCampaign]);
 

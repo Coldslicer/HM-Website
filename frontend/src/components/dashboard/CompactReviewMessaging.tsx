@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { CampaignCreatorInfoManager } from "../../infoAbstraction/infoManagers";
 import { useCampaignStore } from "../../store/campaignStore";
 import { FaPaperPlane } from "react-icons/fa";
 import { Button } from "../ui/Button";
@@ -22,18 +22,11 @@ export function CompactReviewMessaging({ creatorId }) {
 
   useEffect(() => {
     const fetchCreatorChannel = async () => {
-      const { data, error } = await SUPABASE_CLIENT.from("campaign_creators")
-        .select("channel_id, discord_id")
-        .eq("id", creatorId)
-        .single();
-
-      if (error) {
-        console.error("Error fetching creator channel:", error);
-        return;
+      const data = await CampaignCreatorInfoManager.get(creatorId);
+      if (data) {
+        setSelectedChannel(data.channel_id);
+        setCreatorDiscordId(data.discord_id);
       }
-
-      setSelectedChannel(data.channel_id);
-      setCreatorDiscordId(data.discord_id);
     };
 
     fetchCreatorChannel();
