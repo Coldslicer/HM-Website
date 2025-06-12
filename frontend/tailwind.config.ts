@@ -1,7 +1,12 @@
 /* ================ [ IMPORTS ] ================ */
 
 // Tailwind imports
+import tailwindcss from 'tailwindcss';
+
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
+
+
 
 /* ================ [ FIELDS ] ================ */
 
@@ -15,6 +20,7 @@ const config = {
     "./src/**/*.{ts,tsx}",
     "*.{js,ts,jsx,tsx,mdx}",
   ],
+
   prefix: "",
   theme: {
     container: {
@@ -65,7 +71,7 @@ const config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;
 
 /* ================ [ EXPORTS ] ================ */
