@@ -1,5 +1,5 @@
 import {analyzeConversationGhost, getChannelMessages, getLastClientMessageTime} from "../util/util_functions.js";
-import {DISCORD_CLIENT} from "../util/setup.js";
+import {DISCORD_CLIENT} from "../util/clients.js";
 
 export const accountCreationNudge = {
     id: 'accountCreationNudge',

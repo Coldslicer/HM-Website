@@ -4,196 +4,115 @@ import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 
 const initialFormData = {
+  join_code: "",
   campaign_id: "",
-  name: "", // First and Last Name
+  name: "",
   email: "",
-  channel_name: "", // Channel Name
-  channel_url: "", // Channel Link
-  deliverables: "", // Deliverables (multiple choice)
-  rate: "", // Flat rate (numeric)
-  rate_cpm: "", // CPM rate (numeric)
+  channel_name: "",
+  channel_url: "",
+  deliverables: "",
+  rate: "",
+  rate_cpm: "",
   cpm_cap: "",
-  personal_statement: "", // Personal Statement (text)
-  selected: false, // Selected (bool)
-  discord_id: "", // Discord ID (text)
-  agreement: false, // Agreement (bool)
+  personal_statement: "",
+  selected: false,
+  discord_id: "",
+  agreement: false,
 };
 
 export function CreatorForm() {
   const [searchParams] = useSearchParams();
-  const prefilledCampaignName = searchParams.get("campaignName") || "";
+  const prefilledJoinCode = searchParams.get("joinCode") || "";
   const prefilledDiscordID = searchParams.get("discordId") || "";
-
-  const getMostRecentCampaignCreator = async (discordId: string) => {
-    const { data, error } = await SUPABASE_CLIENT.from("campaign_creators") // Updated table name
-      .select("*")
-      .eq("discord_id", discordId)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching data:", error);
-      return null;
-    }
-
-    return data.length ? data[0] : null;
-  };
 
   const [formData, setFormData] = useState({
     ...initialFormData,
-    campaign_name: prefilledCampaignName,
+    join_code: prefilledJoinCode,
     discord_id: prefilledDiscordID,
   });
 
-  const [campaigns, setCampaigns] = useState<any[]>([]);
-  const [error, setError] = useState<string>("");
-  const [success, setSuccess] = useState<boolean>(false);
-  const [campaignNotAvailable, setCampaignNotAvailable] =
-    useState<boolean>(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [campaignNotAvailable, setCampaignNotAvailable] = useState(false);
   const [pricingModel, setPricingModel] = useState<string[]>([]);
   const [deliverables, setDeliverables] = useState<string[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      let creatorData = {};
+    const fetchCampaignFromJoinCode = async () => {
+      try {
+        const { data } = await axios.get(`/api/joincodes/decode?code=${formData.join_code}`);
+        const campaign = data.campaign;
 
-      if (prefilledDiscordID.length !== 0) {
-        const creator = await getMostRecentCampaignCreator(prefilledDiscordID); // No need to convert to number
-        if (creator) {
-          creatorData = {
-            name: creator.name || "",
-            channel_name: creator.channel_name || "",
-            channel_url: creator.channel_url || "",
-            deliverables: creator.deliverables || "",
-            rate: creator.rate || "",
-            rate_cpm: creator.rate_cpm || "",
-            cpm_cap: creator.cpm_cap || "",
-            personal_statement: creator.personal_statement || "",
-          };
-        }
-      }
-
-      // Fetch campaigns that are 'brief_submitted'
-      const { data, error } = await SUPABASE_CLIENT.from("campaigns")
-        .select("*")
-        .eq("status", "brief_submitted")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching campaigns:", error);
-        setError("Failed to load campaigns.");
-        return;
-      }
-
-      setCampaigns(data || []);
-
-      let campaignId = "";
-      if (prefilledCampaignName) {
-        const campaign = data.find((c) => c.name === prefilledCampaignName);
-        if (campaign) {
-          campaignId = campaign.id;
-          setPricingModel(campaign.desired_pricing_model);
-          setDeliverables(campaign.sponsorship_format);
-        } else {
+        if (!campaign) {
           setCampaignNotAvailable(true);
+          return;
         }
-      }
 
-      // Merge both prefilling sources into one `setFormData` call
-      setFormData((prevData) => ({
-        ...prevData,
-        campaign_name: prefilledCampaignName,
-        campaign_id: campaignId,
-        discord_id: prefilledDiscordID,
-        ...creatorData, // Spread creator data only if available
-      }));
+        setPricingModel(campaign.desired_pricing_model || []);
+        setDeliverables(campaign.sponsorship_format || []);
+        setFormData((prev) => ({
+          ...prev,
+          campaign_id: campaign.id,
+        }));
+      } catch (err) {
+        console.error("Error fetching campaign from join code:", err);
+        setCampaignNotAvailable(true);
+      }
     };
 
-    fetchData();
-  }, [prefilledDiscordID, prefilledCampaignName]);
+    const fetchCreatorPrefill = async () => {
+      if (!prefilledDiscordID) return;
+      const { data, error } = await SUPABASE_CLIENT
+        .from("campaign_creators")
+        .select("*")
+        .eq("discord_id", prefilledDiscordID)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!error && data) {
+        setFormData((prev) => ({
+          ...prev,
+          name: data.name || "",
+          channel_name: data.channel_name || "",
+          email: data.email || "",
+          channel_url: data.channel_url || "",
+          deliverables: data.deliverables || "",
+          rate: data.rate || "",
+          rate_cpm: data.rate_cpm || "",
+          cpm_cap: data.cpm_cap || "",
+          personal_statement: data.personal_statement || "",
+        }));
+      }
+    };
+
+    if (formData.join_code) fetchCampaignFromJoinCode();
+    if (prefilledDiscordID) fetchCreatorPrefill();
+  }, [formData.join_code, prefilledDiscordID]);
 
   const validateDiscordId = async (discordId: string) => {
     try {
-      const response = await fetch(
-        `/api/campaigns/validate-discord-id/${discordId}`,
-      );
-      const data = await response.json();
-
-      if (data.valid) {
-        console.log(
-          `Valid Discord ID! User: ${data.username}#${data.discriminator}`,
-        );
-        return true;
-      } else {
-        console.warn("Invalid Discord ID:", data.error);
-        return false;
-      }
-    } catch (error) {
-      console.error("Error validating Discord ID:", error);
+      const res = await axios.get(`/api/campaigns/validate-discord-id/${discordId}`);
+      return res.data.valid;
+    } catch {
       return false;
-    }
-  };
-
-  const handleCampaignChange = async (campaignId: string) => {
-    const campaign = campaigns.find((c) => c.id === campaignId);
-    if (campaign) {
-      setCampaignNotAvailable(false);
-      setPricingModel(campaign.desired_pricing_model);
-
-      // Reset rates based on the new pricing model
-      setFormData((prevData) => ({
-        ...prevData,
-        campaign_id: campaignId,
-        rate:
-          campaign.desired_pricing_model.includes("Flat-rate") ||
-          campaign.desired_pricing_model.includes("Hybrid")
-            ? prevData.rate
-            : "0", // Reset to 0 if Flat-rate is not supported
-        rate_cpm:
-          campaign.desired_pricing_model.includes("CPM (first 30d)") ||
-          campaign.desired_pricing_model.includes("Hybrid")
-            ? prevData.rate_cpm
-            : "0", // Reset to 0 if CPM is not supported
-      }));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
 
-    // Ensure a campaign is selected
-    if (!formData.campaign_id) {
-      setError("Please select a campaign to express interest.");
-      return;
-    }
-
-    // Ensure agreement is checked
-    if (!formData.agreement) {
-      setError("You must agree to the terms to submit the form.");
-      return;
-    }
-
-    // Ensure a valid email address
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError("Please provide a valid email address.");
-      return;
-    }
-
-    // Validate rates (non-negative)
-    if (parseFloat(formData.rate) < 0 || parseFloat(formData.rate_cpm) < 0) {
-      setError("Rates cannot be negative.");
-      return;
-    }
-
-    // Validate Discord ID before submitting
-    const isValidDiscordId = await validateDiscordId(formData.discord_id);
-    if (!isValidDiscordId) {
-      setError("Invalid Discord ID. Please enter a valid Discord ID.");
-      return;
-    }
+    if (!formData.campaign_id) return setError("Join code is not valid.");
+    if (!formData.agreement) return setError("You must agree to the terms.");
+    if (!(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))) return setError("Invalid email.");
+    if (parseFloat(formData.rate) < 0 || parseFloat(formData.rate_cpm) < 0)
+      return setError("Rates cannot be negative.");
+    if (!(await validateDiscordId(formData.discord_id)))
+      return setError("Invalid Discord ID.");
 
     try {
-      const { data, error } = await SUPABASE_CLIENT.from("campaign_creators") // Updated table name
+      const { data, error } = await SUPABASE_CLIENT.from("campaign_creators")
         .insert([
           {
             campaign_id: formData.campaign_id,
@@ -201,49 +120,44 @@ export function CreatorForm() {
             channel_name: formData.channel_name,
             channel_url: formData.channel_url,
             deliverables: formData.deliverables,
-            rate: parseFloat(formData.rate), // Convert to numeric
-            rate_cpm: parseFloat(formData.rate_cpm), // Convert to numeric
+            rate: parseFloat(formData.rate),
+            rate_cpm: parseFloat(formData.rate_cpm),
             cpm_cap:
-              parseFloat(formData.cpm_cap) == 0 || formData.cpm_cap == null
+              parseFloat(formData.cpm_cap) === 0 || !formData.cpm_cap
                 ? null
                 : parseFloat(formData.cpm_cap),
             email: formData.email,
             personal_statement: formData.personal_statement,
             selected: formData.selected,
-            discord_id: formData.discord_id, // No need to convert to number
+            discord_id: formData.discord_id,
           },
         ])
         .select()
         .single();
 
       if (error) throw error;
-      await new Promise((res) => setTimeout(res, 500)); // 0.5 second delay
+
       await axios.post("/api/campaigns/add-creator-to-discord", {
         creatorId: data.id,
       });
 
-      const { data: creatorWithWebhook, error: webhookError } =
-        await SUPABASE_CLIENT.from("campaign_creators")
-          .select("webhook_url")
-          .eq("id", data.id)
-          .single();
-
-      if (webhookError) throw webhookError;
+      const { data: creatorWithWebhook } = await SUPABASE_CLIENT.from("campaign_creators")
+        .select("webhook_url")
+        .eq("id", data.id)
+        .single();
 
       if (!creatorWithWebhook?.webhook_url) {
-        setError(
-          "You're in our systems, but it seems we might have not been able to make a DM channel with you.\nPlease check discord to see if you've been pinged with a confirmation message.",
+        return setError(
+          "You're in our system, but we couldn't send a confirmation DM. Please check Discord manually."
         );
       }
 
-      // ⚡ Post to the Discord channel via the webhook
       await axios.post(creatorWithWebhook.webhook_url, {
         content: `
-[hidden from clients]
 <@${formData.discord_id}> You’re IN
 
 Thank you for applying. While we cannot guarantee every creator will get selected, you have just taken a major step, which is getting your channel in front of big brands.
-If this is your first campaign, read our guide! Super important: [LINK](https://tinyurl.com/hmsponsorguide)
+If this is your first campaign, read our guide! [LINK](https://tinyurl.com/hmsponsorguide)
 
 We will message you if you get selected for the sponsorship. In the meantime if you have any questions you may DM our CEO personally: @hotslicer
 
@@ -251,13 +165,10 @@ Thanks!
 WARM`,
       });
 
-      // On success, set success state to true
       setSuccess(true);
     } catch (err) {
-      console.error("Error submitting creator form:", err);
-      setError(
-        "An error occurred while submitting your information. Please try again later.",
-      );
+      console.error("Submission failed:", err);
+      setError("An error occurred while submitting your info. Please try again later.");
     }
   };
 
@@ -269,47 +180,39 @@ WARM`,
 
       {success ? (
         <div className="bg-green-50 p-6 rounded-lg text-green-500">
-          <p>
-            Thank you! Your interest in the campaign has been successfully
-            submitted.
-          </p>
-          <p>We’ll get back to you shortly!</p>
+          <p>Your interest has been submitted. We'll get back to you soon!</p>
         </div>
       ) : (
         <>
           {error && <div className="text-red-500 mb-4">{error}</div>}
-
           {campaignNotAvailable && (
             <div className="bg-yellow-500 p-4 mb-4 rounded-md text-gray-800">
-              <p>
-                The campaign you are trying to express interest in is no longer
-                accepting responses.
-              </p>
+              <p>This join code does not match a current campaign.</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
-                htmlFor="campaign_id"
+                htmlFor="join_code"
                 className="block text-sm font-medium text-gray-800"
               >
-                Select Campaign
+                Campaign Join Code
               </label>
-              <select
-                id="campaign_id"
-                value={formData.campaign_id}
-                onChange={(e) => handleCampaignChange(e.target.value)}
+              <input
+                id="join_code"
+                type="text"
+                value={formData.join_code}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    join_code: e.target.value,
+                    campaign_id: "", // reset until revalidated
+                  }))
+                }
                 className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-800 shadow-sm focus:border-orange-500 focus:ring-orange-500 p-2.5"
                 required
-              >
-                <option value="">Select a campaign</option>
-                {campaigns.map((campaign) => (
-                  <option key={campaign.id} value={campaign.id}>
-                    {campaign.name}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             <div>

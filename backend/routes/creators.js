@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import { SUPABASE_CLIENT } from '../util/setup.js';
+import { SUPABASE_CLIENT } from '../util/clients.js';
 
 const router = express.Router();
 
@@ -148,11 +148,6 @@ router.get('/channel-data', async (req, res) => {
       // Add more fields as needed
     });
   }
-});
-
-router.get('/dummy', async (req, res) => {
-  console.log('Hello from the backend');
-  res.json({ message: 'Hello from the backend' });
 });
 
 export default router;

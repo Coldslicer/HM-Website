@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import { DISCORD_CLIENT, SUPABASE_CLIENT } from '../util/setup.js';
+import { DISCORD_CLIENT, SUPABASE_CLIENT } from '../util/clients.js';
 
 import fs from 'fs';
 import path from 'path';

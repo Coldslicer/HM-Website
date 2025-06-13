@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import cron from 'node-cron';
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
-import { emailRules } from './emailRules.js';
+import { emailRules } from '../client-updates/emailRules.js';
 
 dotenv.config();
 

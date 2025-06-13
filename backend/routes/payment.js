@@ -7,7 +7,7 @@ import nodemailer from 'nodemailer';
 import path from 'path';
 import { PDFDocument } from 'pdf-lib';
 import { fileURLToPath } from 'url';
-import { SUPABASE_CLIENT } from '../util/setup.js';
+import { SUPABASE_CLIENT } from '../util/clients.js';
 import axios from 'axios';
 
 /* ================ [ HELPERS ] ================ */

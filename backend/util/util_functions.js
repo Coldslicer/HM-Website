@@ -1,4 +1,4 @@
-import {DISCORD_CLIENT, SUPABASE_CLIENT} from "./setup.js";
+import {DISCORD_CLIENT, SUPABASE_CLIENT} from "./clients.js";
 import axios from 'axios';
 
 /**

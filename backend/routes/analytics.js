@@ -3,7 +3,7 @@
 import express from 'express';
 import axios from 'axios';
 import SocialBlade from 'socialblade';
-import { SUPABASE_CLIENT } from '../util/setup.js';
+import { SUPABASE_CLIENT } from '../util/clients.js';
 
 /* ================ [ HELPERS ] ================ */
 
