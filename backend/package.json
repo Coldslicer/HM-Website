@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "format": "npx prettier --write \"**/*.{js,jsx,ts,tsx,json,css,html}\""
   },
   "keywords": [],
   "author": "",
@@ -29,6 +30,10 @@
     "string-similarity": "^4.0.4",
     "stripe": "^17.6.0",
     "supabase": "^2.2.1",
-    "url": "^0.11.4"
+    "url": "^0.11.4",
+    "validator": "^13.15.15"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
   }
 }

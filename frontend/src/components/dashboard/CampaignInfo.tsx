@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import { Card } from "../ui/Card";
 
 interface CampaignInfoProps {
@@ -15,7 +15,7 @@ export const CampaignInfo: React.FC<CampaignInfoProps> = ({ campaignId }) => {
   useEffect(() => {
     async function fetchCampaign() {
       setLoadingCampaign(true);
-      const { data, error } = await SUPABASE_CLIENT
+      const { data, error } = await supabase
         .from("campaigns")
         .select("*")
         .eq("id", campaignId)
@@ -32,7 +32,7 @@ export const CampaignInfo: React.FC<CampaignInfoProps> = ({ campaignId }) => {
 
     async function fetchRoles() {
       setLoadingRoles(true);
-      const { data, error } = await SUPABASE_CLIENT
+      const { data, error } = await supabase
         .from("roles")
         .select("id,title");
 

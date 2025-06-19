@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { SUPABASE_CLIENT } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 
@@ -62,7 +62,7 @@ export function CreatorForm() {
 
     const fetchCreatorPrefill = async () => {
       if (!prefilledDiscordID) return;
-      const { data, error } = await SUPABASE_CLIENT
+      const { data, error } = await supabase
         .from("campaign_creators")
         .select("*")
         .eq("discord_id", prefilledDiscordID)
@@ -112,7 +112,7 @@ export function CreatorForm() {
       return setError("Invalid Discord ID.");
 
     try {
-      const { data, error } = await SUPABASE_CLIENT.from("campaign_creators")
+      const { data, error } = await supabase.from("campaign_creators")
         .insert([
           {
             campaign_id: formData.campaign_id,
@@ -141,7 +141,7 @@ export function CreatorForm() {
         creatorId: data.id,
       });
 
-      const { data: creatorWithWebhook } = await SUPABASE_CLIENT.from("campaign_creators")
+      const { data: creatorWithWebhook } = await supabase.from("campaign_creators")
         .select("webhook_url")
         .eq("id", data.id)
         .single();

@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuthStore } from "../../store/authStore";
 import { useCampaignStore } from "../../store/campaignStore";
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import { CampaignInfo } from "../../components/dashboard/CampaignInfo";
 import { Card } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
@@ -91,7 +91,7 @@ export function BriefForm() {
     const fetchClientServers = async () => {
       if (!user) return;
 
-      const { data, error } = await SUPABASE_CLIENT.from("clients")
+      const { data, error } = await supabase.from("clients")
         .select("servers")
         .eq("id", user.id)
         .single();
@@ -112,7 +112,7 @@ export function BriefForm() {
     const fetchCampaign = async () => {
       if (!currentCampaign?.id || hasHydrated) return;
 
-      const { data, error } = await SUPABASE_CLIENT.from("campaigns")
+      const { data, error } = await supabase.from("campaigns")
         .select("*")
         .eq("id", currentCampaign.id)
         .single();
@@ -163,7 +163,7 @@ export function BriefForm() {
 
     const timeout = setTimeout(async () => {
       try {
-        const { error } = await SUPABASE_CLIENT.from("campaigns")
+        const { error } = await supabase.from("campaigns")
           .update(pendingUpdates)
           .eq("id", currentCampaign.id);
 
@@ -189,7 +189,7 @@ export function BriefForm() {
 
     setSaveStatus("saving");
 
-    const { error } = await SUPABASE_CLIENT.from("campaigns")
+    const { error } = await supabase.from("campaigns")
       .update(pendingUpdates)
       .eq("id", currentCampaign.id);
 
@@ -206,7 +206,7 @@ export function BriefForm() {
   const fetchNiches = async (serverId: string | null) => {
     if (!serverId) return;
 
-    const { data, error } = await SUPABASE_CLIENT.from("niches")
+    const { data, error } = await supabase.from("niches")
       .select("*") // Select only the name field
       .eq("server_id", serverId)
       .neq("name", null);
@@ -220,7 +220,7 @@ export function BriefForm() {
 
   // Fetch discord roles
   const fetchRoles = async (serverId: string | null) => {
-    const { data, error } = await SUPABASE_CLIENT.from("roles")
+    const { data, error } = await supabase.from("roles")
       .select("*")
       .eq("server_id", serverId);
     if (error) console.error("Error fetching roles:", error);
@@ -263,13 +263,13 @@ export function BriefForm() {
       };
 
       if (Object.keys(pendingUpdates).length > 0) {
-        await SUPABASE_CLIENT.from("campaigns")
+        await supabase.from("campaigns")
           .update(pendingUpdates)
           .eq("id", currentCampaign.id);
         setPendingUpdates({});
       }
 
-      const { error } = await SUPABASE_CLIENT.from("campaigns")
+      const { error } = await supabase.from("campaigns")
         .update({ status: "brief_submitted" })
         .eq("id", currentCampaign.id);
 

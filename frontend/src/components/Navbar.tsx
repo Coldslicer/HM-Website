@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo-warm.png";
 import { useAuthStore } from "../store/authStore";
 import { useCampaignStore } from "../store/campaignStore";
-import { SUPABASE_CLIENT } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 
 /* ================ [ NAVBAR ] ================ */
 
@@ -17,7 +17,7 @@ function Navbar() {
   const handleNewCampaign = async () => {
     if (!user) return;
 
-    const { data, error } = await SUPABASE_CLIENT.from("campaigns")
+    const { data, error } = await supabase.from("campaigns")
       .insert({
         client_id: user.id,
         name: "Draft",

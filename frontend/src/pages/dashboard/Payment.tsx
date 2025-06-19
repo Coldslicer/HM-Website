@@ -2,7 +2,7 @@
 
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import { formatNum } from "../../lib/utility";
 import { useCampaignStore } from "../../store/campaignStore";
 
@@ -25,7 +25,7 @@ const Payment = () => {
 
   const checkForm = async () => {
     try {
-      const { data } = await SUPABASE_CLIENT.from("campaigns")
+      const { data } = await supabase.from("campaigns")
         .select("payment_email, company_phone, company_address")
         .eq("id", currentCampaign?.id)
         .single();
@@ -71,7 +71,7 @@ const Payment = () => {
 
     setFormLoading(true);
     try {
-      const { error } = await SUPABASE_CLIENT.from("campaigns")
+      const { error } = await supabase.from("campaigns")
         .update({
           payment_email: email,
           company_phone: phone,

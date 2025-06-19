@@ -46,7 +46,7 @@ async function getCreatorsForCampaign(campaignId) {
 }
 
 // Function to load HTML template from file and decode HTML entities
-function loadHtmlTemplate(templatePath = 'templates/CAMPAIGNCONTRACTWITHFIELDS.html') {
+function loadHtmlTemplate(templatePath = 'templates/contract.html') {
   try {
     const template = fs.readFileSync(path.resolve(templatePath), 'utf-8');
     

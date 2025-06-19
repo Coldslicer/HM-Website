@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useCampaignStore } from "../../store/campaignStore";
 import { DocusealForm } from "@docuseal/react";
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { Label } from "recharts";
 import { Button } from "../../components/ui/Button";
@@ -44,7 +44,7 @@ const Contract = () => {
   useEffect(() => {
     const fetchCampaignData = async () => {
       if (!currentCampaign?.id) return;
-      const { data, error } = await SUPABASE_CLIENT.from("campaigns")
+      const { data, error } = await supabase.from("campaigns")
         .select("contract_email, fully_managed")
         .eq("id", currentCampaign.id)
         .single();
@@ -87,7 +87,7 @@ const Contract = () => {
       });
       setResponseData(response.data);
 
-      await SUPABASE_CLIENT.from("campaigns")
+      await supabase.from("campaigns")
         .update({
           fully_managed: selectedOption === "fully_managed",
           contract_email: email,
@@ -194,7 +194,7 @@ const Contract = () => {
               externalId={responseData.external_id || null}
               onComplete={async () => {
                 currentCampaign.status = "contract_signed";
-                await SUPABASE_CLIENT.from("campaigns")
+                await supabase.from("campaigns")
                   .update({ status: "contract_signed" })
                   .eq("id", currentCampaign.id);
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { DocusealForm } from "@docuseal/react";
-import { SUPABASE_CLIENT } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -24,7 +24,7 @@ export const CreatorContract = () => {
       setCreatorId(creatorIdParam);
 
       // Fetch the embed link for the creator from Supabase
-      const { data, error } = await SUPABASE_CLIENT.from("campaign_creators")
+      const { data, error } = await supabase.from("campaign_creators")
         .select("contract_embed_link")
         .eq("id", creatorIdParam)
         .single();
@@ -52,7 +52,7 @@ export const CreatorContract = () => {
 
     try {
       // Mark the creator's contract as signed in Supabase
-      const { error } = await SUPABASE_CLIENT.from("campaign_creators")
+      const { error } = await supabase.from("campaign_creators")
         .update({ contract_signed: true })
         .eq("id", creatorId);
 

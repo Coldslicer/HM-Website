@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { SUPABASE_CLIENT } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Sidebar } from "../components/dashboard/Sidebar";
 import Welcome from "./dashboard/Welcome";
@@ -25,7 +25,7 @@ function Dashboard() {
 
   // Auto redirect if session doesn't exist
   useEffect(() => {
-    SUPABASE_CLIENT.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }) => {
       if (!data.user) navigate("/login");
     });
   }, [navigate]);

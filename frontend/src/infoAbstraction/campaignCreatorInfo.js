@@ -1,6 +1,6 @@
 // campaignCreatorInfo.js
 
-import { SUPABASE_CLIENT } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 
 export const CampaignCreatorInfoManager = {
   /**
@@ -9,7 +9,7 @@ export const CampaignCreatorInfoManager = {
    * @returns {Promise<Object|null>}
    */
   async get(creatorId) {
-    const { data, error } = await SUPABASE_CLIENT.from("campaign_creators")
+    const { data, error } = await supabase.from("campaign_creators")
       .select("*")
       .eq("id", creatorId)
       .single();
@@ -29,7 +29,7 @@ export const CampaignCreatorInfoManager = {
    * @returns {Promise<Object[]|null>}
    */
   async listByCampaign(campaignId, filters = {}) {
-    let query = SUPABASE_CLIENT.from("campaign_creators").select("*").eq("campaign_id", campaignId);
+    let query = supabase.from("campaign_creators").select("*").eq("campaign_id", campaignId);
 
     if (filters.selected !== undefined) {
       query = query.eq("selected", filters.selected);

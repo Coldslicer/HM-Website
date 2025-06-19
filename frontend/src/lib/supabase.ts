@@ -9,11 +9,11 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Create client
-const SUPABASE_CLIENT = createClient(
+const supabase = createClient(
   SUPABASE_URL ?? "https://invalid.invalid/",
   SUPABASE_ANON_KEY ?? "invalid",
 );
 
 /* ================ [ EXPORTS ] ================ */
 
-export { SUPABASE_CLIENT };
+export { supabase };
