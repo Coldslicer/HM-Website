@@ -19,7 +19,7 @@ const commands = [
     .setDescription(
       "Get your discord numeric ID (this is used during creator registration)",
     ),
-  
+
   // VIDEO SUBMISSIONS
   new SlashCommandBuilder()
     .setName("draft")
@@ -45,7 +45,7 @@ const commands = [
         )
         .setRequired(true),
     ),
-  
+
   // CREATOR MANAGEMENT
   new SlashCommandBuilder()
     .setName("join")
@@ -124,15 +124,15 @@ const commands = [
     .addNumberOption((option) =>
       option
         .setName("cpm_cap")
-        .setDescription("Your CPM cap (optional, this is the max amount you'll be paid in CPM)")
+        .setDescription(
+          "Your CPM cap (optional, this is the max amount you'll be paid in CPM)",
+        )
         .setRequired(false),
     )
     .addStringOption((option) =>
       option
         .setName("discord_id")
-        .setDescription(
-          "Your discord I (only admins may register others)",
-        )
+        .setDescription("Your discord I (only admins may register others)")
         .setRequired(false),
     ),
   new SlashCommandBuilder()
@@ -148,7 +148,7 @@ const commands = [
     .addNumberOption((option) =>
       option.setName("cap").setDescription("The new CPM cap"),
     ),
-  
+
   // CHANNEL MANAGEMENT
   new SlashCommandBuilder()
     .setName("register")
@@ -166,12 +166,16 @@ const commands = [
     ),
   new SlashCommandBuilder()
     .setName("unregister")
-    .setDescription("Removes the current channel from the WARM registration list")
+    .setDescription(
+      "Removes the current channel from the WARM registration list",
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   new SlashCommandBuilder()
     .setName("registrations")
-    .setDescription("Lists all channels registered with WARM in the current server"),
-  
+    .setDescription(
+      "Lists all channels registered with WARM in the current server",
+    ),
+
   // ROLES MANAGEMENT
   new SlashCommandBuilder()
     .setName("showroles")
@@ -191,15 +195,15 @@ const commands = [
     .addStringOption((option) =>
       option
         .setName("description")
-        .setDescription(
-          "A brief description of the role (shown to clients)",
-        )
+        .setDescription("A brief description of the role (shown to clients)")
         .setRequired(true),
     )
     .addStringOption((option) =>
       option
         .setName("role")
-        .setDescription("Ping the discord role that you want to attach to this WARM role")
+        .setDescription(
+          "Ping the discord role that you want to attach to this WARM role",
+        )
         .setRequired(true),
     ),
   new SlashCommandBuilder()
@@ -209,7 +213,9 @@ const commands = [
     .addStringOption((option) =>
       option
         .setName("value")
-        .setDescription("Ping the discord role you want to remove the WARM attachment for")
+        .setDescription(
+          "Ping the discord role you want to remove the WARM attachment for",
+        )
         .setRequired(true),
     ),
 
@@ -234,11 +240,11 @@ discord.once("ready", async () => {
 
   // Wait for discord to be ready
   await discord.application.commands.fetch();
-  
+
   // Register all slash commands with discord
   const commandsData = commands.map((command) => command.toJSON());
   try {
-    await discord.application.commands.set(commandsData); // Registers commands globally
+    await discord.application.commands.set(commandsData);
   } catch (error) {
     console.error("[HM]: Error registering slash commands: ", error);
     process.exit(1);
