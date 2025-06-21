@@ -103,6 +103,7 @@ router.get("/channel-data", async (req, res) => {
       subscriberCount: data.follower_count,
       country: data.country,
       averageViews: data.average_views,
+      discordId: id,
       // Add more fields as needed
     });
   }
@@ -152,6 +153,7 @@ router.get("/channel-data", async (req, res) => {
       subscriberCount: "",
       country: "",
       averageViews: "",
+      discordId: id || "",
       // Add more fields as needed
     });
   }
