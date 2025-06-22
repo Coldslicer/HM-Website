@@ -13,6 +13,14 @@ const CreatorStatus = Object.freeze({
   PAYMENT_COMPLETE: "PAYMENT_COMPLETE",
 });
 
+const PaymentStatus = Object.freeze({
+  WAITING: "WAITING",
+  READY: "READY",
+  EMAILED: "EMAILED",
+  PROCESSING: "PROCESSING",
+  PAID: "PAID",
+});
+
 /* ================ [ HELPERS ] ================ */
 
 function getValidStates(status = null) {
@@ -99,6 +107,8 @@ async function updateTable(table, instance, data) {
 
 export {
   CreatorStatus,
+  PaymentStatus,
+  getValidStates,
   saqTable,
   sauTable,
   searchTable,

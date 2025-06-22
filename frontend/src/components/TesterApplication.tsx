@@ -57,9 +57,7 @@ function TesterApplication() {
   const handleSubmit = async () => {
     if (isStepValid()) {
       try {
-        const { error } = await supabase.from(
-          "tester_applications",
-        ).insert([
+        const { error } = await supabase.from("tester_applications").insert([
           {
             email: formData.email,
             discord_id: formData.discordTag,

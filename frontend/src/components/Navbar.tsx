@@ -13,11 +13,11 @@ function Navbar() {
   const { setCurrentCampaign } = useCampaignStore();
   const navigate = useNavigate();
 
-
   const handleNewCampaign = async () => {
     if (!user) return;
 
-    const { data, error } = await supabase.from("campaigns")
+    const { data, error } = await supabase
+      .from("campaigns")
       .insert({
         client_id: user.id,
         name: "Draft",

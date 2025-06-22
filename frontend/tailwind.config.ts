@@ -1,12 +1,10 @@
 /* ================ [ IMPORTS ] ================ */
 
 // Tailwind imports
-import tailwindcss from 'tailwindcss';
+import tailwindcss from "tailwindcss";
 
 import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
-
-
 
 /* ================ [ FIELDS ] ================ */
 

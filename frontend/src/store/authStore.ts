@@ -19,7 +19,8 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => {
   // Fetch the most recently updated campaign
   const fetchLatestCampaign = async (userId: string) => {
-    const { data, error } = await supabase.from("campaigns")
+    const { data, error } = await supabase
+      .from("campaigns")
       .select("*")
       .eq("client_id", userId)
       .order("updated_at", { ascending: false }) // Sort by latest update
@@ -84,11 +85,11 @@ export const useAuthStore = create<AuthState>((set) => {
     const profilePicture = googleAvatar || discordAvatar || null;
 
     try {
-      const { data: existingClient, error: checkError } =
-        await supabase.from("clients")
-          .select("id")
-          .eq("id", user.id)
-          .single();
+      const { data: existingClient, error: checkError } = await supabase
+        .from("clients")
+        .select("id")
+        .eq("id", user.id)
+        .single();
 
       if (checkError && checkError.code !== "PGRST116") {
         throw new Error(
@@ -97,11 +98,12 @@ export const useAuthStore = create<AuthState>((set) => {
       }
 
       if (!existingClient) {
-        await supabase.from("clients").insert([
-          { id: user.id, profile_picture: profilePicture },
-        ]);
+        await supabase
+          .from("clients")
+          .insert([{ id: user.id, profile_picture: profilePicture }]);
       } else if (profilePicture) {
-        await supabase.from("clients")
+        await supabase
+          .from("clients")
           .update({ profile_picture: profilePicture })
           .eq("id", user.id);
       }

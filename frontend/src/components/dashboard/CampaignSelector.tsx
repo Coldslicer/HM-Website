@@ -26,7 +26,6 @@ export function CampaignSelector({ onClose }: { onClose?: () => void }) {
     if (onClose) onClose();
   };
 
-
   const handleNewCampaign = async () => {
     if (!user) return;
 

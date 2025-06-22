@@ -37,7 +37,6 @@ const contents = {
 /* ================ [ BRIEF FORM ] ================ */
 
 export function BriefForm() {
-  
   // Helper functions
   const { currentCampaign, setCurrentCampaign } = useCampaignStore();
   const { user } = useAuthStore();
@@ -91,7 +90,8 @@ export function BriefForm() {
     const fetchClientServers = async () => {
       if (!user) return;
 
-      const { data, error } = await supabase.from("clients")
+      const { data, error } = await supabase
+        .from("clients")
         .select("servers")
         .eq("id", user.id)
         .single();
@@ -112,7 +112,8 @@ export function BriefForm() {
     const fetchCampaign = async () => {
       if (!currentCampaign?.id || hasHydrated) return;
 
-      const { data, error } = await supabase.from("campaigns")
+      const { data, error } = await supabase
+        .from("campaigns")
         .select("*")
         .eq("id", currentCampaign.id)
         .single();
@@ -139,7 +140,7 @@ export function BriefForm() {
         niches: Array.isArray(data.niches) ? data.niches : [],
         brief_url: data.brief_url || "",
       });
-      console.log(formData)
+      console.log(formData);
 
       setHasHydrated(true);
     };
@@ -163,7 +164,8 @@ export function BriefForm() {
 
     const timeout = setTimeout(async () => {
       try {
-        const { error } = await supabase.from("campaigns")
+        const { error } = await supabase
+          .from("campaigns")
           .update(pendingUpdates)
           .eq("id", currentCampaign.id);
 
@@ -189,7 +191,8 @@ export function BriefForm() {
 
     setSaveStatus("saving");
 
-    const { error } = await supabase.from("campaigns")
+    const { error } = await supabase
+      .from("campaigns")
       .update(pendingUpdates)
       .eq("id", currentCampaign.id);
 
@@ -206,7 +209,8 @@ export function BriefForm() {
   const fetchNiches = async (serverId: string | null) => {
     if (!serverId) return;
 
-    const { data, error } = await supabase.from("niches")
+    const { data, error } = await supabase
+      .from("niches")
       .select("*") // Select only the name field
       .eq("server_id", serverId)
       .neq("name", null);
@@ -220,7 +224,8 @@ export function BriefForm() {
 
   // Fetch discord roles
   const fetchRoles = async (serverId: string | null) => {
-    const { data, error } = await supabase.from("roles")
+    const { data, error } = await supabase
+      .from("roles")
       .select("*")
       .eq("server_id", serverId);
     if (error) console.error("Error fetching roles:", error);
@@ -263,13 +268,15 @@ export function BriefForm() {
       };
 
       if (Object.keys(pendingUpdates).length > 0) {
-        await supabase.from("campaigns")
+        await supabase
+          .from("campaigns")
           .update(pendingUpdates)
           .eq("id", currentCampaign.id);
         setPendingUpdates({});
       }
 
-      const { error } = await supabase.from("campaigns")
+      const { error } = await supabase
+        .from("campaigns")
         .update({ status: "brief_submitted" })
         .eq("id", currentCampaign.id);
 
@@ -290,23 +297,25 @@ export function BriefForm() {
       const baseUrl = window.location.origin; // Dynamically get the base URL
       let formattedMessage = "";
       for (const role of roles) {
-        if (formData.per_influencer_budget.includes(role.id) && formData.server_id == role.server_id)
+        if (
+          formData.per_influencer_budget.includes(role.id) &&
+          formData.server_id == role.server_id
+        )
           formattedMessage += role.value + " \n";
       }
 
       const getJoinCode = async (campaignId: string): Promise<string> => {
-        const res = await fetch(`/api/joincodes/encode?campaignId=${encodeURIComponent(campaignId)}`);
+        const res = await fetch(
+          `/api/joincodes/encode?campaignId=${encodeURIComponent(campaignId)}`,
+        );
 
         if (!res.ok) throw new Error("Failed to get join code");
         const data = await res.json();
         return data.code;
       };
 
-
-
-
       // Usage:
-      const joinCode = await getJoinCode(""+currentCampaign.id);
+      const joinCode = await getJoinCode("" + currentCampaign.id);
 
       formattedMessage += `
 
@@ -350,8 +359,10 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
 `;
 
       // Send to selected niches' webhooks
-      const selectedNiches = niches.filter((niche) =>
-        formData.niches.includes(niche.name!) && formData.server_id == niche.server_id,
+      const selectedNiches = niches.filter(
+        (niche) =>
+          formData.niches.includes(niche.name!) &&
+          formData.server_id == niche.server_id,
       );
       for (const niche of selectedNiches) {
         await fetch("/api/messages/send", {
@@ -419,7 +430,11 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
   };
 
   const handleSponsorshipFormatToggle = (
-    value: "30s Longform Integration" | "60s Longform Integration" | "Shortform" | "Dedicated Video",
+    value:
+      | "30s Longform Integration"
+      | "60s Longform Integration"
+      | "Shortform"
+      | "Dedicated Video",
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -431,7 +446,7 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
 
   // Completed brief
   if (currentCampaign != null && currentCampaign?.status !== "draft") {
-    return <CampaignInfo campaignId={""+currentCampaign.id} />;
+    return <CampaignInfo campaignId={"" + currentCampaign.id} />;
   }
 
   return (
@@ -470,23 +485,29 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
           </button>
         </div>
       </Card>
-      
+
       {/* Campaign Brief Title */}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-
         <Card className="max-w-2xl mx-auto space-y-4 p-6">
-          <h3 className="text-2xl font-bold text-black mb-6">Brand Information</h3>
+          <h3 className="text-2xl font-bold text-black mb-6">
+            Brand Information
+          </h3>
 
           {/* Company Name */}
           <div>
-            <Label weight="bold" htmlFor="company_name">Brand Name</Label>
+            <Label weight="bold" htmlFor="company_name">
+              Brand Name
+            </Label>
             <Input
               id="company_name"
               type="text"
               value={formData.company_name}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, company_name: e.target.value }))
+                setFormData((prev) => ({
+                  ...prev,
+                  company_name: e.target.value,
+                }))
               }
               placeholder="e.g. Hotslicer Media"
               required
@@ -496,7 +517,9 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
 
           {/* Brand Website */}
           <div>
-            <Label weight="bold" htmlFor="website">Brand Website</Label>
+            <Label weight="bold" htmlFor="website">
+              Brand Website
+            </Label>
             <Input
               id="website"
               type="url"
@@ -530,13 +553,16 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
               rows={4}
             />
             <p className="text-sm text-black-400 mt-1">
-              This will be shown to influencers, so make sure it represents your brand!
+              This will be shown to influencers, so make sure it represents your
+              brand!
             </p>
           </div>
 
           {/* Representative Name */}
           <div>
-            <Label weight="bold" htmlFor="rep_name">Representative Name</Label>
+            <Label weight="bold" htmlFor="rep_name">
+              Representative Name
+            </Label>
             <Input
               id="rep_name"
               type="text"
@@ -552,11 +578,15 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
         </Card>
 
         <Card className="max-w-2xl mx-auto space-y-4">
-          <h3 className="text-2xl font-bold text-black mb-6">Campaign Information</h3>
+          <h3 className="text-2xl font-bold text-black mb-6">
+            Campaign Information
+          </h3>
 
           {/* Campaign Name */}
           <div>
-            <Label weight="bold" htmlFor="campaign_name">Campaign Name</Label>
+            <Label weight="bold" htmlFor="campaign_name">
+              Campaign Name
+            </Label>
             <Input
               id="campaign_name"
               type="text"
@@ -577,14 +607,17 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
               className="mt-1"
             />
             <p className="text-sm text-black-400 mt-1">
-              Should be something descriptive, only containing letters, numbers, and spaces.
+              Should be something descriptive, only containing letters, numbers,
+              and spaces.
             </p>
             {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
           </div>
 
           {/* Brief URL */}
           <div>
-            <Label weight="bold" htmlFor="brief_url">Brief URL</Label>
+            <Label weight="bold" htmlFor="brief_url">
+              Brief URL
+            </Label>
             <Input
               id="brief_url"
               type="url"
@@ -621,7 +654,10 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
                   // default to today if switching back from flexible
                   setFormData((prev) => ({
                     ...prev,
-                    date: prev.date === "flexible" ? new Date().toISOString().slice(0, 10) : prev.date,
+                    date:
+                      prev.date === "flexible"
+                        ? new Date().toISOString().slice(0, 10)
+                        : prev.date,
                   }));
                 }
               }}
@@ -630,17 +666,25 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="flexible" id="flexible" />
-                <Label weight="bold" htmlFor="flexible" className="cursor-pointer select-none">
-                  Flexible (influencers can post according to their upload schedule)
+                <Label
+                  weight="bold"
+                  htmlFor="flexible"
+                  className="cursor-pointer select-none"
+                >
+                  Flexible (influencers can post according to their upload
+                  schedule)
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="set_date" id="set_date" />
-                <Label weight="bold" htmlFor="set_date" className="cursor-pointer select-none">
+                <Label
+                  weight="bold"
+                  htmlFor="set_date"
+                  className="cursor-pointer select-none"
+                >
                   Set Date
                 </Label>
               </div>
-
             </RadioGroup>
 
             {formData.date !== "flexible" && (
@@ -661,41 +705,48 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
             )}
           </div>
         </Card>
-        
-        <Card className="max-w-2xl mx-auto space-y-4">
-          <h3 className="text-2xl font-bold text-black mb-6">Distribution Options</h3>
-          {clientServers.length > 1 && (
-  <div className="mb-4">
-    <label className="block text-sm font-medium text-black-200 mb-2">
-      Select Server
-    </label>
-    <RadioGroup
-      value={formData.server_id || ""}
-      onValueChange={(value) => {
-        setFormData((prev) => ({ ...prev, server_id: value }));
-      }}
-      className="grid gap-2"
-      required
-    >
-      {clientServers.map((serverId) => (
-        <div key={serverId} className="flex items-center space-x-2">
-          <RadioGroupItem value={serverId} id={`server-${serverId}`} />
-          <Label htmlFor={`server-${serverId}`} className="cursor-pointer">
-            {serverId}
-          </Label>
-        </div>
-      ))}
-    </RadioGroup>
-  </div>
-)}
-          <div>
 
+        <Card className="max-w-2xl mx-auto space-y-4">
+          <h3 className="text-2xl font-bold text-black mb-6">
+            Distribution Options
+          </h3>
+          {clientServers.length > 1 && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-black-200 mb-2">
+                Select Server
+              </label>
+              <RadioGroup
+                value={formData.server_id || ""}
+                onValueChange={(value) => {
+                  setFormData((prev) => ({ ...prev, server_id: value }));
+                }}
+                className="grid gap-2"
+                required
+              >
+                {clientServers.map((serverId) => (
+                  <div key={serverId} className="flex items-center space-x-2">
+                    <RadioGroupItem
+                      value={serverId}
+                      id={`server-${serverId}`}
+                    />
+                    <Label
+                      htmlFor={`server-${serverId}`}
+                      className="cursor-pointer"
+                    >
+                      {serverId}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+          )}
+          <div>
             {/* Niches */}
             <label className="block text-sm font-medium text-black-200 mb-2">
               Channels
             </label>
             <MultiSelectChips
-              options={niches.filter(n => n !== null).map(n => n.name!)}
+              options={niches.filter((n) => n !== null).map((n) => n.name!)}
               selected={formData.niches}
               onToggle={handleNicheToggle}
             />
@@ -711,9 +762,10 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
                 {roles.map((role) => {
                   // Ensure we're using the correct ID comparison
                   // Convert both to strings for comparison
-                  const isSelected = formData.per_influencer_budget
-                    ?.map(String) // Convert budget items to strings
-                    .includes(String(role.id)) ?? false; // Convert role.id to string
+                  const isSelected =
+                    formData.per_influencer_budget
+                      ?.map(String) // Convert budget items to strings
+                      .includes(String(role.id)) ?? false; // Convert role.id to string
                   return (
                     <SelectableCard
                       key={role.id}
@@ -741,7 +793,9 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
                 description="Fixed payment for the campaign"
               />
               <SelectableCard
-                selected={formData.desired_pricing_model.includes("CPM (first 30d)")}
+                selected={formData.desired_pricing_model.includes(
+                  "CPM (first 30d)",
+                )}
                 onClick={() => handlePricingToggle("CPM (first 30d)")}
                 title="CPM (first 30d)"
                 description="Cost per thousand views for the first 30 days"
@@ -762,14 +816,22 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
             </label>
             <div className="grid grid-cols-4 gap-4">
               <SelectableCard
-                selected={formData.sponsorship_format.includes("30s Longform Integration")}
-                onClick={() => handleSponsorshipFormatToggle("30s Longform Integration")}
+                selected={formData.sponsorship_format.includes(
+                  "30s Longform Integration",
+                )}
+                onClick={() =>
+                  handleSponsorshipFormatToggle("30s Longform Integration")
+                }
                 title="30s Integration"
                 description="30 second sponsored segment in a long form video"
               />
               <SelectableCard
-                selected={formData.sponsorship_format.includes("60s Longform Integration")}
-                onClick={() => handleSponsorshipFormatToggle("60s Longform Integration")}
+                selected={formData.sponsorship_format.includes(
+                  "60s Longform Integration",
+                )}
+                onClick={() =>
+                  handleSponsorshipFormatToggle("60s Longform Integration")
+                }
                 title="60s Integration"
                 description="60 second sponsored segment in a long form video"
               />
@@ -780,7 +842,9 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
                 description="A short-form (scrolling) format video about your product or service"
               />
               <SelectableCard
-                selected={formData.sponsorship_format.includes("Dedicated Video")}
+                selected={formData.sponsorship_format.includes(
+                  "Dedicated Video",
+                )}
                 onClick={() => handleSponsorshipFormatToggle("Dedicated Video")}
                 title="Dedicated Video"
                 description="A full length video about your product or service!"

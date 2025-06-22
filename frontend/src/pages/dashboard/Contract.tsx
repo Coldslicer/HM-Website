@@ -44,7 +44,8 @@ const Contract = () => {
   useEffect(() => {
     const fetchCampaignData = async () => {
       if (!currentCampaign?.id) return;
-      const { data, error } = await supabase.from("campaigns")
+      const { data, error } = await supabase
+        .from("campaigns")
         .select("contract_email, fully_managed")
         .eq("id", currentCampaign.id)
         .single();
@@ -87,7 +88,8 @@ const Contract = () => {
       });
       setResponseData(response.data);
 
-      await supabase.from("campaigns")
+      await supabase
+        .from("campaigns")
         .update({
           fully_managed: selectedOption === "fully_managed",
           contract_email: email,
@@ -100,9 +102,7 @@ const Contract = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">
-        Contract
-      </h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Contract</h1>
 
       <Card className="p-6 mb-6">
         <form onSubmit={handleSubmit}>
@@ -194,7 +194,8 @@ const Contract = () => {
               externalId={responseData.external_id || null}
               onComplete={async () => {
                 currentCampaign.status = "contract_signed";
-                await supabase.from("campaigns")
+                await supabase
+                  .from("campaigns")
                   .update({ status: "contract_signed" })
                   .eq("id", currentCampaign.id);
 
@@ -217,12 +218,12 @@ const Contract = () => {
         </Card>
       ) : (
         <Card className="p-6 text-center text-gray-500">
-          Please provide your email and service preference to access the contract
+          Please provide your email and service preference to access the
+          contract
         </Card>
       )}
     </div>
   );
-
 };
 
 /* ================ [ EXPORTS ] ================ */

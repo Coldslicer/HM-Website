@@ -1,6 +1,8 @@
 import { discord, supabase } from "../util/clients.js";
 import { ChannelType } from "discord.js";
 
+import { queryTable } from "../util/supaUtil.js";
+
 export async function fetchMessages(channelId) {
   try {
     const channel = await discord.channels.fetch(channelId);
@@ -59,13 +61,12 @@ export async function sendDM(message, id, type) {
       channelId = data.staff_chat_channel_id;
       webhookUrl = data.staff_chat_webhook_url;
     } else {
-      const { data, error } = await supabase
-        .from("campaign_creators")
-        .select("channel_id, webhook_url")
-        .eq("id", id)
-        .single();
-      if (error || !data) throw new Error("No creator found for the given ID");
-
+      let data = await queryTable(
+        "creator_instances",
+        id,
+        "chat_id",
+        "chat_url",
+      );
       channelId = data.channel_id;
       webhookUrl = data.webhook_url;
     }

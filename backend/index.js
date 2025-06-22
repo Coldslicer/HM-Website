@@ -2,12 +2,11 @@
 
 import "./util/clients.js";
 
-/* ================ [ DRIVER ] ================ */
+/* ================ [ IMPORTS ] ================ */
 
-// Imports
 import express from "express";
 import cors from "cors";
-import { supabase, discord } from "./util/clients.js";
+import { discord } from "./util/clients.js";
 import {
   ON_READY,
   ON_USER_INTERACTION,
@@ -16,7 +15,6 @@ import {
   ON_USER_JOIN,
 } from "./util/discordSetup.js";
 
-// Routes
 import campaignsRouter from "./routes/discord_routes.js";
 import messagesRouter from "./routes/message_routes.js";
 import creatorsRouter from "./routes/creators.js";
@@ -25,29 +23,29 @@ import analyticsRouter from "./routes/analytics.js";
 import paymentRouter from "./routes/payment.js";
 import joincodesRouter from "./routes/joincode_routes.js";
 
-// Initialize the Express app
+/* ================ [ DRIVER ] ================ */
+
+// Initialize app
 const APP = express();
 const PORT = process.env.APP_PORT || 3000;
-
-// Middleware
 APP.use(express.json());
 APP.use(cors());
 
-// Apply routes
-APP.use("/api/campaigns", campaignsRouter); // Route for campaigns (finalize creators, etc.)
-APP.use("/api/contracts", contractsRouter); // Route for contracts
-APP.use("/api/messages", messagesRouter); // Route for messaging
-APP.use("/api/creators", creatorsRouter); // Route for creator data
-APP.use("/api/analytics", analyticsRouter); // Route for analytics
-APP.use("/api/payment", paymentRouter); // Route for payment
-APP.use("/api/joincodes", joincodesRouter); // Route for join codes
+// Connect routes
+APP.use("/api/campaigns", campaignsRouter);
+APP.use("/api/contracts", contractsRouter);
+APP.use("/api/messages", messagesRouter);
+APP.use("/api/creators", creatorsRouter);
+APP.use("/api/analytics", analyticsRouter);
+APP.use("/api/payment", paymentRouter);
+APP.use("/api/joincodes", joincodesRouter);
 
 // Start Express server
 APP.listen(PORT, () => {
   console.log(`[HM]: Server started up on http://localhost:${PORT}`);
 });
 
-// Event listeners
+// Discord setup
 discord.once("ready", async () => await ON_READY());
 discord.on(
   "interactionCreate",

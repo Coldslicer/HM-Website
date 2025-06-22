@@ -36,4 +36,3 @@ const MultiSelectChips: React.FC<MultiSelectChipsProps> = ({
 
 export default MultiSelectChips;
 export { MultiSelectChips };
-

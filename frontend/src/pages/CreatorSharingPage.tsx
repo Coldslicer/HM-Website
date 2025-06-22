@@ -21,9 +21,8 @@ export const CreatorSharingPage: React.FC = () => {
   }, [campaignId]);
 
   const fetchCreators = async (campaignId: string) => {
-    const { data: creatorsData } = await supabase.from(
-      "campaign_creators",
-    )
+    const { data: creatorsData } = await supabase
+      .from("campaign_creators")
       .select(
         "id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement, cpm_cap",
       )
@@ -76,7 +75,8 @@ export const CreatorSharingPage: React.FC = () => {
       ),
     );
 
-    await supabase.from("campaign_creators")
+    await supabase
+      .from("campaign_creators")
       .update({ selected: !creator.selected })
       .eq("id", creator.id);
   };

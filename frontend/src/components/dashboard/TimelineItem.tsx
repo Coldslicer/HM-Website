@@ -18,7 +18,10 @@ interface TimelineItemProps {
   onOpenPopup: (url: string, creatorId: string, isDraft: boolean) => void;
 }
 
-const TimelineItem: React.FC<TimelineItemProps> = ({ creator, onOpenPopup }) => {
+const TimelineItem: React.FC<TimelineItemProps> = ({
+  creator,
+  onOpenPopup,
+}) => {
   const contractComplete = creator.contract_signed;
   const draftComplete = isCompleted(creator.draft);
   const finalComplete = isCompleted(creator.live_url);
@@ -53,21 +56,23 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ creator, onOpenPopup }) => 
           <div className="flex-1">
             <div
               className={`p-4 rounded-md ${
-                contractComplete 
-                  ? "bg-orange-500 text-white" 
+                contractComplete
+                  ? "bg-orange-500 text-white"
                   : "border-2 border-gray-300 bg-gray-50"
               } text-center mx-2`}
             >
-              <div className={`text-sm ${contractComplete ? "text-white" : "text-gray-600"} mb-1`}>
+              <div
+                className={`text-sm ${contractComplete ? "text-white" : "text-gray-600"} mb-1`}
+              >
                 Contract Signed
               </div>
-              <div className={`text-sm ${contractComplete ? "text-white" : "text-gray-500"} flex items-center justify-center gap-1`}>
+              <div
+                className={`text-sm ${contractComplete ? "text-white" : "text-gray-500"} flex items-center justify-center gap-1`}
+              >
                 {contractComplete ? (
                   <>
                     <span>Complete</span>
-                    <Disclaimer
-                      text="Creator contracts are between Hotslicer Media and creators. We don't show them to clients at this time, but be assured that this creator is contractually obligated to follow through with the campaign."
-                    />
+                    <Disclaimer text="Creator contracts are between Hotslicer Media and creators. We don't show them to clients at this time, but be assured that this creator is contractually obligated to follow through with the campaign." />
                   </>
                 ) : (
                   <span>Incomplete</span>
@@ -88,12 +93,14 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ creator, onOpenPopup }) => 
           <div className="flex-1">
             <div
               className={`p-4 rounded-md ${
-                draftComplete 
-                  ? "bg-orange-500 text-white" 
+                draftComplete
+                  ? "bg-orange-500 text-white"
                   : "border-2 border-gray-300 bg-gray-50"
               } text-center mx-2`}
             >
-              <div className={`text-sm ${draftComplete ? "text-white" : "text-gray-600"} mb-1`}>
+              <div
+                className={`text-sm ${draftComplete ? "text-white" : "text-gray-600"} mb-1`}
+              >
                 Draft Submitted
               </div>
               {draftComplete ? (
@@ -120,19 +127,23 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ creator, onOpenPopup }) => 
           <div className="flex-1">
             <div
               className={`p-4 rounded-md ${
-                finalComplete 
-                  ? "bg-orange-500 text-white" 
+                finalComplete
+                  ? "bg-orange-500 text-white"
                   : "border-2 border-gray-300 bg-gray-50"
               } text-center mx-2`}
             >
-              <div className={`text-sm ${finalComplete ? "text-white" : "text-gray-600"} mb-1`}>
+              <div
+                className={`text-sm ${finalComplete ? "text-white" : "text-gray-600"} mb-1`}
+              >
                 Live Submitted
               </div>
               {finalComplete ? (
                 <Button
                   variant="link"
                   className={`font-semibold underline cursor-pointer text-sm ${finalComplete ? "text-white" : ""}`}
-                  onClick={() => onOpenPopup(creator.live_url, creator.id, false)}
+                  onClick={() =>
+                    onOpenPopup(creator.live_url, creator.id, false)
+                  }
                 >
                   Complete
                 </Button>

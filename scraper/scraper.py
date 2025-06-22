@@ -83,7 +83,7 @@ def update_views_columns(video, current_views):
     return updates
 
 def update_video_data():
-    creators = supabase.table("campaign_creators").select("live_url").execute().data
+    creators = supabase.table("creator_instances").select("live_url").execute().data
 
     for creator in creators:
         url = creator.get("live_url")

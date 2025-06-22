@@ -9,7 +9,8 @@ export const CreatorInfoManager = {
    * @returns {Promise<Object|null>} - The creator info object or null if not found.
    */
   async get(creatorId) {
-    const { data, error } = await supabase.from("creators")
+    const { data, error } = await supabase
+      .from("creators")
       .select("*")
       .eq("creator_id", creatorId)
       .single();

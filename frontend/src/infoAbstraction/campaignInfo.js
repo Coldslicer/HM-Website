@@ -9,7 +9,8 @@ export const CampaignInfoManager = {
    * @returns {Promise<Object|null>} - The campaign info object or null if not found.
    */
   async get(campaignId) {
-    const { data, error } = await supabase.from("campaigns")
+    const { data, error } = await supabase
+      .from("campaigns")
       .select("*")
       .eq("id", campaignId)
       .single();
@@ -28,7 +29,8 @@ export const CampaignInfoManager = {
    * @returns {Promise<Object[]|null>}
    */
   async listByClient(clientId) {
-    const { data, error } = await supabase.from("campaigns")
+    const { data, error } = await supabase
+      .from("campaigns")
       .select("*")
       .eq("client_id", clientId)
       .order("created_at", { ascending: false });
@@ -48,7 +50,8 @@ export const CampaignInfoManager = {
    * @returns {Promise<Object|null>}
    */
   async create(clientId, info) {
-    const { data, error } = await supabase.from("campaigns")
+    const { data, error } = await supabase
+      .from("campaigns")
       .insert({ client_id: clientId, ...info })
       .select()
       .single();
@@ -88,10 +91,16 @@ export const CampaignInfoManager = {
    * @returns {RealtimeChannel}
    */
   subscribeStatus(campaignId, callback) {
-    const channel = supabase.channel(`campaigns:${campaignId}`)
+    const channel = supabase
+      .channel(`campaigns:${campaignId}`)
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "campaigns", filter: `id=eq.${campaignId}` },
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "campaigns",
+          filter: `id=eq.${campaignId}`,
+        },
         (payload) => {
           if (payload.new?.status !== undefined) {
             callback(payload.new.status);

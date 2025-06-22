@@ -21,9 +21,8 @@ const Timeline = () => {
   }, [currentCampaign]);
 
   const fetchSelectedCreators = async () => {
-    const { data: creatorsData } = await supabase.from(
-      "campaign_creators",
-    )
+    const { data: creatorsData } = await supabase
+      .from("campaign_creators")
       .select(
         "id, draft, live_url, contract_signed, selected, channel_url, channel_name, final_approved, discord_id",
       )
@@ -68,14 +67,16 @@ const Timeline = () => {
   };
 
   const handleApproval = async (creatorId: string) => {
-    const { data: creator } = await supabase.from("campaign_creators")
+    const { data: creator } = await supabase
+      .from("campaign_creators")
       .select("discord_id")
       .eq("id", creatorId)
       .single();
 
     if (!creator) return;
 
-    await supabase.from("campaign_creators")
+    await supabase
+      .from("campaign_creators")
       .update({ final_approved: true })
       .eq("id", creatorId);
 

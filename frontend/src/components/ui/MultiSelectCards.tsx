@@ -68,4 +68,4 @@ const MultiSelectCards: React.FC<MultiSelectCardsProps> = ({
 };
 
 export default MultiSelectCards;
-export { MultiSelectCards }
+export { MultiSelectCards };

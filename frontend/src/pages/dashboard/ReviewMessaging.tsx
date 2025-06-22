@@ -18,7 +18,8 @@ export function ReviewMessaging({ creatorId }) {
 
   useEffect(() => {
     const fetchCreatorChannel = async () => {
-      const { data, error } = await supabase.from("campaign_creators")
+      const { data, error } = await supabase
+        .from("campaign_creators")
         .select("channel_id, discord_id")
         .eq("id", creatorId)
         .single();

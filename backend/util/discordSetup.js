@@ -7,17 +7,17 @@ import {
   addCreatorToDiscord,
 } from "../handlers/discord_functions.js"; // Your local function to validate Discord ID
 import * as CodeFunctions from "../handlers/joincode_functions.js";
+import { queryTable, saqTable, searchTable, updateTable } from "./supaUtil.js";
 
 /* ================ [ HELPERS ] ================ */
 
 async function getCampaignCreatorEntryByChannel(channelId, userId) {
-  // Check campaign_creators table for direct match on channel_id
-  const { data: creatorData } = await supabase
-    .from("campaign_creators")
-    .select("*")
-    .eq("channel_id", channelId)
-    .single();
-
+  let creatorData = await saqTable(
+    "creator_instances",
+    { chat_id: channelId },
+    null,
+    "*",
+  );
   if (creatorData) return creatorData;
 
   // Check for group chat campaign match
@@ -28,14 +28,19 @@ async function getCampaignCreatorEntryByChannel(channelId, userId) {
     .single();
 
   if (campaignData) {
-    const { data: groupCreatorData } = await supabase
-      .from("campaign_creators")
-      .select("*")
-      .eq("campaign_id", campaignData.id)
-      .eq("discord_id", userId)
-      .single();
-
-    if (groupCreatorData) return groupCreatorData;
+    let res = await saqTable(
+      "creator_instances",
+      { campaign_id: campaignData.id },
+      null,
+      "*",
+    );
+    if (
+      res &&
+      (await queryTable("creators", res.creator_id, "discord_id")
+        .discord_id) === userId
+    ) {
+      return res;
+    }
   }
 
   return null;
@@ -310,13 +315,16 @@ const handleEditRatesCommand = async (interaction) => {
   const cpmRate = interaction.options.getNumber("cpm");
   const cpmCap = interaction.options.getNumber("cap");
 
-  const { data, error: selectError } = await supabase
-    .from("campaign_creators")
-    .select("rate, rate_cpm, cpm_cap")
-    .eq("id", creatorEntry.id);
+  let data = await queryTable(
+    "creator_instances",
+    creatorEntry.id,
+    "rate_flat",
+    "rate_cpm",
+    "cpm_cap",
+  );
 
   if (
-    (data.rate === 0 && flatRate) ||
+    (data.rate_flat === 0 && flatRate) ||
     (data.rate_cpm === 0 && cpmRate) ||
     (data.cmp_cap === 0 && cpmCap)
   ) {
@@ -327,7 +335,7 @@ const handleEditRatesCommand = async (interaction) => {
     });
   }
 
-  if (flatRate !== null) updateData.rate = flatRate;
+  if (flatRate !== null) updateData.rate_flat = flatRate;
   if (cpmRate !== null) updateData.rate_cpm = cpmRate;
   if (cpmCap !== null) updateData.cmp_cap = cmpCap;
 
@@ -338,10 +346,7 @@ const handleEditRatesCommand = async (interaction) => {
     });
   }
 
-  const { error } = await supabase
-    .from("campaign_creators")
-    .update(updateData)
-    .eq("id", creatorEntry.id);
+  await updateTable("creator_instances", creatorEntry.id, updateData);
 
   if (error) {
     console.error("Rate update error:", error);
@@ -358,176 +363,158 @@ const handleEditRatesCommand = async (interaction) => {
 };
 
 async function handleJoinCommand(interaction) {
-  try {
-    // Extract required options
-    const join_code = interaction.options.getString("join_code");
-    const name = interaction.options.getString("name");
-    const email = interaction.options.getString("email");
-    const channel_name = interaction.options.getString("channel_name");
-    const channel_url = interaction.options.getString("channel_url");
-    const deliverables = interaction.options.getString("deliverables");
-    const personal_statement =
-      interaction.options.getString("personal_statement");
-
-    const isAdmin = interaction.member.permissions?.has?.("Administrator");
-    const discord_id =
-      interaction.options.getString("discord_id") || interaction.user.id;
-
-    if (discord_id !== interaction.user.id && !isAdmin) {
-      return await interaction.reply({
-        content:
-          "Only admins can register others for a campaign. Encourage this user to register themselves!",
-        ephemeral: true,
-      });
-    }
-
-    const agreement = interaction.options.getBoolean("agreement");
-
-    // Optional rate fields (fallback to 0)
-    const rate = interaction.options.getNumber("rate") ?? 0;
-    const rate_cpm = interaction.options.getNumber("rate_cpm") ?? 0;
-    const cpm_capRaw = interaction.options.getNumber("cpm_cap") ?? 0;
-    const cpm_cap = rate_cpm > 0 && cpm_capRaw > 0 ? cpm_capRaw : null;
-
-    // Basic required field validation
-    if (!join_code) {
-      return await interaction.reply({
-        content: "Join code is required.",
-        ephemeral: true,
-      });
-    }
-    if (!agreement) {
-      return await interaction.reply({
-        content:
-          "You must agree to our terms to join. Contact staff if you need assistance.",
-        ephemeral: true,
-      });
-    }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return await interaction.reply({
-        content: "Please provide a valid email address.",
-        ephemeral: true,
-      });
-    }
-    if (!discord_id) {
-      return await interaction.reply({
-        content: "Discord ID is required.",
-        ephemeral: true,
-      });
-    }
-
-    if ([rate, rate_cpm, cpm_capRaw].some((n) => isNaN(n))) {
-      return await interaction.reply({
-        content: "Rates must be valid numbers.",
-        ephemeral: true,
-      });
-    }
-    if (rate < 0 || rate_cpm < 0 || cpm_capRaw < 0) {
-      return await interaction.reply({
-        content: "Rates cannot be negative.",
-        ephemeral: true,
-      });
-    }
-
-    // Validate Discord ID
-    const discordValid = await validateDiscordId(discord_id);
-    if (!discordValid) {
-      return await interaction.reply({
-        content: "Invalid Discord ID.",
-        ephemeral: true,
-      });
-    }
-
-    // Decode join code
-    const campaign = await CodeFunctions.decodeJoinCode(join_code);
-    if (!campaign?.id) {
-      return await interaction.reply({
-        content: "Join code is not valid.",
-        ephemeral: true,
-      });
-    }
-    const campaign_id = campaign.id;
-
-    // Insert creator record into Supabase
-    const { data: creator, error: insertError } = await supabase
-      .from("campaign_creators")
-      .insert([
-        {
-          campaign_id,
-          name,
-          email,
-          channel_name,
-          channel_url,
-          deliverables,
-          rate,
-          rate_cpm,
-          cpm_cap,
-          personal_statement,
-          discord_id,
-          selected: false,
-        },
-      ])
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error("Supabase insert error:", insertError);
-      return await interaction.reply({
-        content:
-          "Failed to join campaign due to a server error. Please try again later.",
-        ephemeral: true,
-      });
-    }
-
-    // Add creator to Discord channels
-    await addCreatorToDiscord(creator.id);
-
-    // Fetch webhook URL
-    const { data: creatorWithWebhook, error: webhookError } = await supabase
-      .from("campaign_creators")
-      .select("webhook_url")
-      .eq("id", creator.id)
-      .single();
-
-    if (webhookError || !creatorWithWebhook?.webhook_url) {
-      return await interaction.reply({
-        content:
-          "You're registered, but we couldn't send you a confirmation DM. Please check Discord manually.",
-        ephemeral: true,
-      });
-    }
-
-    // Send confirmation message to creator
-    await fetch(creatorWithWebhook.webhook_url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        content: `
-<@${discord_id}> You’re IN!
-
-Thank you for applying. While we cannot guarantee selection, you've taken an important step by getting your channel in front of major brands.
-
-If this is your first campaign, read our guide: https://tinyurl.com/hmsponsorguide
-
-We will message you if selected. Meanwhile, feel free to DM our CEO personally: @hotslicer
-
-Thanks!
-WARM`,
-      }),
-    });
-
-    return await interaction.reply({
-      content:
-        "You have successfully joined the campaign! Check your DMs for confirmation.",
-      ephemeral: true,
-    });
-  } catch (err) {
-    console.error("Error in handleJoinCommand:", err);
-    return await interaction.reply({
-      content: "An unexpected error occurred. Please try again later.",
-      ephemeral: true,
-    });
-  }
+  // TODO: needs to be split into creator and instance
+  //  try {
+  //     // Extract required options
+  //     const join_code = interaction.options.getString("join_code");
+  //     const name = interaction.options.getString("name");
+  //     const email = interaction.options.getString("email");
+  //     const channel_name = interaction.options.getString("channel_name");
+  //     const channel_url = interaction.options.getString("channel_url");
+  //     const deliverables = interaction.options.getString("deliverables");
+  //     const personal_statement =
+  //       interaction.options.getString("personal_statement");
+  //     const isAdmin = interaction.member.permissions?.has?.("Administrator");
+  //     const discord_id =
+  //       interaction.options.getString("discord_id") || interaction.user.id;
+  //     if (discord_id !== interaction.user.id && !isAdmin) {
+  //       return await interaction.reply({
+  //         content:
+  //           "Only admins can register others for a campaign. Encourage this user to register themselves!",
+  //         ephemeral: true,
+  //       });
+  //     }
+  //     const agreement = interaction.options.getBoolean("agreement");
+  //     // Optional rate fields (fallback to 0)
+  //     const rate = interaction.options.getNumber("rate") ?? 0;
+  //     const rate_cpm = interaction.options.getNumber("rate_cpm") ?? 0;
+  //     const cpm_capRaw = interaction.options.getNumber("cpm_cap") ?? 0;
+  //     const cpm_cap = rate_cpm > 0 && cpm_capRaw > 0 ? cpm_capRaw : null;
+  //     // Basic required field validation
+  //     if (!join_code) {
+  //       return await interaction.reply({
+  //         content: "Join code is required.",
+  //         ephemeral: true,
+  //       });
+  //     }
+  //     if (!agreement) {
+  //       return await interaction.reply({
+  //         content:
+  //           "You must agree to our terms to join. Contact staff if you need assistance.",
+  //         ephemeral: true,
+  //       });
+  //     }
+  //     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  //       return await interaction.reply({
+  //         content: "Please provide a valid email address.",
+  //         ephemeral: true,
+  //       });
+  //     }
+  //     if (!discord_id) {
+  //       return await interaction.reply({
+  //         content: "Discord ID is required.",
+  //         ephemeral: true,
+  //       });
+  //     }
+  //     if ([rate, rate_cpm, cpm_capRaw].some((n) => isNaN(n))) {
+  //       return await interaction.reply({
+  //         content: "Rates must be valid numbers.",
+  //         ephemeral: true,
+  //       });
+  //     }
+  //     if (rate < 0 || rate_cpm < 0 || cpm_capRaw < 0) {
+  //       return await interaction.reply({
+  //         content: "Rates cannot be negative.",
+  //         ephemeral: true,
+  //       });
+  //     }
+  //     // Validate Discord ID
+  //     const discordValid = await validateDiscordId(discord_id);
+  //     if (!discordValid) {
+  //       return await interaction.reply({
+  //         content: "Invalid Discord ID.",
+  //         ephemeral: true,
+  //       });
+  //     }
+  //     // Decode join code
+  //     const campaign = await CodeFunctions.decodeJoinCode(join_code);
+  //     if (!campaign?.id) {
+  //       return await interaction.reply({
+  //         content: "Join code is not valid.",
+  //         ephemeral: true,
+  //       });
+  //     }
+  //     const campaign_id = campaign.id;
+  //     // Insert creator record into Supabase
+  //     const { data: creator, error: insertError } = await supabase
+  //       .from("campaign_creators")
+  //       .insert([
+  //         {
+  //           campaign_id,
+  //           name,
+  //           email,
+  //           channel_name,
+  //           channel_url,
+  //           deliverables,
+  //           rate,
+  //           rate_cpm,
+  //           cpm_cap,
+  //           personal_statement,
+  //           discord_id,
+  //           selected: false,
+  //         },
+  //       ])
+  //       .select()
+  //       .single();
+  //     if (insertError) {
+  //       console.error("Supabase insert error:", insertError);
+  //       return await interaction.reply({
+  //         content:
+  //           "Failed to join campaign due to a server error. Please try again later.",
+  //         ephemeral: true,
+  //       });
+  //     }
+  //     // Add creator to Discord channels
+  //     await addCreatorToDiscord(creator.id);
+  //     // Fetch webhook URL
+  //     const { data: creatorWithWebhook, error: webhookError } = await supabase
+  //       .from("campaign_creators")
+  //       .select("webhook_url")
+  //       .eq("id", creator.id)
+  //       .single();
+  //     if (webhookError || !creatorWithWebhook?.webhook_url) {
+  //       return await interaction.reply({
+  //         content:
+  //           "You're registered, but we couldn't send you a confirmation DM. Please check Discord manually.",
+  //         ephemeral: true,
+  //       });
+  //     }
+  //     // Send confirmation message to creator
+  //     await fetch(creatorWithWebhook.webhook_url, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         content: `
+  // <@${discord_id}> You’re IN!
+  // Thank you for applying. While we cannot guarantee selection, you've taken an important step by getting your channel in front of major brands.
+  // If this is your first campaign, read our guide: https://tinyurl.com/hmsponsorguide
+  // We will message you if selected. Meanwhile, feel free to DM our CEO personally: @hotslicer
+  // Thanks!
+  // WARM`,
+  //       }),
+  //     });
+  //     return await interaction.reply({
+  //       content:
+  //         "You have successfully joined the campaign! Check your DMs for confirmation.",
+  //       ephemeral: true,
+  //     });
+  //   } catch (err) {
+  //     console.error("Error in handleJoinCommand:", err);
+  //     return await interaction.reply({
+  //       content: "An unexpected error occurred. Please try again later.",
+  //       ephemeral: true,
+  //     });
+  //   }
 }
 
 const handleGetLink = async (interaction) => {
@@ -570,10 +557,7 @@ const handleContentSubmission = async (interaction) => {
     updateData.draft_submitted_at = new Date().toISOString();
   }
 
-  const { error } = await supabase
-    .from("campaign_creators")
-    .update(updateData)
-    .eq("id", creatorEntry.id);
+  await updateTable("creator_instances", creatorEntry.id, updateData);
 
   if (error) {
     console.error("Content submission error:", error);

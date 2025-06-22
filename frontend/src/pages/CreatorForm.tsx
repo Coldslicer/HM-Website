@@ -40,7 +40,9 @@ export function CreatorForm() {
   useEffect(() => {
     const fetchCampaignFromJoinCode = async () => {
       try {
-        const { data } = await axios.get(`/api/joincodes/decode?code=${formData.join_code}`);
+        const { data } = await axios.get(
+          `/api/joincodes/decode?code=${formData.join_code}`,
+        );
         const campaign = data.campaign;
 
         if (!campaign) {
@@ -92,7 +94,9 @@ export function CreatorForm() {
 
   const validateDiscordId = async (discordId: string) => {
     try {
-      const res = await axios.get(`/api/campaigns/validate-discord-id/${discordId}`);
+      const res = await axios.get(
+        `/api/campaigns/validate-discord-id/${discordId}`,
+      );
       return res.data.valid;
     } catch {
       return false;
@@ -105,14 +109,16 @@ export function CreatorForm() {
 
     if (!formData.campaign_id) return setError("Join code is not valid.");
     if (!formData.agreement) return setError("You must agree to the terms.");
-    if (!(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))) return setError("Invalid email.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      return setError("Invalid email.");
     if (parseFloat(formData.rate) < 0 || parseFloat(formData.rate_cpm) < 0)
       return setError("Rates cannot be negative.");
     if (!(await validateDiscordId(formData.discord_id)))
       return setError("Invalid Discord ID.");
 
     try {
-      const { data, error } = await supabase.from("campaign_creators")
+      const { data, error } = await supabase
+        .from("campaign_creators")
         .insert([
           {
             campaign_id: formData.campaign_id,
@@ -141,14 +147,15 @@ export function CreatorForm() {
         creatorId: data.id,
       });
 
-      const { data: creatorWithWebhook } = await supabase.from("campaign_creators")
+      const { data: creatorWithWebhook } = await supabase
+        .from("campaign_creators")
         .select("webhook_url")
         .eq("id", data.id)
         .single();
 
       if (!creatorWithWebhook?.webhook_url) {
         return setError(
-          "You're in our system, but we couldn't send a confirmation DM. Please check Discord manually."
+          "You're in our system, but we couldn't send a confirmation DM. Please check Discord manually.",
         );
       }
 
@@ -168,7 +175,9 @@ WARM`,
       setSuccess(true);
     } catch (err) {
       console.error("Submission failed:", err);
-      setError("An error occurred while submitting your info. Please try again later.");
+      setError(
+        "An error occurred while submitting your info. Please try again later.",
+      );
     }
   };
 

@@ -32,9 +32,7 @@ export const CampaignInfo: React.FC<CampaignInfoProps> = ({ campaignId }) => {
 
     async function fetchRoles() {
       setLoadingRoles(true);
-      const { data, error } = await supabase
-        .from("roles")
-        .select("id,title");
+      const { data, error } = await supabase.from("roles").select("id,title");
 
       if (error) {
         console.error("Error fetching roles:", error);
@@ -76,17 +74,25 @@ export const CampaignInfo: React.FC<CampaignInfoProps> = ({ campaignId }) => {
             </div>
 
             <div>
-              <dt className="text-sm font-medium text-gray-700">Brand Website</dt>
+              <dt className="text-sm font-medium text-gray-700">
+                Brand Website
+              </dt>
               <dd className="mt-1 text-gray-600">{campaign.website}</dd>
             </div>
 
             <div>
-              <dt className="text-sm font-medium text-gray-700">Brand Description</dt>
-              <dd className="mt-1 text-gray-600">{campaign.company_description}</dd>
+              <dt className="text-sm font-medium text-gray-700">
+                Brand Description
+              </dt>
+              <dd className="mt-1 text-gray-600">
+                {campaign.company_description}
+              </dd>
             </div>
 
             <div>
-              <dt className="text-sm font-medium text-gray-700">Representative Name</dt>
+              <dt className="text-sm font-medium text-gray-700">
+                Representative Name
+              </dt>
               <dd className="mt-1 text-gray-600">{campaign.rep_name}</dd>
             </div>
           </dl>
@@ -100,22 +106,30 @@ export const CampaignInfo: React.FC<CampaignInfoProps> = ({ campaignId }) => {
 
           <dl className="space-y-4">
             <div>
-              <dt className="text-sm font-medium text-gray-700">Campaign Name</dt>
+              <dt className="text-sm font-medium text-gray-700">
+                Campaign Name
+              </dt>
               <dd className="mt-1 text-gray-600">{campaign.name}</dd>
             </div>
 
             <div>
-              <dt className="text-sm font-medium text-gray-700">Posting Date</dt>
+              <dt className="text-sm font-medium text-gray-700">
+                Posting Date
+              </dt>
               <dd className="mt-1 text-gray-600">{campaign.date}</dd>
             </div>
 
             <div>
               <dt className="text-sm font-medium text-gray-700">Channels</dt>
-              <dd className="mt-1 text-gray-600">{campaign.niches.join(", ")}</dd>
+              <dd className="mt-1 text-gray-600">
+                {campaign.niches.join(", ")}
+              </dd>
             </div>
 
             <div>
-              <dt className="text-sm font-medium text-gray-700">Per-Influencer Roles</dt>
+              <dt className="text-sm font-medium text-gray-700">
+                Per-Influencer Roles
+              </dt>
               <dd className="mt-1 text-gray-600">
                 {loadingRoles ? "Loading roles..." : roleTitles.join(", ")}
               </dd>

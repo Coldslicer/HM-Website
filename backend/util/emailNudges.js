@@ -1,4 +1,10 @@
 import {
+  CreatorStatus,
+  PaymentStatus,
+  saqTable,
+  searchTable,
+} from "./supaUtil.js";
+import {
   analyzeConversationGhost,
   getChannelMessages,
   getLastClientMessageTime,
@@ -59,22 +65,26 @@ export const flatRatePaymentNudge = {
   once: false, // This nudge can send repeatedly
 
   async evaluate(campaign, supabase) {
-    const { data: creators, error } = await supabase
-      .from("campaign_creators")
-      .select("channel_url, final, flat_paid")
-      .eq("campaign_id", campaign.id)
-      .eq("flat_paid", false);
-
-    if (error) {
-      console.error(
-        "❌ Error fetching creators for flat rate payment nudge:",
-        error.message,
+    let creators = await saqTable(
+      "creator_instances",
+      { campaign_id: campaign.id },
+      null,
+      "creator_id",
+      "live_url",
+      "flat_status",
+    );
+    for (const creator of creators)
+      creator.channel_url = await queryTable(
+        "creators",
+        creator.creator_id,
+        "channel_url",
       );
-      return null;
-    }
 
     const unpaidCreators = creators.filter(
-      (c) => c.final && c.final.trim() !== "",
+      (c) =>
+        c.live_url &&
+        c.live_url.trim() !== "" &&
+        c.flat_status === PaymentStatus.READY,
     );
 
     if (unpaidCreators.length === 0) return null;
@@ -106,22 +116,28 @@ export const cpmPaymentNudges = {
   id: "cpmPaymentNudges",
   once: false,
   async evaluate(campaign, supabase, sentMemos) {
-    const { data: creators, error } = await supabase
-      .from("campaign_creators")
-      .select("channel_url, live_submitted, cpm_paid")
-      .eq("campaign_id", campaign.id);
-
-    if (error) {
-      console.error("Error fetching campaign creators:", error);
-      return null;
-    }
+    let creators = await saqTable(
+      "creator_instances",
+      { campaign_id: campaign.id },
+      null,
+      "creator_id",
+      "live_url",
+      "cpm_status",
+    );
+    for (const creator of creators)
+      creator.channel_url = await queryTable(
+        "creators",
+        creator.creator_id,
+        "channel_url",
+      );
 
     const now = new Date();
     let finalMessage = "";
 
     for (const creator of creators) {
-      const { channel_url, live_submitted, cpm_paid } = creator;
-      if (!channel_url || !live_submitted || cpm_paid) continue;
+      const { channel_url, live_submitted, cpm_status } = creator;
+      if (!channel_url || !live_submitted || cpm_status == PaymentStatus.PAID)
+        continue;
 
       const liveDate = new Date(live_submitted);
       const daysSinceLive = Math.floor(
@@ -206,16 +222,9 @@ export const reviewCreatorsNudge = {
 
     if (campaign.status !== "brief_submitted" || hoursDiff < 72) return null;
 
-    // Count campaign_creators
-    const { data: creators, error } = await supabase
-      .from("campaign_creators")
-      .select("id")
-      .eq("campaign_id", campaign.id);
-
-    if (error) {
-      console.error("Error fetching campaign creators:", error);
-      return null;
-    }
+    let creators = await searchTable("creator_instances", {
+      campaign_id: campaign.id,
+    });
 
     const numInfluencers = creators.length;
     const repName = campaign.rep_name || "there";
@@ -249,23 +258,17 @@ export const draftSubmissionReminderNudge = {
     const now = new Date();
 
     // Get all creators for this campaign
-    const { data: campaignCreators, error: creatorsError } = await supabase
-      .from("campaign_creators")
-      .select("*, campaigns(*)")
-      .eq("campaign_id", campaign.id)
-      .filter("draft_submitted_at", "not.is", null);
-
-    if (creatorsError) {
-      console.error("Error fetching campaign creators:", creatorsError);
-      return null;
-    }
+    campaignCreators = await saqTable(
+      "creator_instances",
+      { campaign_id: campaign.id },
+      CreatorStatus.DRAFT_SUBMITTED,
+      "*",
+    );
 
     let creatorsNeedingReview = [];
 
     // Process each creator's draft submission
     for (const creator of campaignCreators) {
-      if (!creator.draft_submitted_at) continue;
-
       const submittedAt = new Date(creator.draft_submitted_at);
       const hoursSinceSubmission = (now - submittedAt) / (1000 * 60 * 60);
 

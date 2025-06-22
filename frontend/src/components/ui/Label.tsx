@@ -23,9 +23,8 @@ const labelVariants = cva(
     defaultVariants: {
       weight: "normal",
     },
-  }
+  },
 );
-
 
 // Label component
 const Label = React.forwardRef<

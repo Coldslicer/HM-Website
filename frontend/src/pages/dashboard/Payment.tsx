@@ -25,7 +25,8 @@ const Payment = () => {
 
   const checkForm = async () => {
     try {
-      const { data } = await supabase.from("campaigns")
+      const { data } = await supabase
+        .from("campaigns")
         .select("payment_email, company_phone, company_address")
         .eq("id", currentCampaign?.id)
         .single();
@@ -48,10 +49,7 @@ const Payment = () => {
         selected: true,
       });
 
-      const creators = (response.data || []).filter(
-        (creator) => creator.selected,
-      );
-
+      const creators = response.data || [];
       const sortedCreators = creators.sort(
         (a: { channel_name: string }, b: { channel_name: string }) =>
           a.channel_name.localeCompare(b.channel_name),
@@ -71,7 +69,8 @@ const Payment = () => {
 
     setFormLoading(true);
     try {
-      const { error } = await supabase.from("campaigns")
+      const { error } = await supabase
+        .from("campaigns")
         .update({
           payment_email: email,
           company_phone: phone,
@@ -93,7 +92,7 @@ const Payment = () => {
     setLoading(true);
     try {
       await axios.post("/api/payment/initiate-payment", {
-        creator_id: creatorId,
+        creator_instance: creatorId,
         type,
       });
 

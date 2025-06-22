@@ -16,8 +16,4 @@ export default function Popup({ children }: { children: React.ReactNode }) {
   );
 }
 
-
-
-
-
-export { Popup }
+export { Popup };

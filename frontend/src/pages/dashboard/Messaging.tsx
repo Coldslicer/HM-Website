@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { CampaignCreatorInfoManager, CampaignInfoManager } from "../../infoAbstraction/infoManagers";
+import {
+  CampaignCreatorInfoManager,
+  CampaignInfoManager,
+} from "../../infoAbstraction/infoManagers";
 import { useCampaignStore } from "../../store/campaignStore";
 import ChannelSelector from "../../components/dashboard/ChannelSelector.tsx";
 import MessagingComponent from "../../components/dashboard/MessagingComponent.tsx";
@@ -33,9 +36,13 @@ export function Messaging() {
   useEffect(() => {
     const fetchCreators = async () => {
       if (!currentCampaign?.id) return;
-      const data = await CampaignCreatorInfoManager.listByCampaign(currentCampaign.id, {
-        selected: currentCampaign.status !== "brief_submitted" ? true : undefined,
-      });
+      const data = await CampaignCreatorInfoManager.listByCampaign(
+        currentCampaign.id,
+        {
+          selected:
+            currentCampaign.status !== "brief_submitted" ? true : undefined,
+        },
+      );
       if (data) {
         console.log("Fetched creators:", data);
         setCreators(data);
@@ -102,8 +109,6 @@ export function Messaging() {
       </div>
     </div>
   );
-
-
 }
 
 export default Messaging;

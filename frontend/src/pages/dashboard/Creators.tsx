@@ -34,9 +34,8 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
   const fetchCreators = async () => {
     setIsLoading(true);
     try {
-      const { data: creatorsData } = await supabase.from(
-        "campaign_creators",
-      )
+      const { data: creatorsData } = await supabase
+        .from("campaign_creators")
         .select(
           "id, channel_url, channel_name, rate, rate_cpm, selected, personal_statement, cpm_cap",
         )
@@ -92,7 +91,8 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
       ),
     );
 
-    await supabase.from("campaign_creators")
+    await supabase
+      .from("campaign_creators")
       .update({ selected: !creator.selected })
       .eq("id", creator.id);
   };
@@ -105,7 +105,8 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase.from("campaigns")
+      const { error } = await supabase
+        .from("campaigns")
         .update({ status: "creators_selected", total_price: totalRate })
         .eq("id", currentCampaign?.id);
 

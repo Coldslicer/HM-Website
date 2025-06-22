@@ -1,6 +1,6 @@
 import express from "express";
 import axios from "axios";
-import { discord, supabase } from "../util/clients.js";
+import { supabase } from "../util/clients.js";
 
 import fs from "fs";
 import path from "path";
@@ -8,6 +8,12 @@ import ejs from "ejs";
 import he from "he"; // Import the 'he' library for decoding HTML entities
 
 import { fileURLToPath } from "url"; // Import necessary method from 'url'
+import {
+  CreatorStatus,
+  queryTable,
+  saqTable,
+  updateTable,
+} from "../util/supaUtil.js";
 
 const API_KEY = process.env.DOCUSEAL_API_KEY;
 
@@ -28,10 +34,12 @@ async function getCampaignDetails(campaignId) {
 
 // Function to get creator details from Supabase
 async function getCreatorsForCampaign(campaignId, fullyManaged) {
-  const { data, error } = await supabase
-    .from("campaign_creators")
-    .select("*")
-    .eq("campaign_id", campaignId);
+  let data = await saqTable(
+    "creator_instances",
+    { campaign_id: campaignId },
+    null,
+    "*",
+  );
 
   if (error) {
     console.error("Error fetching creators:", error);
@@ -270,25 +278,20 @@ router.post("/creator-forms", async (req, res) => {
   }
 
   try {
-    // Fetch creators who are selected for the campaign
-    const { data: creatorsData, error: fetchCreatorsError } = await supabase
-      .from("campaign_creators")
-      .select(
-        "id, campaign_id, channel_name, deliverables, rate, rate_cpm, channel_url, name, discord_id, webhook_url, email",
-      )
-      .eq("campaign_id", campaign_id)
-      .eq("selected", true); // Only selected creators
-
-    if (fetchCreatorsError) {
-      console.error(
-        "Error fetching creators data:",
-        fetchCreatorsError.message,
-      );
-      return res.status(500).json({ error: "Failed to fetch creator data" });
-    }
+    let creatorInstances = await saqTable(
+      "creator_instances",
+      { campaign_id: campaign_id },
+      CreatorStatus.CREATOR_APPROVED,
+      "id",
+      "creator_id",
+      "deliverables",
+      "rate_flat",
+      "rate_cpm",
+      "cpm_cap",
+    );
 
     // Check if creators data exists
-    if (!creatorsData || creatorsData.length === 0) {
+    if (!creatorInstances) {
       console.log("No selected creators found for the given campaign_id");
       return res.status(400).json({
         error: "No selected creators found for the provided campaign_id",
@@ -319,13 +322,21 @@ router.post("/creator-forms", async (req, res) => {
     }
 
     // Process each selected creator and submit the contract for them
-    for (const creatorData of creatorsData) {
+    for (const creatorInstance of creatorInstances) {
+      let creatorData = await queryTable(
+        "creators",
+        creatorInstance.creator_id,
+        "channel_name",
+        "channel_url",
+        "email",
+        "name",
+      );
       try {
         // Prepare submission data for the creator contract
         const submissionData = {
           template_id: 772682, // Assuming this template ID is correct for creator contracts
           send_email: false,
-          external_id: creatorData.id,
+          external_id: creatorInstance.id,
           submitters: [
             {
               email: process.env.AGENCY_EMAIL, // Assuming the agency email is used here
@@ -352,23 +363,23 @@ router.post("/creator-forms", async (req, res) => {
                 {
                   name: "Deliverable",
                   default_value:
-                    creatorData.deliverables || "No deliverables specified", // Use creator's deliverables if available
+                    creatorInstance.deliverables || "No deliverables specified", // Use creator's deliverables if available
                 },
                 {
                   name: "Rate",
                   default_value:
-                    creatorData.rate ||
-                    creatorData.rate_cpm ||
-                    creatorData.cpm_cap
+                    creatorInstance.rate_flat ||
+                    creatorInstance.rate_cpm ||
+                    creatorInstance.cpm_cap
                       ? [
-                          creatorData.rate
-                            ? `$${creatorData.rate * 0.85} Flat`
+                          creatorInstance.rate
+                            ? `$${creatorInstance.rate * 0.85} Flat`
                             : null,
-                          creatorData.rate_cpm
-                            ? `$${creatorData.rate_cpm * 0.85} CPM`
+                          creatorInstance.rate_cpm
+                            ? `$${creatorInstance.rate_cpm * 0.85} CPM`
                             : null,
-                          creatorData.cpm_cap
-                            ? `$${creatorData.cpm_cap * 0.85} CPM Cap`
+                          creatorInstance.cpm_cap
+                            ? `$${creatorInstance.cpm_cap * 0.85} CPM Cap`
                             : null,
                         ]
                           .filter(Boolean)
@@ -385,7 +396,7 @@ router.post("/creator-forms", async (req, res) => {
               email: creatorData.email,
               name: creatorData.name,
               role: "creator",
-              external_id: creatorData.id,
+              external_id: creatorInstance.id,
             },
           ],
         };
@@ -404,36 +415,22 @@ router.post("/creator-forms", async (req, res) => {
         // Get the embed source (link to sign)
         const embedSrc = response.data[1]?.embed_src;
         if (embedSrc) {
-          // Update Supabase with the contract embed link for the creator
-          const { error: updateError } = await supabase
-            .from("campaign_creators")
-            .update({ contract_embed_link: embedSrc })
-            .eq("id", creatorData.id);
-
-          if (updateError) {
-            console.error(
-              "Error updating Supabase with embed link:",
-              updateError.message,
-            );
-          } else {
-            console.log(
-              "Supabase updated with contract embed link successfully for creator:",
-              creatorData.id,
-            );
-          }
+          await updateTable("creator_instances", creatorInstance.id, {
+            contract_url: embedSrc,
+          });
 
           // If discord_id and webhook_url exist, send the Discord ping
-          if (creatorData.discord_id && creatorData.webhook_url) {
+          if (creatorData.discord_id && creatorInstance.chat_webhook) {
             const discordMessage = {
               content: `[hidden from clients]\n<@${creatorData.discord_id}>, please review and sign the [creator contract](https://warm.hotslicer.com/creator-contract?creatorId=${creatorData.id})`,
             };
 
             try {
               // Send the message to the Discord webhook
-              await axios.post(creatorData.webhook_url, discordMessage);
+              await axios.post(creatorInstance.chat_webhook, discordMessage);
               console.log(
                 "Discord ping sent successfully for creator:",
-                creatorData.id,
+                creatorInstance.id,
               );
             } catch (discordError) {
               console.error(
@@ -445,13 +442,13 @@ router.post("/creator-forms", async (req, res) => {
         } else {
           console.error(
             "Failed to retrieve the contract link for creator:",
-            creatorData.id,
+            creatorInstance.id,
           );
         }
       } catch (error) {
         console.error(
           "An error occurred while creating the contract for creator:",
-          creatorData.id,
+          creatorInstance.id,
           error,
         );
       }

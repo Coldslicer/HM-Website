@@ -10,6 +10,13 @@ import { fileURLToPath } from "url";
 import { supabase } from "../util/clients.js";
 import axios from "axios";
 
+import {
+  saqTable,
+  queryTable,
+  updateTable,
+  PaymentStatus,
+} from "../util/supaUtil.js";
+
 /* ================ [ HELPERS ] ================ */
 
 // Date formatter
@@ -196,36 +203,33 @@ const modifyPDF = async (campaignData, paymentAmount) => {
 // Get creators
 ROUTER.post("/get-creators", async (req, res) => {
   try {
-    const { campaign_id } = req.body;
+    const { campaign_id, selected } = req.body;
 
     if (!campaign_id) {
       return res.status(400).json({ error: "campaign_id is required" });
     }
 
-    const { data, error } = await supabase
-      .from("campaign_creators")
-      .select(
-        `
-        id,
-        channel_name,
-        rate,
-        rate_cpm,
-        flat_paid,
-        cpm_paid,
-        final_approved,
-        flat_emailed,
-        cpm_emailed,
-        live_submitted,
-        cpm_cap,
-        selected,
-        live_url
-      `,
-      )
-      .eq("campaign_id", campaign_id);
+    let data;
+    if (selected) {
+      data = await saqTable(
+        "creator_instances",
+        { campaign_id: campaign_id },
+        CreatorStatus.CREATOR_APPROVED,
+        "*",
+      );
+    } else {
+      data = await saqTable(
+        "creator_instances",
+        { campaign_id: campaign_id },
+        null,
+        "*",
+      );
+    }
 
-    if (error) {
-      console.error("Supabase error:", error);
-      return res.status(500).json({ error: error.message });
+    for (const instance of data) {
+      let creatorData = await queryTable("creators", instance.creator_id, "*");
+      const { id, ...rest } = creatorData;
+      Object.assign(instance, rest);
     }
 
     res.json(data || []);
@@ -238,15 +242,25 @@ ROUTER.post("/get-creators", async (req, res) => {
 // Initiate payment
 ROUTER.post("/initiate-payment", async (req, res) => {
   try {
-    const { creator_id, type } = req.body;
+    const { creator_instance, type } = req.body;
 
-    const { data: creatorData, error: creatorError } = await supabase
-      .from("campaign_creators")
-      .select("campaign_id, rate, rate_cpm, channel_name, live_url, cpm_cap")
-      .eq("id", creator_id)
-      .single();
+    let creatorData = await queryTable(
+      "creator_instances",
+      creator_instance,
+      "creator_id",
+      "campaign_id",
+      "live_url",
+      "rate_flat",
+      "rate_cpm",
+      "cpm_cap",
+    );
+    let creatorChannelName = await queryTable(
+      "creators",
+      creatorData.creator_id,
+      "channel_name",
+    );
 
-    if (creatorError || !creatorData) {
+    if (!creatorData) {
       return res.status(404).json({ error: "Creator not found" });
     }
 
@@ -270,7 +284,7 @@ ROUTER.post("/initiate-payment", async (req, res) => {
 
     let paymentAmount;
     if (type === "flat") {
-      paymentAmount = creatorData.rate;
+      paymentAmount = creatorData.rate_flat;
     } else {
       const videoId = getVideoID(creatorData.live_url);
       if (!videoId) {
@@ -287,12 +301,12 @@ ROUTER.post("/initiate-payment", async (req, res) => {
       {
         ...campaignData,
         type: type.toUpperCase(),
-        creatorName: creatorData.channel_name,
+        creatorName: creatorChannelName,
       },
       paymentAmount,
     );
 
-    await TRANSPORTER.sendMail({
+    TRANSPORTER.sendMail({
       from: process.env.INVOICE_EMAIL,
       to: campaignData.payment_email,
       subject: "Invoice from Hotslicer Media",
@@ -306,12 +320,15 @@ ROUTER.post("/initiate-payment", async (req, res) => {
       ],
     });
 
-    const { error: updateError } = await supabase
-      .from("campaign_creators")
-      .update({ [`${type}_emailed`]: true })
-      .eq("id", creator_id);
-
-    if (updateError) throw updateError;
+    if (type === "flat") {
+      await updateTable("creator_instances", creator_instance, {
+        flat_status: PaymentStatus.EMAILED,
+      });
+    } else {
+      await updateTable("creator_instances", creator_instance, {
+        cpm_status: PaymentStatus.EMAILED,
+      });
+    }
 
     const { error: incrementError } = await supabase
       .from("campaigns")

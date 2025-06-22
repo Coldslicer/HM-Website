@@ -5,7 +5,12 @@ interface SelectableCardProps {
   description: string;
 }
 
-const SelectableCard = ({ selected, onClick, title, description }: SelectableCardProps) => (
+const SelectableCard = ({
+  selected,
+  onClick,
+  title,
+  description,
+}: SelectableCardProps) => (
   <div
     onClick={onClick}
     className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
@@ -28,7 +33,12 @@ const SelectableCard = ({ selected, onClick, title, description }: SelectableCar
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         )}
       </div>

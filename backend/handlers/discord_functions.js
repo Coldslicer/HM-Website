@@ -1,7 +1,18 @@
-// src/controllers/campaigns.js
+/* ================ [ IMPORTS ] ================ */
 
 import { supabase, discord } from "../util/clients.js";
 import { PermissionsBitField, ChannelType } from "discord.js";
+
+import {
+  CreatorStatus,
+  saqTable,
+  sauTable,
+  searchTable,
+  queryTable,
+  updateTable,
+} from "../util/supaUtil.js";
+
+/* ================ [ HELPERS ] ================ */
 
 /**
  * Validate if discordId corresponds to a Discord user.
@@ -29,37 +40,32 @@ export async function validateDiscordId(discordId) {
  * @param {string} campaignId
  */
 export async function removeUnselectedDiscordChannels(campaignId) {
-  if (!campaignId) throw new Error("Campaign ID is required");
+  if (!campaignId) return { message: "Campaign ID is required!" };
 
-  const { data: unselectedCreators, error: fetchError } = await supabase
-    .from("campaign_creators")
-    .select("id, discord_id, channel_id")
-    .eq("campaign_id", campaignId)
-    .eq("selected", false);
+  // Fetch unselected creators
+  unselectedCreators = await saqTable(
+    "creator_instances",
+    { campaign_id: campaignId, status: null },
+    null,
+    "chat_id",
+  );
+  if (!unselectedCreators) return { message: "No unselected creators found!" };
 
-  if (fetchError) throw fetchError;
-
-  if (!unselectedCreators || unselectedCreators.length === 0) {
-    return { message: "No unselected creators to remove channels for" };
-  }
-
-  for (const creator of unselectedCreators) {
-    if (creator.channel_id) {
-      try {
-        const channel = await discord.channels.fetch(creator.channel_id);
-        if (channel)
-          await channel.delete("Removing unselected creator channel");
-      } catch {
-        // ignore if channel doesn't exist or delete failed
-      }
-      await supabase
-        .from("campaign_creators")
-        .update({ channel_id: null, webhook_url: "" })
-        .eq("id", creator.id);
+  // Remove channels for unselected creators
+  for (creator of unselectedCreators) {
+    if (creator.chat_id) {
+      await discord.channels
+        .fetch(creator.chat_id)
+        .then((c) => c.delete("Removing unselected creator channel"))
+        .catch(() => {});
+      await updateTable("creator_instances", creator_instance, {
+        chat_id: null,
+        chat_url: null,
+      });
     }
   }
 
-  return { message: "Unselected creators’ Discord channels removed" };
+  return { message: "Successfully removed unselected creator channels!" };
 }
 
 /**
@@ -160,24 +166,18 @@ export async function purgeCategory(campaignId) {
 
   await category.delete();
 
-  await supabase
-    .from("campaigns")
-    .update({
-      category_id: null,
-      staff_chat_channel_id: null,
-      staff_chat_webhook_url: null,
-      group_chat_channel_id: null,
-      webhook_url: null,
-    })
-    .eq("id", campaignId);
-
-  await supabase
-    .from("campaign_creators")
-    .update({
-      channel_id: null,
-      webhook_url: null,
-    })
-    .eq("campaign_id", campaignId);
+  await updateTable("campaigns", campaignId, {
+    category_id: null,
+    staff_chat_channel_id: null,
+    staff_chat_webhook_url: null,
+    group_chat_channel_id: null,
+    webhook_url: null,
+  });
+  await sauTable(
+    "creator_instances",
+    { campaign_id: campaignId },
+    { chat_id: null, chat_url: null },
+  );
 
   return { message: "Category and related channels purged successfully" };
 }
@@ -189,19 +189,26 @@ export async function purgeCategory(campaignId) {
 export async function addCreatorToDiscord(creatorId) {
   if (!creatorId) throw new Error("Creator ID is required");
 
-  const { data: creator, error: creatorError } = await supabase
-    .from("campaign_creators")
-    .select("id, discord_id, channel_name, campaign_id")
-    .eq("id", creatorId)
-    .single();
-  if (creatorError || !creator) throw new Error("Creator not found");
+  let creator_instance = await queryTable(
+    "creator_instances",
+    creatorId,
+    "creator_id",
+    "campaign_id",
+  );
+  let creator = await queryTable(
+    "creators",
+    creator_instance.creator_id,
+    "discord_id",
+    "channel_name",
+  );
+  if (!creator) throw new Error("Creator not found");
 
   const { data: campaign, error: campaignError } = await supabase
     .from("campaigns")
     .select(
       "id, company_name, rep_name, category_id, server_id, client_id, group_chat_channel_id",
     )
-    .eq("id", creator.campaign_id)
+    .eq("id", creator_instance.campaign_id)
     .single();
   if (campaignError || !campaign) throw new Error("Campaign not found");
 
@@ -266,14 +273,10 @@ export async function addCreatorToDiscord(creatorId) {
     }
   }
 
-  await supabase
-    .from("campaign_creators")
-    .update({
-      channel_id: channel.id,
-      webhook_url: webhook.url,
-    })
-    .eq("id", creatorId);
-
+  await updateTable("creator_instances", creatorId, {
+    chat_id: channel.id,
+    chat_url: webhook.url,
+  });
   return { message: "Creator channel, webhook, and group access set up" };
 }
 
@@ -284,28 +287,36 @@ export async function addCreatorToDiscord(creatorId) {
 export async function removeCreatorFromDiscord(creatorId) {
   if (!creatorId) throw new Error("Creator ID is required");
 
-  const { data: creator, error: creatorError } = await supabase
-    .from("campaign_creators")
-    .select("id, discord_id, channel_name, campaign_id, channel_id")
-    .eq("id", creatorId)
-    .single();
-  if (creatorError || !creator) throw new Error("Creator not found");
+  let creator_instance = await queryTable(
+    "creator_instances",
+    creatorId,
+    "creator_id",
+    "campaign_id",
+    "chat_id",
+  );
+  let creator = await queryTable(
+    "creators",
+    creator_instance.creator_id,
+    "discord_id",
+    "channel_name",
+  );
+  if (!creator) throw new Error("Creator not found");
 
   const { data: campaign, error: campaignError } = await supabase
     .from("campaigns")
     .select(
       "id, company_name, rep_name, category_id, server_id, client_id, group_chat_channel_id",
     )
-    .eq("id", creator.campaign_id)
+    .eq("id", creator_instance.campaign_id)
     .single();
   if (campaignError || !campaign) throw new Error("Campaign not found");
 
   const guild = discord.guilds.cache.get(campaign.server_id);
   if (!guild) throw new Error("Guild not found");
 
-  if (creator.channel_id) {
+  if (creator_instance.chat_id) {
     try {
-      const channel = await guild.channels.fetch(creator.channel_id);
+      const channel = await guild.channels.fetch(creator_instance.chat_id);
       if (channel) await channel.delete("Removing creator channel");
     } catch {
       // ignore errors
@@ -323,14 +334,10 @@ export async function removeCreatorFromDiscord(creatorId) {
     }
   }
 
-  await supabase
-    .from("campaign_creators")
-    .update({
-      channel_id: null,
-      webhook_url: null,
-    })
-    .eq("id", creatorId);
-
+  await updateTable("creator_instances", creatorId, {
+    chat_id: null,
+    chat_url: null,
+  });
   return { message: "Creator channel deleted and removed from group chat" };
 }
 
@@ -355,13 +362,20 @@ export async function createGroupChat(campaignId) {
     .single();
   if (clientError || !client) throw new Error("Client not found");
 
-  const { data: creators, error: creatorsError } = await supabase
-    .from("campaign_creators")
-    .select("discord_id")
-    .eq("campaign_id", campaignId)
-    .eq("selected", true);
-  if (creatorsError || !creators.length)
+  let creators = await queryTable(
+    "creators",
+    await searchTable(
+      "creator_instances",
+      { campaign_id: campaignId },
+      CreatorStatus.CREATOR_APPROVED,
+      "creator_id",
+    ).map((i) => i.creator_id),
+    "discord_id",
+  );
+
+  if (!creators) {
     throw new Error("No selected creators found");
+  }
 
   const guild = discord.guilds.cache.get(campaign.server_id);
   if (!guild) throw new Error("Guild not found");
