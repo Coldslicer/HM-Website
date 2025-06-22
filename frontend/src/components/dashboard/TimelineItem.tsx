@@ -52,9 +52,9 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ creator, onOpenPopup }) => 
           {/* Contract Signed */}
           <div className="flex-1">
             <div
-              className={`p-4 rounded-md ${
-                contractComplete 
-                  ? "bg-orange-500 text-white" 
+              className={`p-4 rounded-md min-h-[96px] ${
+                contractComplete
+                  ? "bg-orange-500 text-white"
                   : "border-2 border-gray-300 bg-gray-50"
               } text-center mx-2`}
             >
@@ -87,9 +87,9 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ creator, onOpenPopup }) => 
           {/* Draft Submitted */}
           <div className="flex-1">
             <div
-              className={`p-4 rounded-md ${
-                draftComplete 
-                  ? "bg-orange-500 text-white" 
+              className={`p-4 rounded-md min-h-[96px] ${
+                draftComplete
+                  ? "bg-orange-500 text-white"
                   : "border-2 border-gray-300 bg-gray-50"
               } text-center mx-2`}
             >
@@ -119,9 +119,9 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ creator, onOpenPopup }) => 
           {/* Live Submitted */}
           <div className="flex-1">
             <div
-              className={`p-4 rounded-md ${
-                finalComplete 
-                  ? "bg-orange-500 text-white" 
+              className={`p-4 rounded-md min-h-[96px] ${
+                finalComplete
+                  ? "bg-orange-500 text-white"
                   : "border-2 border-gray-300 bg-gray-50"
               } text-center mx-2`}
             >
