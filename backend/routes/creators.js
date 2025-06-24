@@ -1,10 +1,10 @@
 import express from "express";
 import axios from "axios";
-import { supabase } from "../util/clients.js";
+import {supabase} from "../util/clients.js";
 
 const router = express.Router();
 
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY; // Replace with your YouTube API key
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 async function extractChannelId(url) {
   const usernameMatch = url.match(/@([\w\d._-]+)/);
@@ -68,7 +68,7 @@ async function getVideoData(channelId) {
     `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds}&key=${YOUTUBE_API_KEY}`,
   );
 
-  console.log("response: " + videoResponse.data);
+  console.log("[Info] YouTube API response: " + videoResponse.data);
 
   const videos = videoResponse.data.items;
   const totalViews = videos.reduce((sum, video) => {
@@ -82,6 +82,27 @@ async function getVideoData(channelId) {
   };
 }
 
+router.get("/discord-tag-to-id", async (req, res) => {
+  const {discord_tag} = req.query;
+
+    if (!discord_tag) {
+      console.log("[Error] No discord tag provided");
+      return res.status(400).json({error: "Discord tag is required"});
+    }
+    try {
+      // await fetchAllGuildMembers(); // for seeing the server's members
+
+      const response = {
+        discordId: await lookupDiscordId(discord_tag)
+      };
+
+      res.json(response);
+    } catch (err) {
+      console.log("[Error] Problem with getting discord ID: " + err);
+      return res.status(400).json({error: "Problem with getting discord ID"});
+    }
+});
+
 router.get("/channel-data", async (req, res) => {
   const { url, id } = req.query;
 
@@ -93,10 +114,10 @@ router.get("/channel-data", async (req, res) => {
 
   if (!error) {
     console.log(
-      "fetched cache for channel " +
-        url +
-        "\n" +
-        `channelTitle: ${data.handle},\nsubscriberCount: ${data.follower_count},\ncountry: ${data.country},\naverageViews: ${data.average_views}`,
+      "[Info] Fetched cache for channel " +
+      url +
+      "\n" +
+      `channelTitle: ${data.handle},\nsubscriberCount: ${data.follower_count},\ncountry: ${data.country},\naverageViews: ${data.average_views}`,
     );
     return res.json({
       channelTitle: data.handle,
@@ -108,9 +129,9 @@ router.get("/channel-data", async (req, res) => {
   }
 
   console.log(
-    "unable to fetch cache for channel " +
-      url +
-      "\nIf this is not the first query, please check infrastructure to limit api calls",
+    "[Info] Unable to fetch cache for channel " +
+    url +
+    "\nIf this is not the first query, please check infrastructure to limit api calls",
   );
 
   if (!url) {
@@ -156,5 +177,105 @@ router.get("/channel-data", async (req, res) => {
     });
   }
 });
+
+/**
+ * @typedef {Object} DiscordUser
+ * @property {string} id              – Snowflake ID (e.g. "767458854249824328")
+ * @property {string} username        – The user’s display name
+ * @property {string} [discriminator] – Optional four-digit tag
+ */
+
+/**
+ * @typedef {Object} DiscordMember
+ * @property {DiscordUser} user
+ */
+
+/**
+ * Given a Discord “tag” (either "username#1234" or just "username"),
+ * looks up that user in a guild and returns their snowflake ID.
+ *
+ * @param {string} discordTag – The tag string from the query
+ * @returns {Promise<string>} Resolves to the user’s ID
+ * @throws {Error} If the format is invalid or the user isn’t found
+ */
+async function lookupDiscordId(discordTag) {
+  // Split into [username, discriminator?]
+  /** @type {[string, string|undefined]} */
+  const parts = discordTag.includes("#")
+    ? discordTag.split("#")
+    : [discordTag, undefined];
+
+  const username = parts[0];
+  const discriminator = parts[1];
+
+  if (!username) {
+    throw new Error('Invalid Discord tag; must include at least a username');
+  }
+
+  /** @type {string} Guild (server) ID from your .env */
+  const guildId = process.env.HOTSLICER_MEDIA_SERVER_ID;
+  /** @type {string} Bot token from your .env */
+  const botToken = process.env.DISCORD_TOKEN;
+
+  // Fetch up to 1,000 members whose username matches
+  // @type {DiscordMember[]}
+  const res = await axios.get(
+    `https://discord.com/api/v9/guilds/${guildId}/members/search`,
+    {
+      headers: {Authorization: `Bot ${botToken}`},
+      params: {query: username, limit: 1000},
+    }
+  );
+  const members = res.data;
+  console.log("[Info] Discord members: "+members);
+
+  // Find exact match on name + (if provided) discriminator
+  const match = members.find((m) =>
+    m.user.username === username &&
+    (discriminator ? m.user.discriminator === discriminator : true)
+  );
+
+  if (!match) {
+    throw new Error(`Discord user "${discordTag}" not found in guild ${guildId}`);
+  }
+
+  return match.user.id;
+}
+
+/**
+ * Fetches all members in a guild via the REST API (paginating by 1000).
+ * Logs each member as "username#discriminator ⇒ id".
+ */
+async function fetchAllGuildMembers() {
+  const guildId   = process.env.HOTSLICER_MEDIA_SERVER_ID;
+  const botToken  = process.env.DISCORD_TOKEN;
+  let allMembers = [];
+  let after      = '0';
+
+  try {
+    while (true) {
+      const res = await axios.get(
+        `https://discord.com/api/v9/guilds/${guildId}/members`,
+        {
+          headers: { Authorization: `Bot ${botToken}` },
+          params: { limit: 1000, after },
+        }
+      );
+      const batch = res.data;
+      console.log(`Fetched ${batch.length} members (after=${after})`);
+      allMembers = allMembers.concat(batch);
+      if (batch.length < 1000) break;
+      after = batch[batch.length - 1].user.id;
+    }
+
+    console.log(`\nTotal members fetched: ${allMembers.length}`);
+    allMembers.forEach(m => {
+      const u = m.user;
+      console.log(`${u.username}#${u.discriminator} ⇒ ${u.id}`);
+    });
+  } catch (err) {
+    console.error('Error fetching members:', err.response?.data || err.message);
+  }
+}
 
 export default router;
