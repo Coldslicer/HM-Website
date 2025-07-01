@@ -101,3 +101,25 @@ export async function sendMessage(channelId, message) {
   }
   await channel.send(message);
 }
+
+/**
+ * Sends a DM to a user.
+ * @param {{ userId: string, message: string }} params
+ * @returns {Promise<{ sentTo?: string, error?: string }>}
+ */
+export async function handleDm({ userId, message }) {
+  try {
+    const user = await discord.users.fetch(userId);
+    if (!user) {
+      return { error: "User not found." };
+    }
+
+    const dmChannel = await user.createDM();
+    await dmChannel.send(message);
+
+    return { sentTo: user.tag };
+  } catch (err) {
+    console.error("[handleDm] Failed to DM user:", err);
+    return { error: "Failed to send DM." };
+  }
+}

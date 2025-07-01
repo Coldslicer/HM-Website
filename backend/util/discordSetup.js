@@ -359,59 +359,16 @@ const handleEditRatesCommand = async (interaction) => {
 
 async function handleJoinCommand(interaction) {
   try {
-    // Extract required options
     const join_code = interaction.options.getString("join_code");
-    const name = interaction.options.getString("name");
-    const email = interaction.options.getString("email");
-    const channel_name = interaction.options.getString("channel_name");
-    const channel_url = interaction.options.getString("channel_url");
-    const deliverables = interaction.options.getString("deliverables");
-    const personal_statement =
-      interaction.options.getString("personal_statement");
-
-    const isAdmin = interaction.member.permissions?.has?.("Administrator");
-    const discord_id =
-      interaction.options.getString("discord_id") || interaction.user.id;
-
-    if (discord_id !== interaction.user.id && !isAdmin) {
-      return await interaction.reply({
-        content:
-          "Only admins can register others for a campaign. Encourage this user to register themselves!",
-        ephemeral: true,
-      });
-    }
-
-    const agreement = interaction.options.getBoolean("agreement");
-
-    // Optional rate fields (fallback to 0)
     const rate = interaction.options.getNumber("rate") ?? 0;
     const rate_cpm = interaction.options.getNumber("rate_cpm") ?? 0;
     const cpm_capRaw = interaction.options.getNumber("cpm_cap") ?? 0;
     const cpm_cap = rate_cpm > 0 && cpm_capRaw > 0 ? cpm_capRaw : null;
+    const discord_id = interaction.user.id;
 
-    // Basic required field validation
     if (!join_code) {
       return await interaction.reply({
         content: "Join code is required.",
-        ephemeral: true,
-      });
-    }
-    if (!agreement) {
-      return await interaction.reply({
-        content:
-          "You must agree to our terms to join. Contact staff if you need assistance.",
-        ephemeral: true,
-      });
-    }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return await interaction.reply({
-        content: "Please provide a valid email address.",
-        ephemeral: true,
-      });
-    }
-    if (!discord_id) {
-      return await interaction.reply({
-        content: "Discord ID is required.",
         ephemeral: true,
       });
     }
@@ -422,6 +379,7 @@ async function handleJoinCommand(interaction) {
         ephemeral: true,
       });
     }
+
     if (rate < 0 || rate_cpm < 0 || cpm_capRaw < 0) {
       return await interaction.reply({
         content: "Rates cannot be negative.",
@@ -429,7 +387,6 @@ async function handleJoinCommand(interaction) {
       });
     }
 
-    // Validate Discord ID
     const discordValid = await validateDiscordId(discord_id);
     if (!discordValid) {
       return await interaction.reply({
@@ -438,7 +395,6 @@ async function handleJoinCommand(interaction) {
       });
     }
 
-    // Decode join code
     const campaign = await CodeFunctions.decodeJoinCode(join_code);
     if (!campaign?.id) {
       return await interaction.reply({
@@ -446,24 +402,22 @@ async function handleJoinCommand(interaction) {
         ephemeral: true,
       });
     }
-    const campaign_id = campaign.id;
 
-    // Insert creator record into Supabase
     const { data: creator, error: insertError } = await supabase
       .from("campaign_creators")
       .insert([
         {
-          campaign_id,
-          name,
-          email,
-          channel_name,
-          channel_url,
-          deliverables,
+          campaign_id: campaign.id,
+          name: null,
+          email: null,
+          channel_name: "",
+          channel_url: "",
+          deliverables: null,
+          personal_statement: "",
+          discord_id,
           rate,
           rate_cpm,
           cpm_cap,
-          personal_statement,
-          discord_id,
           selected: false,
         },
       ])
@@ -479,10 +433,8 @@ async function handleJoinCommand(interaction) {
       });
     }
 
-    // Add creator to Discord channels
     await addCreatorToDiscord(creator.id);
 
-    // Fetch webhook URL
     const { data: creatorWithWebhook, error: webhookError } = await supabase
       .from("campaign_creators")
       .select("webhook_url")
@@ -497,7 +449,6 @@ async function handleJoinCommand(interaction) {
       });
     }
 
-    // Send confirmation message to creator
     await fetch(creatorWithWebhook.webhook_url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -529,6 +480,7 @@ WARM`,
     });
   }
 }
+
 
 const handleGetLink = async (interaction) => {
   const join_code = interaction.options.getString("join_code");

@@ -1,8 +1,12 @@
 import express from "express";
 import {
   fetchMessages,
+  // message to any channel type
   sendDM,
+  // message to a known channel
   sendMessage,
+  // literally a DM
+  handleDm,
 } from "../handlers/message_functions.js";
 
 const router = express.Router();
@@ -55,6 +59,27 @@ router.get("/read-messages/:channelId", async (req, res) => {
   } catch (error) {
     console.error("Error reading messages:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/dm", async (req, res) => {
+  try {
+    const { userId, message } = req.body;
+
+    if (!userId || !message) {
+      return res.status(400).json({ error: "Missing userId or message." });
+    }
+
+    const result = await handleDm({ userId, message });
+
+    if (result.error) {
+      return res.status(500).json({ error: result.error });
+    }
+
+    return res.status(200).json({ success: true, sentTo: result.sentTo });
+  } catch (err) {
+    console.error("[/dm] Unhandled error:", err);
+    return res.status(500).json({ error: "Internal server error." });
   }
 });
 

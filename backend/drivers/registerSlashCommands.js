@@ -48,93 +48,33 @@ const commands = [
 
   // CREATOR MANAGEMENT
   new SlashCommandBuilder()
-    .setName("join")
-    .setDescription("Join a campaign using a valid join code")
-    .addStringOption((option) =>
-      option
-        .setName("join_code")
-        .setDescription("The join code you were provided")
-        .setRequired(true),
-    )
-    .addStringOption((option) =>
-      option.setName("name").setDescription("Your name").setRequired(true),
-    )
-    .addStringOption((option) =>
-      option
-        .setName("email")
-        .setDescription("Your contact email")
-        .setRequired(true),
-    )
-    .addStringOption((option) =>
-      option
-        .setName("channel_name")
-        .setDescription("The name of your channel")
-        .setRequired(true),
-    )
-    .addStringOption((option) =>
-      option
-        .setName("channel_url")
-        .setDescription("A link to your channel (only Youtube is supported)")
-        .setRequired(true),
-    )
-    .addStringOption((option) =>
-      option
-        .setName("deliverables")
-        .setDescription("Select your deliverable type")
-        .setRequired(true)
-        .addChoices(
-          {
-            name: "Longform Integration (30s)",
-            value: "Longform Integration (30s)",
-          },
-          {
-            name: "Longform Integration (60s)",
-            value: "Longform Integration (60s)",
-          },
-          { name: "Shortform Video", value: "Shortform Video" },
-          { name: "Dedicated Longform", value: "Dedicated Longform" },
-        ),
-    )
-    .addStringOption((option) =>
-      option
-        .setName("personal_statement")
-        .setDescription("Why should the campaign select you?")
-        .setRequired(true),
-    )
-    .addBooleanOption((option) =>
-      option
-        .setName("agreement")
-        .setDescription(
-          "I understand that Hotslicer Media takes a 15% cut and agree to follow through if selected",
-        )
-        .setRequired(true),
-    )
-    .addNumberOption((option) =>
-      option
-        .setName("rate")
-        .setDescription("Your flat rate (optional)")
-        .setRequired(false),
-    )
-    .addNumberOption((option) =>
-      option
-        .setName("rate_cpm")
-        .setDescription("Your CPM rate (optional)")
-        .setRequired(false),
-    )
-    .addNumberOption((option) =>
-      option
-        .setName("cpm_cap")
-        .setDescription(
-          "Your CPM cap (optional, this is the max amount you'll be paid in CPM)",
-        )
-        .setRequired(false),
-    )
-    .addStringOption((option) =>
-      option
-        .setName("discord_id")
-        .setDescription("Your discord I (only admins may register others)")
-        .setRequired(false),
-    ),
+  .setName("join")
+  .setDescription("Join a campaign using a valid join code")
+  .addStringOption((option) =>
+    option
+      .setName("join_code")
+      .setDescription("The join code you were provided")
+      .setRequired(true)
+  )
+  .addNumberOption((option) =>
+    option
+      .setName("rate")
+      .setDescription("Your flat rate (optional)")
+      .setRequired(false)
+  )
+  .addNumberOption((option) =>
+    option
+      .setName("rate_cpm")
+      .setDescription("Your CPM rate (optional)")
+      .setRequired(false)
+  )
+  .addNumberOption((option) =>
+    option
+      .setName("cpm_cap")
+      .setDescription("CPM cap (optional)")
+      .setRequired(false)
+  ),
+
   new SlashCommandBuilder()
     .setName("editrates")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)

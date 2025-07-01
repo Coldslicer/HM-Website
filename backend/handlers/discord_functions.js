@@ -2,6 +2,7 @@
 
 import { supabase, discord } from "../util/clients.js";
 import { PermissionsBitField, ChannelType } from "discord.js";
+import stringSimilarity from "string-similarity";
 
 /**
  * Validate if discordId corresponds to a Discord user.
@@ -419,3 +420,57 @@ export async function createGroupChat(campaignId) {
 
   return { message: "Group chat created successfully" };
 }
+
+/**
+ * Looks up a Discord ID from a tag, using fuzzy matching if needed.
+ * @param {import("discord.js").Client} discord - Your Discord client
+ * @param {string} inputTag - The user-provided Discord tag or username
+ * @returns {Promise<Object>} - { id, matchType, matchedAs?, similarity? }
+ */
+export async function getDiscordIdFromTag(discord, inputTag) {
+  if (!inputTag) {
+    throw new Error("Missing tag");
+  }
+
+  const allMembers = [];
+
+  for (const [, guild] of discord.guilds.cache) {
+    const members = await guild.members.fetch();
+    members.forEach((member) => {
+      allMembers.push(member.user);
+    });
+  }
+
+  const exact = allMembers.find(
+    (u) => u.tag === inputTag || u.username === inputTag
+  );
+  if (exact) {
+    return { id: exact.id, matchType: "exact" };
+  }
+
+  const tags = allMembers.map((u) => u.tag);
+  const usernames = allMembers.map((u) => u.username);
+  const allNames = [...tags, ...usernames];
+
+  const matches = stringSimilarity.findBestMatch(inputTag, allNames);
+  const bestMatch = matches.bestMatch;
+  const bestValue = bestMatch.target;
+  const similarity = bestMatch.rating;
+
+  if (similarity > 0.6) {
+    const matchedUser = allMembers.find(
+      (u) => u.tag === bestValue || u.username === bestValue
+    );
+    if (matchedUser) {
+      return {
+        id: matchedUser.id,
+        matchType: "fuzzy",
+        matchedAs: bestValue,
+        similarity: similarity.toFixed(2),
+      };
+    }
+  }
+
+  throw new Error("No sufficiently similar user found");
+}
+
