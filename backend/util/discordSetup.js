@@ -640,13 +640,19 @@ const ON_USER_JOIN = async (member) => {
 
   try {
     await member.send(`
-Hey ${member.user.username}, welcome to **${member.guild.name}**, so excited to have you here.
-This is **not** just a regular Discord server. It’s a **sponsorship hub**. 
+Hey ${member.user.username},
 
-Comments or concerns? DM our CEO personally right now: <@655866521117130752>
-Otherwise, please check pings from the server, they are **ONLY** for sponsorship offers!
+Welcome to **${member.guild.name}**, we're so excited to have you here!
+This server is **NOT** a regular Discord server, it's a sponsorship hub.
 
-Hope you have a great time here!`);
+Before getting started, we request that you fill out this 2 minute form, it is **mandatory** to recieve sponsorship offers:
+https://forms.gle/s573MEVZsFmEaEgP9
+
+For any concerns or inquiries, message our CEO: <@655866521117130752>
+Please frequently check the server, we **ONLY** ping for sponsorship offers!
+
+We hope you have a great time here!
+    `);
   } catch (error) {
     console.error(`Could not DM the user: ${error}`);
   }
