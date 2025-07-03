@@ -1,5 +1,5 @@
 // Max amount of scrapes per run (bc it costs money)
-const SCRAPE_LIMIT = 5;
+const SCRAPE_LIMIT = 100;
 
 /* ================ [ IMPORTS ] ================ */
 
