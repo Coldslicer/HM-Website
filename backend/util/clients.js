@@ -50,3 +50,24 @@ const discord = new Client({
 
 // Export client
 export { discord };
+
+/* ================ [ APIFY ] ================ */
+
+// Apify tiktok scraper endpoint
+const tiktok = `https://api.apify.com/v2/acts/clockworks~tiktok-scraper/run-sync-get-dataset-items?token=${process.env.APIFY_TOKEN}`
+
+// Export endpoint
+export { tiktok };
+
+/* ================ [ CHATGPT ] ================ */
+
+// Imports
+import OpenAI from "openai";
+
+// OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_KEY,
+});
+
+// Export client
+export { openai };

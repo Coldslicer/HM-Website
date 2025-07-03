@@ -1,10 +1,9 @@
 /* ================ [ SETUP ] ================ */
 
-import "../util/clients.js";
+import { discord } from "../util/clients.js";
 
 /* ================ [ IMPORTS ] ================ */
 
-import { discord } from "../util/clients.js";
 import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 
 /* ================ [ COMMANDS ] ================ */
