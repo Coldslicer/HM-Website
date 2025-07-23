@@ -1,15 +1,21 @@
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 import { config } from "dotenv";
+config({ path: '../.env' }); // specify path if your .env is outside the current folder
 import fs from "fs";
-import path from "path";
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 config();
 
-const token = process.env.BOT_TOKEN;
+const token = process.env.DISCORD_TOKEN;
 const serverId = process.env.SERVER_ID;
 
 if (!token) {
-  console.error("BOT_TOKEN environment variable not found");
+  console.error("DISCORD_TOKEN environment variable not found");
   process.exit(1);
 }
 
@@ -53,7 +59,7 @@ function saveSent(sent) {
 }
 
 const messageTemplate =
-  "Hey @[username]!\n\n" +
+  "Hey [username]\n\n" +
   "This is the WARM Bot from Hotslicer Media, the sponsorships Discord server. \n\n" +
   "Can you please take 2 minutes fill out this form? https://forms.gle/QuYAorMpW5c4LJvu9\n\n" +
   "Without this info, **you will be missing out on sponsorships!** Brands need this data to decide who to sponsor. \nPlease fill it out ASAP!\n\n" +
@@ -68,10 +74,14 @@ client.once("ready", async () => {
   const guild = await client.guilds.fetch(serverId);
   const members = await guild.members.fetch();
 
+  // console.log("Members: ", members);
+
   const unfound = new Set(names);
   const toMessage = [];
 
   for (const member of members.values()) {
+    // console.log("Name: ", member.user.username);
+    // console.log("Unfound: ", unfound);
     if (unfound.has(member.user.username)) {
       toMessage.push(member);
       unfound.delete(member.user.username);
@@ -79,9 +89,12 @@ client.once("ready", async () => {
   }
 
   for (const member of toMessage) {
-    if (sent.has(member.id)) continue;
+    if (sent.has(member.id)) {
+      console.log("Already sent to \"", member.user.tag, "\" - skipping");
+      continue;
+    }
     try {
-      const msg = messageTemplate.replace("[username]", member.user.username);
+      const msg = messageTemplate.replace("[username]", "<@"+member.id+">");
       await member.send(msg);
       console.log(`✅ Sent to ${member.user.tag}`);
       sent.add(member.id);
@@ -91,7 +104,7 @@ client.once("ready", async () => {
     }
   }
 
-  if (unfound.size) {
+  if (unfound.size > 0) {
     console.log("\nUnresolved usernames:");
     for (const name of unfound) {
       console.log(` - ${name}`);
