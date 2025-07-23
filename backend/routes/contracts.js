@@ -1,26 +1,26 @@
-import express from 'express';
-import axios from 'axios';
-import { DISCORD_CLIENT, SUPABASE_CLIENT } from '../util/setup.js';
+import express from "express";
+import axios from "axios";
+import { discord, supabase } from "../util/clients.js";
 
-import fs from 'fs';
-import path from 'path';
-import ejs from 'ejs';
-import he from 'he';  // Import the 'he' library for decoding HTML entities
+import fs from "fs";
+import path from "path";
+import ejs from "ejs";
+import he from "he"; // Import the 'he' library for decoding HTML entities
 
-import { fileURLToPath } from 'url'; // Import necessary method from 'url'
+import { fileURLToPath } from "url"; // Import necessary method from 'url'
 
 const API_KEY = process.env.DOCUSEAL_API_KEY;
 
 // Function to get campaign details from Supabase
 async function getCampaignDetails(campaignId) {
-  const { data, error } = await SUPABASE_CLIENT
-    .from('campaigns')
-    .select('*')
-    .eq('id', campaignId)
+  const { data, error } = await supabase
+    .from("campaigns")
+    .select("*")
+    .eq("id", campaignId)
     .single();
 
   if (error) {
-    console.error('Error fetching campaign details:', error);
+    console.error("Error fetching campaign details:", error);
     return null;
   }
   return data;
@@ -28,13 +28,13 @@ async function getCampaignDetails(campaignId) {
 
 // Function to get creator details from Supabase
 async function getCreatorsForCampaign(campaignId, fullyManaged) {
-  const { data, error } = await SUPABASE_CLIENT
-    .from('campaign_creators')
-    .select('*')
-    .eq('campaign_id', campaignId);
+  const { data, error } = await supabase
+    .from("campaign_creators")
+    .select("*")
+    .eq("campaign_id", campaignId);
 
   if (error) {
-    console.error('Error fetching creators:', error);
+    console.error("Error fetching creators:", error);
     return [];
   }
 
@@ -49,9 +49,8 @@ async function getCreatorsForCampaign(campaignId, fullyManaged) {
   return data;
 }
 
-
 // Function to load HTML template from file and decode HTML entities
-function loadHtmlTemplate(templatePath = '../assets/CAMPAIGNCONTRACTWITHFIELDS.html') {
+function loadHtmlTemplate(templatePath = "../assets/contract.html") {
   try {
     // Get the directory of the current module (using import.meta.url)
     const __filename = fileURLToPath(import.meta.url);
@@ -59,20 +58,19 @@ function loadHtmlTemplate(templatePath = '../assets/CAMPAIGNCONTRACTWITHFIELDS.h
 
     // Resolve the path to the HTML template using __dirname
     const templateFilePath = path.resolve(__dirname, templatePath);
-    
+
     // Read the HTML template file
-    const template = fs.readFileSync(templateFilePath, 'utf-8');
-    
+    const template = fs.readFileSync(templateFilePath, "utf-8");
+
     // Decode HTML entities in the template to get the correct text
     const decodedTemplate = he.decode(template);
-    
+
     return decodedTemplate;
   } catch (err) {
-    console.error('Error loading template file:', err);
-    return '';
+    console.error("Error loading template file:", err);
+    return "";
   }
 }
-
 
 // Function to upload the contract template to DocuSeal
 async function uploadTemplateToDocuSeal(htmlContent, campaignId) {
@@ -91,23 +89,27 @@ async function uploadTemplateToDocuSeal(htmlContent, campaignId) {
         </body>
       </html>
     `;
-    
+
     // Make a POST request to DocuSeal to upload the template
-    const response = await axios.post('https://api.docuseal.com/templates/html', {
-      name: 'Campaign Contract '+campaignId, // Template name
-      html_body: fullHtml, // Send the full HTML structure here as 'html_body'
-      folder_name: 'Client Contracts', // Specify the category here
-    }, {
-      headers: {
-        'X-Auth-Token': API_KEY,
-        'Content-Type': 'application/json',
+    const response = await axios.post(
+      "https://api.docuseal.com/templates/html",
+      {
+        name: "Campaign Contract " + campaignId, // Template name
+        html_body: fullHtml, // Send the full HTML structure here as 'html_body'
+        folder_name: "Client Contracts", // Specify the category here
       },
-    });
-    
-    console.log('Template uploaded successfully:', response.data);
+      {
+        headers: {
+          "X-Auth-Token": API_KEY,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    console.log("Template uploaded successfully:", response.data);
     return response.data.id; // Get the document ID from the response
   } catch (error) {
-    console.error('Error uploading template to DocuSeal:', error);
+    console.error("Error uploading template to DocuSeal:", error);
     return null;
   }
 }
@@ -129,15 +131,17 @@ async function generateContract(campaignId, fullyManaged) {
   // Ensure that the data passed matches the placeholders in the HTML template
   const renderedHtml = ejs.render(htmlTemplate, {
     campaign: campaign,
-    creators: creators
+    creators: creators,
   });
 
   // Upload the rendered HTML to DocuSeal
-  const documentId = await uploadTemplateToDocuSeal(renderedHtml,campaignId);
+  const documentId = await uploadTemplateToDocuSeal(renderedHtml, campaignId);
   if (documentId) {
-    console.log(`Template uploaded successfully with Document ID: ${documentId}`);
+    console.log(
+      `Template uploaded successfully with Document ID: ${documentId}`,
+    );
   } else {
-    console.log('Failed to upload template.');
+    console.log("Failed to upload template.");
   }
   return documentId;
 }
@@ -148,141 +152,170 @@ async function generateContract(campaignId, fullyManaged) {
 
 const router = express.Router();
 
-router.get('/client-form', async (req, res) => {
+router.get("/client-form", async (req, res) => {
   const { campaign_id, signer_email, fully_managed } = req.query;
   const fullyManaged = fully_managed === "true";
 
   if (!campaign_id) {
-    console.log('query did not provide campaign_id');
-    return res.status(400).json({ error: 'Campaign ID is required' });
+    console.log("query did not provide campaign_id");
+    return res.status(400).json({ error: "Campaign ID is required" });
   }
 
   // Fetch existing contract data
-  const { data: existingData, error: fetchError } = await SUPABASE_CLIENT
+  const { data: existingData, error: fetchError } = await supabase
     .from("campaigns")
     .select("id, contract_json, name")
     .eq("id", campaign_id)
     .single();
 
   if (fetchError) {
-    console.error('Error fetching Supabase data:', fetchError.message);
-    return res.status(500).json({ error: 'Failed to fetch Supabase campaign data' });
+    console.error("Error fetching Supabase data:", fetchError.message);
+    return res
+      .status(500)
+      .json({ error: "Failed to fetch Supabase campaign data" });
   }
 
-  if (existingData?.contract_json && Array.isArray(existingData.contract_json) && existingData.contract_json.length > 1) {
-    console.log('Returning stored contract JSON.');
+  if (
+    existingData?.contract_json &&
+    Array.isArray(existingData.contract_json) &&
+    existingData.contract_json.length > 1
+  ) {
+    console.log("Returning stored contract JSON.");
     return res.json({
       embed_src: existingData.contract_json[1].embed_src,
-      external_id: existingData.contract_json[1].external_id
+      external_id: existingData.contract_json[1].external_id,
     });
   }
 
   // If no stored contract, ensure signer_email is provided for generating a new one
   if (!signer_email) {
-    console.log('query did not provide signer_email');
-    return res.status(400).json({ error: 'Signer email is required' });
+    console.log("query did not provide signer_email");
+    return res.status(400).json({ error: "Signer email is required" });
   }
 
   try {
     const templateId = await generateContract(campaign_id, fullyManaged);
     if (!templateId) {
-      return res.status(500).json({ error: 'Error creating submission' });
+      return res.status(500).json({ error: "Error creating submission" });
     }
     const submissionData = {
       template_id: templateId,
       send_email: false,
       // external_id: campaign_id,
-      order: 'preserved',
+      order: "preserved",
       submitters: [
         {
           email: signer_email,
-          role: 'client',
+          role: "client",
           external_id: campaign_id,
           fields: [
             {
-              name: 'FullyManagedCampaign',
-              default_value: fullyManaged ? "Client has opted for Fully Managed Campaign services. Client acknowledges an additional 15% fee applies to each Influencer’s rate as reflected in the table or invoice." : "Client has not opted for Fully Managed Campaign services and agrees to manage all Influencer communications and logistics.",
-              readonly: false
+              name: "FullyManagedCampaign",
+              default_value: fullyManaged
+                ? "Client has opted for Fully Managed Campaign services. Client acknowledges an additional 15% fee applies to each Influencer’s rate as reflected in the table or invoice."
+                : "Client has not opted for Fully Managed Campaign services and agrees to manage all Influencer communications and logistics.",
+              readonly: false,
             },
-          ]
+          ],
         },
         {
           email: process.env.AGENCY_EMAIL,
-          role: 'agency',
+          role: "agency",
         },
       ],
     };
 
-    const response = await axios.post('https://api.docuseal.com/submissions', submissionData, {
-      headers: { 'X-Auth-Token': API_KEY, 'content-type': 'application/json' }
-    });
+    const response = await axios.post(
+      "https://api.docuseal.com/submissions",
+      submissionData,
+      {
+        headers: {
+          "X-Auth-Token": API_KEY,
+          "content-type": "application/json",
+        },
+      },
+    );
 
     const clientEmbedSrc = response.data[0].embed_src;
 
     res.json({ embed_src: clientEmbedSrc, external_id: campaign_id });
 
     // Update Supabase with the contract JSON
-    const { error: updateError } = await SUPABASE_CLIENT
+    const { error: updateError } = await supabase
       .from("campaigns")
       .update({ contract_json: response.data })
       .eq("id", campaign_id);
 
-    if (updateError) console.error('Error updating Supabase:', updateError.message);
-
+    if (updateError)
+      console.error("Error updating Supabase:", updateError.message);
   } catch (error) {
-    console.error('An error occurred while creating the submission:', error);
-    console.error('Error response:', error.response?.data || error.message);
+    console.error("An error occurred while creating the submission:", error);
+    console.error("Error response:", error.response?.data || error.message);
 
     if (!res.headersSent) {
-      return res.status(500).json({ error: "An error occurred during API call" });
+      return res
+        .status(500)
+        .json({ error: "An error occurred during API call" });
     }
   }
 });
 
-router.post('/creator-forms', async (req, res) => {
+router.post("/creator-forms", async (req, res) => {
   const { campaign_id } = req.body; // Using req.body to retrieve the campaign_id
 
   // Validate inputs
   if (!campaign_id) {
-    console.log('query did not provide campaign_id');
-    return res.status(400).json({ error: 'Campaign ID is required' });
+    console.log("query did not provide campaign_id");
+    return res.status(400).json({ error: "Campaign ID is required" });
   }
 
   try {
     // Fetch creators who are selected for the campaign
-    const { data: creatorsData, error: fetchCreatorsError } = await SUPABASE_CLIENT
-      .from('campaign_creators')
-      .select('id, campaign_id, channel_name, deliverables, rate, rate_cpm, channel_url, name, discord_id, webhook_url, email')
-      .eq('campaign_id', campaign_id)
-      .eq('selected', true); // Only selected creators
+    const { data: creatorsData, error: fetchCreatorsError } = await supabase
+      .from("campaign_creators")
+      .select(
+        "id, campaign_id, channel_name, deliverables, rate, rate_cpm, channel_url, name, discord_id, webhook_url, email",
+      )
+      .eq("campaign_id", campaign_id)
+      .eq("selected", true); // Only selected creators
 
     if (fetchCreatorsError) {
-      console.error('Error fetching creators data:', fetchCreatorsError.message);
-      return res.status(500).json({ error: 'Failed to fetch creator data' });
+      console.error(
+        "Error fetching creators data:",
+        fetchCreatorsError.message,
+      );
+      return res.status(500).json({ error: "Failed to fetch creator data" });
     }
 
     // Check if creators data exists
     if (!creatorsData || creatorsData.length === 0) {
-      console.log('No selected creators found for the given campaign_id');
-      return res.status(400).json({ error: 'No selected creators found for the provided campaign_id' });
+      console.log("No selected creators found for the given campaign_id");
+      return res.status(400).json({
+        error: "No selected creators found for the provided campaign_id",
+      });
     }
 
     // Fetch campaign data using campaign_id
-    const { data: campaignData, error: fetchCampaignError } = await SUPABASE_CLIENT
-      .from('campaigns')
-      .select('date, brief_url, company_name')
-      .eq('id', campaign_id)
+    const { data: campaignData, error: fetchCampaignError } = await supabase
+      .from("campaigns")
+      .select("date, brief_url, company_name")
+      .eq("id", campaign_id)
       .single();
 
     if (fetchCampaignError) {
-      console.error('Error fetching campaign data:', fetchCampaignError.message);
-      return res.status(500).json({ error: 'Failed to fetch campaign data' });
+      console.error(
+        "Error fetching campaign data:",
+        fetchCampaignError.message,
+      );
+      return res.status(500).json({ error: "Failed to fetch campaign data" });
     }
 
     // Check if campaign data exists
     if (!campaignData) {
-      console.log('No campaign data found for the given campaign_id');
-      return res.status(400).json({ error: 'No campaign data found for the provided campaign_id' });
+      console.log("No campaign data found for the given campaign_id");
+      return res
+        .status(400)
+        .json({ error: "No campaign data found for the provided campaign_id" });
     }
 
     // Process each selected creator and submit the contract for them
@@ -290,57 +323,68 @@ router.post('/creator-forms', async (req, res) => {
       try {
         // Prepare submission data for the creator contract
         const submissionData = {
-          template_id: 772682,  // Assuming this template ID is correct for creator contracts
+          template_id: 772682, // Assuming this template ID is correct for creator contracts
           send_email: false,
           external_id: creatorData.id,
           submitters: [
             {
-              email: process.env.AGENCY_EMAIL,  // Assuming the agency email is used here
-              role: 'agency',
+              email: process.env.AGENCY_EMAIL, // Assuming the agency email is used here
+              role: "agency",
               fields: [
                 {
-                  name: 'Handle',
-                  default_value: creatorData.channel_name || 'No handle provided', // Use the creator's channel name
+                  name: "Handle",
+                  default_value:
+                    creatorData.channel_name || "No handle provided", // Use the creator's channel name
                 },
                 {
-                  name: 'URL',
-                  default_value: creatorData.channel_url || 'No URL provided', // Use the creator's channel URL
+                  name: "URL",
+                  default_value: creatorData.channel_url || "No URL provided", // Use the creator's channel URL
                 },
                 {
-                  name: 'Brand',
-                  default_value: campaignData.company_name || 'Unknown Brand',  // Use the campaign's company name
+                  name: "Brand",
+                  default_value: campaignData.company_name || "Unknown Brand", // Use the campaign's company name
                 },
                 {
-                  name: 'Brief',
-                  default_value: campaignData.brief_url || 'No brief URL provided',  // Use the campaign's brief URL
+                  name: "Brief",
+                  default_value:
+                    campaignData.brief_url || "No brief URL provided", // Use the campaign's brief URL
                 },
                 {
-                  name: 'Deliverable',
-                  default_value: creatorData.deliverables || 'No deliverables specified',  // Use creator's deliverables if available
+                  name: "Deliverable",
+                  default_value:
+                    creatorData.deliverables || "No deliverables specified", // Use creator's deliverables if available
                 },
                 {
-                  name: 'Rate',
-                  default_value: (creatorData.rate || creatorData.rate_cpm || creatorData.cpm_cap
-                  ? [
-                      creatorData.rate ? `$${creatorData.rate * 0.85} Flat` : null,
-                      creatorData.rate_cpm ? `$${creatorData.rate_cpm * 0.85} CPM` : null,
-                      creatorData.cpm_cap ? `$${creatorData.cpm_cap * 0.85} CPM Cap` : null,
-                    ]
-                      .filter(Boolean)
-                      .join(', ')
-                  : 'TBD')
-                
+                  name: "Rate",
+                  default_value:
+                    creatorData.rate ||
+                    creatorData.rate_cpm ||
+                    creatorData.cpm_cap
+                      ? [
+                          creatorData.rate
+                            ? `$${creatorData.rate * 0.85} Flat`
+                            : null,
+                          creatorData.rate_cpm
+                            ? `$${creatorData.rate_cpm * 0.85} CPM`
+                            : null,
+                          creatorData.cpm_cap
+                            ? `$${creatorData.cpm_cap * 0.85} CPM Cap`
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .join(", ")
+                      : "TBD",
                 },
                 {
-                  name: 'Platform',
-                  default_value: 'YouTube',  // Default to YouTube
+                  name: "Platform",
+                  default_value: "YouTube", // Default to YouTube
                 },
               ],
             },
             {
               email: creatorData.email,
               name: creatorData.name,
-              role: 'creator',
+              role: "creator",
               external_id: creatorData.id,
             },
           ],
@@ -348,11 +392,11 @@ router.post('/creator-forms', async (req, res) => {
 
         // Make the API request to create the submission for the creator
         const response = await axios.request({
-          method: 'POST',
-          url: 'https://api.docuseal.com/submissions',
+          method: "POST",
+          url: "https://api.docuseal.com/submissions",
           headers: {
-            'X-Auth-Token': API_KEY,
-            'content-type': 'application/json',
+            "X-Auth-Token": API_KEY,
+            "content-type": "application/json",
           },
           data: submissionData,
         });
@@ -361,15 +405,21 @@ router.post('/creator-forms', async (req, res) => {
         const embedSrc = response.data[1]?.embed_src;
         if (embedSrc) {
           // Update Supabase with the contract embed link for the creator
-          const { error: updateError } = await SUPABASE_CLIENT
-            .from('campaign_creators')
+          const { error: updateError } = await supabase
+            .from("campaign_creators")
             .update({ contract_embed_link: embedSrc })
-            .eq('id', creatorData.id);
+            .eq("id", creatorData.id);
 
           if (updateError) {
-            console.error('Error updating Supabase with embed link:', updateError.message);
+            console.error(
+              "Error updating Supabase with embed link:",
+              updateError.message,
+            );
           } else {
-            console.log('Supabase updated with contract embed link successfully for creator:', creatorData.id);
+            console.log(
+              "Supabase updated with contract embed link successfully for creator:",
+              creatorData.id,
+            );
           }
 
           // If discord_id and webhook_url exist, send the Discord ping
@@ -381,29 +431,45 @@ router.post('/creator-forms', async (req, res) => {
             try {
               // Send the message to the Discord webhook
               await axios.post(creatorData.webhook_url, discordMessage);
-              console.log('Discord ping sent successfully for creator:', creatorData.id);
+              console.log(
+                "Discord ping sent successfully for creator:",
+                creatorData.id,
+              );
             } catch (discordError) {
-              console.error('Error sending Discord ping:', discordError.message);
+              console.error(
+                "Error sending Discord ping:",
+                discordError.message,
+              );
             }
           }
-
         } else {
-          console.error('Failed to retrieve the contract link for creator:', creatorData.id);
+          console.error(
+            "Failed to retrieve the contract link for creator:",
+            creatorData.id,
+          );
         }
       } catch (error) {
-        console.error('An error occurred while creating the contract for creator:', creatorData.id, error);
+        console.error(
+          "An error occurred while creating the contract for creator:",
+          creatorData.id,
+          error,
+        );
       }
     }
 
     // Send a success response
-    return res.json({ message: 'Contracts submitted for all selected creators successfully' });
+    return res.json({
+      message: "Contracts submitted for all selected creators successfully",
+    });
   } catch (error) {
-    console.error('An error occurred while processing the creator contracts:', error.message);
-    return res.status(500).json({ error: 'An error occurred during contract creation for creators' });
+    console.error(
+      "An error occurred while processing the creator contracts:",
+      error.message,
+    );
+    return res.status(500).json({
+      error: "An error occurred during contract creation for creators",
+    });
   }
 });
-
-
-
 
 export default router;

@@ -1,6 +1,6 @@
 // creatorInfo.js
 
-import { SUPABASE_CLIENT } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 
 export const CreatorInfoManager = {
   /**
@@ -9,7 +9,7 @@ export const CreatorInfoManager = {
    * @returns {Promise<Object|null>} - The creator info object or null if not found.
    */
   async get(creatorId) {
-    const { data, error } = await SUPABASE_CLIENT.from("creators")
+    const { data, error } = await supabase.from("creators")
       .select("*")
       .eq("creator_id", creatorId)
       .single();
@@ -29,7 +29,7 @@ export const CreatorInfoManager = {
    * @returns {Promise<boolean>} - True if successful, false otherwise.
    */
   async set(creatorId, info) {
-    const { error } = await SUPABASE_CLIENT.from("creators").upsert({
+    const { error } = await supabase.from("creators").upsert({
       creator_id: creatorId,
       ...info,
     });

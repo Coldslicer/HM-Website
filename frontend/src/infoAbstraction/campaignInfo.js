@@ -1,6 +1,6 @@
 // campaignInfo.js
 
-import { SUPABASE_CLIENT } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 
 export const CampaignInfoManager = {
   /**
@@ -9,7 +9,7 @@ export const CampaignInfoManager = {
    * @returns {Promise<Object|null>} - The campaign info object or null if not found.
    */
   async get(campaignId) {
-    const { data, error } = await SUPABASE_CLIENT.from("campaigns")
+    const { data, error } = await supabase.from("campaigns")
       .select("*")
       .eq("id", campaignId)
       .single();
@@ -28,7 +28,7 @@ export const CampaignInfoManager = {
    * @returns {Promise<Object[]|null>}
    */
   async listByClient(clientId) {
-    const { data, error } = await SUPABASE_CLIENT.from("campaigns")
+    const { data, error } = await supabase.from("campaigns")
       .select("*")
       .eq("client_id", clientId)
       .order("created_at", { ascending: false });
@@ -48,7 +48,7 @@ export const CampaignInfoManager = {
    * @returns {Promise<Object|null>}
    */
   async create(clientId, info) {
-    const { data, error } = await SUPABASE_CLIENT.from("campaigns")
+    const { data, error } = await supabase.from("campaigns")
       .insert({ client_id: clientId, ...info })
       .select()
       .single();
@@ -68,7 +68,7 @@ export const CampaignInfoManager = {
    * @returns {Promise<boolean>} - True if successful, false otherwise.
    */
   async set(campaignId, info) {
-    const { error } = await SUPABASE_CLIENT.from("campaign_info").upsert({
+    const { error } = await supabase.from("campaign_info").upsert({
       campaign_id: campaignId,
       ...info,
     });
@@ -88,7 +88,7 @@ export const CampaignInfoManager = {
    * @returns {RealtimeChannel}
    */
   subscribeStatus(campaignId, callback) {
-    const channel = SUPABASE_CLIENT.channel(`campaigns:${campaignId}`)
+    const channel = supabase.channel(`campaigns:${campaignId}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "campaigns", filter: `id=eq.${campaignId}` },

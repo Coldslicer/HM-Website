@@ -1,33 +1,38 @@
-import { SUPABASE_CLIENT } from './setup.js';
-import { DISCORD_CLIENT } from './setup.js';
-import { PermissionFlagsBits } from 'discord.js'
-import { ChannelType } from 'discord.js';
+import { supabase } from "./clients.js";
+import { discord } from "./clients.js";
+import { PermissionFlagsBits } from "discord.js";
+import { ChannelType } from "discord.js";
+import {
+  validateDiscordId,
+  addCreatorToDiscord,
+} from "../handlers/discord_functions.js"; // Your local function to validate Discord ID
+import * as CodeFunctions from "../handlers/joincode_functions.js";
 
 /* ================ [ HELPERS ] ================ */
 
 async function getCampaignCreatorEntryByChannel(channelId, userId) {
   // Check campaign_creators table for direct match on channel_id
-  const { data: creatorData } = await SUPABASE_CLIENT
-    .from('campaign_creators')
-    .select('*')
-    .eq('channel_id', channelId)
+  const { data: creatorData } = await supabase
+    .from("campaign_creators")
+    .select("*")
+    .eq("channel_id", channelId)
     .single();
 
   if (creatorData) return creatorData;
 
   // Check for group chat campaign match
-  const { data: campaignData } = await SUPABASE_CLIENT
-    .from('campaigns')
-    .select('*')
-    .eq('group_chat_channel_id', channelId)
+  const { data: campaignData } = await supabase
+    .from("campaigns")
+    .select("*")
+    .eq("group_chat_channel_id", channelId)
     .single();
 
   if (campaignData) {
-    const { data: groupCreatorData } = await SUPABASE_CLIENT
-      .from('campaign_creators')
-      .select('*')
-      .eq('campaign_id', campaignData.id)
-      .eq('discord_id', userId)
+    const { data: groupCreatorData } = await supabase
+      .from("campaign_creators")
+      .select("*")
+      .eq("campaign_id", campaignData.id)
+      .eq("discord_id", userId)
       .single();
 
     if (groupCreatorData) return groupCreatorData;
@@ -39,20 +44,25 @@ async function getCampaignCreatorEntryByChannel(channelId, userId) {
 /* ================ [ DISCORD HANDLERS ] ================ */
 
 const ON_READY = async () => {
-  console.log(`[HM]: Discord bot logged in as ${DISCORD_CLIENT.user.tag}`);
+  console.log(`[HM]: Discord bot logged in as ${discord.user.tag}`);
   try {
-    const channel = await DISCORD_CLIENT.channels.fetch(process.env.STARTUP_CHANNEL_ID);
+    const channel = await discord.channels.fetch(
+      process.env.STARTUP_CHANNEL_ID,
+    );
     if (channel?.type === ChannelType.GuildText) {
-      console.log('[HM]: Successfully started up discord bot!');
+      console.log("[HM]: Successfully started up discord bot!");
     }
   } catch (error) {
-    console.error('[HM]: Startup error:', error);
+    console.error("[HM]: Startup error:", error);
   }
 };
 
 const handleCommonChecks = (interaction) => {
   if (!interaction.guild) {
-    interaction.reply({ content: "This command requires a server context.", ephemeral: true });
+    interaction.reply({
+      content: "This command requires a server context.",
+      ephemeral: true,
+    });
     return false;
   }
   return true;
@@ -63,161 +73,220 @@ const ON_USER_INTERACTION = async (interaction) => {
 
   try {
     switch (interaction.commandName) {
-      case 'help':
+      case "help":
         return handleHelpCommand(interaction);
-      case 'register':
+      case "register":
         return handleRegisterCommand(interaction);
-      case 'registrations':
+      case "registrations":
         return handleRegistrationsCommand(interaction);
-      case 'unregister':
+      case "unregister":
         return handleUnregisterCommand(interaction);
-      case 'showroles':
+      case "showroles":
         return handleShowRolesCommand(interaction);
-      case 'addrole':
+      case "addrole":
         return handleAddRoleCommand(interaction);
-      case 'removerole':
+      case "removerole":
         return handleRemoveRoleCommand(interaction);
-      case 'editrates':
+      case "editrates":
         return handleEditRatesCommand(interaction);
-      case 'draft':
-      case 'final':
-      case 'live':
+      case "join":
+        return handleJoinCommand(interaction);
+      case "getlink":
+        return handleGetLink(interaction);
+      case "draft":
+      case "final":
+      case "live":
         return handleContentSubmission(interaction);
-      case 'id':
-        return interaction.reply({ content: `Your Discord ID: ${interaction.user.id}`, ephemeral: true });
+      case "id":
+        return interaction.reply({
+          content: `Your Discord ID: ${interaction.user.id}`,
+          ephemeral: true,
+        });
     }
   } catch (error) {
     console.error(`Error handling ${interaction.commandName}:`, error);
-    interaction.reply({ content: "An error occurred processing your request.", ephemeral: true });
+    interaction.reply({
+      content: "An error occurred processing your request.",
+      ephemeral: true,
+    });
   }
 };
 
 /* ================ [ COMMAND HANDLERS ] ================ */
 
 const handleHelpCommand = (interaction) => {
-  const helpMessage = `**Welcome to Warm, by Hotslicer Media**...`; // Keep existing help message
+  const helpMessage = `**Welcome to Warm, by Hotslicer Media**...`; // TODO: write help message
   return interaction.reply({ content: helpMessage, ephemeral: true });
 };
 
 const handleRegisterCommand = async (interaction) => {
   if (!handleCommonChecks(interaction)) return;
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-    return interaction.reply({ content: "Administrator permissions required.", ephemeral: true });
+    return interaction.reply({
+      content: "Administrator permissions required.",
+      ephemeral: true,
+    });
   }
 
-  const { error } = await SUPABASE_CLIENT
-    .from('niches')
-    .insert([{ 
-      name: interaction.options.getString('description'), 
+  const { error } = await supabase.from("niches").insert([
+    {
+      name: interaction.options.getString("description"),
       channel_id: interaction.channel.id,
-      server_id: interaction.guild.id 
-    }]);
+      server_id: interaction.guild.id,
+    },
+  ]);
 
   if (error) {
-    console.error('Registration error:', error);
-    return interaction.reply({ content: "Registration failed. Please try later.", ephemeral: true });
+    console.error("Registration error:", error);
+    return interaction.reply({
+      content: "Registration failed. Please try later.",
+      ephemeral: true,
+    });
   }
 
-  return interaction.reply({ content: "Channel registered successfully!", ephemeral: true });
+  return interaction.reply({
+    content: "Channel registered successfully!",
+    ephemeral: true,
+  });
 };
 
 const handleRegistrationsCommand = async (interaction) => {
   if (!handleCommonChecks(interaction)) return;
 
-  const { data } = await SUPABASE_CLIENT
-    .from('niches')
-    .select('name, channel_id')
-    .eq('server_id', interaction.guild.id);
+  const { data } = await supabase
+    .from("niches")
+    .select("name, channel_id")
+    .eq("server_id", interaction.guild.id);
 
   if (!data?.length) {
-    return interaction.reply({ content: "No registered channels found.", ephemeral: true });
+    return interaction.reply({
+      content: "No registered channels found.",
+      ephemeral: true,
+    });
   }
 
-  const list = data.map((item, i) => `${i+1}. <#${item.channel_id}>: ${item.name}`).join("\n");
-  return interaction.reply({ content: `**Registered Channels:**\n${list}`, ephemeral: true });
+  const list = data
+    .map((item, i) => `${i + 1}. <#${item.channel_id}>: ${item.name}`)
+    .join("\n");
+  return interaction.reply({
+    content: `**Registered Channels:**\n${list}`,
+    ephemeral: true,
+  });
 };
 
 const handleUnregisterCommand = async (interaction) => {
   if (!handleCommonChecks(interaction)) return;
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-    return interaction.reply({ content: "Administrator permissions required.", ephemeral: true });
+    return interaction.reply({
+      content: "Administrator permissions required.",
+      ephemeral: true,
+    });
   }
 
-  const { error } = await SUPABASE_CLIENT
-    .from('niches')
-    .delete()
-    .match({ 
-      channel_id: interaction.channel.id,
-      server_id: interaction.guild.id 
-    });
+  const { error } = await supabase.from("niches").delete().match({
+    channel_id: interaction.channel.id,
+    server_id: interaction.guild.id,
+  });
 
   if (error) {
-    console.error('Unregister error:', error);
-    return interaction.reply({ content: "Failed to unregister channel.", ephemeral: true });
+    console.error("Unregister error:", error);
+    return interaction.reply({
+      content: "Failed to unregister channel.",
+      ephemeral: true,
+    });
   }
 
-  return interaction.reply({ content: "Channel unregistered!", ephemeral: true });
+  return interaction.reply({
+    content: "Channel unregistered!",
+    ephemeral: true,
+  });
 };
 
 const handleShowRolesCommand = async (interaction) => {
   if (!handleCommonChecks(interaction)) return;
 
-  const { data } = await SUPABASE_CLIENT
-    .from('roles')
-    .select('title, description, value')
-    .eq('server_id', interaction.guild.id);
+  const { data } = await supabase
+    .from("roles")
+    .select("title, description, value")
+    .eq("server_id", interaction.guild.id);
 
   if (!data?.length) {
-    return interaction.reply({ content: "No roles configured.", ephemeral: true });
+    return interaction.reply({
+      content: "No roles configured.",
+      ephemeral: true,
+    });
   }
 
-  const roleList = data.map(r => `- **${r.title} (${r.value})**: ${r.description}`).join('\n');
-  return interaction.reply({ content: `**Configured Roles:**\n${roleList}`, ephemeral: true });
+  const roleList = data
+    .map((r) => `- **${r.title} (${r.value})**: ${r.description}`)
+    .join("\n");
+  return interaction.reply({
+    content: `**Configured Roles:**\n${roleList}`,
+    ephemeral: true,
+  });
 };
 
 const handleAddRoleCommand = async (interaction) => {
   if (!handleCommonChecks(interaction)) return;
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-    return interaction.reply({ content: "Administrator permissions required.", ephemeral: true });
+    return interaction.reply({
+      content: "Administrator permissions required.",
+      ephemeral: true,
+    });
   }
 
-  const { error } = await SUPABASE_CLIENT
-    .from('roles')
-    .insert([{
-      title: interaction.options.getString('title'),
-      description: interaction.options.getString('description'),
-      value: interaction.options.getString('value'),
-      server_id: interaction.guild.id
-    }]);
+  const { error } = await supabase.from("roles").insert([
+    {
+      title: interaction.options.getString("title"),
+      description: interaction.options.getString("description"),
+      value: interaction.options.getString("value"),
+      server_id: interaction.guild.id,
+    },
+  ]);
 
   if (error) {
-    console.error('Add role error:', error);
-    return interaction.reply({ content: "Failed to add role.", ephemeral: true });
+    console.error("Add role error:", error);
+    return interaction.reply({
+      content: "Failed to add role.",
+      ephemeral: true,
+    });
   }
 
-  return interaction.reply({ content: "Role added successfully!", ephemeral: true });
+  return interaction.reply({
+    content: "Role added successfully!",
+    ephemeral: true,
+  });
 };
 
 const handleRemoveRoleCommand = async (interaction) => {
   if (!handleCommonChecks(interaction)) return;
   if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-    return interaction.reply({ content: "Administrator permissions required.", ephemeral: true });
+    return interaction.reply({
+      content: "Administrator permissions required.",
+      ephemeral: true,
+    });
   }
 
-  const { error } = await SUPABASE_CLIENT
-    .from('roles')
+  const { error } = await supabase
+    .from("roles")
     .delete()
-    .match({ 
-      value: interaction.options.getString('value'),
-      server_id: interaction.guild.id 
+    .match({
+      value: interaction.options.getString("value"),
+      server_id: interaction.guild.id,
     });
 
   if (error) {
-    console.error('Remove role error:', error);
-    return interaction.reply({ content: "Failed to remove role.", ephemeral: true });
+    console.error("Remove role error:", error);
+    return interaction.reply({
+      content: "Failed to remove role.",
+      ephemeral: true,
+    });
   }
 
-  return interaction.reply({ content: "Role configuration removed!", ephemeral: true });
+  return interaction.reply({
+    content: "Role configuration removed!",
+    ephemeral: true,
+  });
 };
 
 const handleEditRatesCommand = async (interaction) => {
@@ -225,30 +294,36 @@ const handleEditRatesCommand = async (interaction) => {
 
   const creatorEntry = await getCampaignCreatorEntryByChannel(
     interaction.channel.id,
-    interaction.user.id
+    interaction.user.id,
   );
 
   if (!creatorEntry) {
     return interaction.reply({
-      content: "No associated campaign found. Ensure you're in the correct channel.",
-      ephemeral: true
+      content:
+        "No associated campaign found. Ensure you're in the correct channel.",
+      ephemeral: true,
     });
   }
 
   const updateData = {};
-  const flatRate = interaction.options.getNumber('flat');
-  const cpmRate = interaction.options.getNumber('cpm');
-  const cpmCap = interaction.options.getNumber('cap');
+  const flatRate = interaction.options.getNumber("flat");
+  const cpmRate = interaction.options.getNumber("cpm");
+  const cpmCap = interaction.options.getNumber("cap");
 
-  const { data, error: selectError } = await SUPABASE_CLIENT
-    .from('campaign_creators')
+  const { data, error: selectError } = await supabase
+    .from("campaign_creators")
     .select("rate, rate_cpm, cpm_cap")
-    .eq('id', creatorEntry.id);
-  
-  if (data.rate === 0 && flatRate || data.rate_cpm === 0 && cpmRate || data.cmp_cap === 0 && cpmCap) {
+    .eq("id", creatorEntry.id);
+
+  if (
+    (data.rate === 0 && flatRate) ||
+    (data.rate_cpm === 0 && cpmRate) ||
+    (data.cmp_cap === 0 && cpmCap)
+  ) {
     return interaction.reply({
-      content: "You can't add rates that would violate the allowed payment models. Contact support of you think this is a mistake.",
-      ephemeral: true
+      content:
+        "You can't add rates that would violate the allowed payment models. Contact support of you think this is a mistake.",
+      ephemeral: true,
     });
   }
 
@@ -259,23 +334,159 @@ const handleEditRatesCommand = async (interaction) => {
   if (Object.keys(updateData).length === 0) {
     return interaction.reply({
       content: "Please provide at least one rate to update (flat or CPM).",
-      ephemeral: true
+      ephemeral: true,
     });
   }
 
-  const { error } = await SUPABASE_CLIENT
-    .from('campaign_creators')
+  const { error } = await supabase
+    .from("campaign_creators")
     .update(updateData)
-    .eq('id', creatorEntry.id);
+    .eq("id", creatorEntry.id);
 
   if (error) {
-    console.error('Rate update error:', error);
-    return interaction.reply({ content: "Failed to update rates.", ephemeral: true });
+    console.error("Rate update error:", error);
+    return interaction.reply({
+      content: "Failed to update rates.",
+      ephemeral: true,
+    });
   }
 
-  return interaction.reply({ 
+  return interaction.reply({
     content: "Rates updated successfully!",
-    ephemeral: true 
+    ephemeral: true,
+  });
+};
+
+async function handleJoinCommand(interaction) {
+  try {
+    const join_code = interaction.options.getString("join_code");
+    const rate = interaction.options.getNumber("rate") ?? 0;
+    const rate_cpm = interaction.options.getNumber("rate_cpm") ?? 0;
+    const cpm_capRaw = interaction.options.getNumber("cpm_cap") ?? 0;
+    const cpm_cap = rate_cpm > 0 && cpm_capRaw > 0 ? cpm_capRaw : null;
+    const discord_id = interaction.user.id;
+
+    if (!join_code) {
+      return await interaction.reply({
+        content: "Join code is required.",
+        ephemeral: true,
+      });
+    }
+
+    if ([rate, rate_cpm, cpm_capRaw].some((n) => isNaN(n))) {
+      return await interaction.reply({
+        content: "Rates must be valid numbers.",
+        ephemeral: true,
+      });
+    }
+
+    if (rate < 0 || rate_cpm < 0 || cpm_capRaw < 0) {
+      return await interaction.reply({
+        content: "Rates cannot be negative.",
+        ephemeral: true,
+      });
+    }
+
+    const discordValid = await validateDiscordId(discord_id);
+    if (!discordValid) {
+      return await interaction.reply({
+        content: "Invalid Discord ID.",
+        ephemeral: true,
+      });
+    }
+
+    const campaign = await CodeFunctions.decodeJoinCode(join_code);
+    if (!campaign?.id) {
+      return await interaction.reply({
+        content: "Join code is not valid.",
+        ephemeral: true,
+      });
+    }
+
+    const { data: creator, error: insertError } = await supabase
+      .from("campaign_creators")
+      .insert([
+        {
+          campaign_id: campaign.id,
+          name: null,
+          email: null,
+          channel_name: "",
+          channel_url: "",
+          deliverables: null,
+          personal_statement: "",
+          discord_id,
+          rate,
+          rate_cpm,
+          cpm_cap,
+          selected: false,
+        },
+      ])
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Supabase insert error:", insertError);
+      return await interaction.reply({
+        content:
+          "Failed to join campaign due to a server error. Please try again later.",
+        ephemeral: true,
+      });
+    }
+
+    await addCreatorToDiscord(creator.id);
+
+    const { data: creatorWithWebhook, error: webhookError } = await supabase
+      .from("campaign_creators")
+      .select("webhook_url")
+      .eq("id", creator.id)
+      .single();
+
+    if (webhookError || !creatorWithWebhook?.webhook_url) {
+      return await interaction.reply({
+        content:
+          "You're registered, but we couldn't send you a confirmation DM. Please check Discord manually.",
+        ephemeral: true,
+      });
+    }
+
+    await fetch(creatorWithWebhook.webhook_url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: `
+<@${discord_id}> You’re IN!
+
+Thank you for applying. While we cannot guarantee selection, you've taken an important step by getting your channel in front of major brands.
+
+If this is your first campaign, read our guide: https://tinyurl.com/hmsponsorguide
+
+We will message you if selected. Meanwhile, feel free to DM our CEO personally: @hotslicer
+
+Thanks!
+WARM`,
+      }),
+    });
+
+    return await interaction.reply({
+      content:
+        "You have successfully joined the campaign! Check your DMs for confirmation.",
+      ephemeral: true,
+    });
+  } catch (err) {
+    console.error("Error in handleJoinCommand:", err);
+    return await interaction.reply({
+      content: "An unexpected error occurred. Please try again later.",
+      ephemeral: true,
+    });
+  }
+}
+
+
+const handleGetLink = async (interaction) => {
+  const join_code = interaction.options.getString("join_code");
+  interaction.reply({
+    content: `[Here's your link!](https://warm.hotslicer.com/creator-form?joinCode=${join_code}&discordId=${interaction.user.id})`,
+    ephemeral: true,
   });
 };
 
@@ -284,41 +495,50 @@ const handleContentSubmission = async (interaction) => {
 
   const creatorEntry = await getCampaignCreatorEntryByChannel(
     interaction.channel.id,
-    interaction.user.id
+    interaction.user.id,
   );
 
   if (!creatorEntry) {
     return interaction.reply({
-      content: "No associated campaign found. Ensure you're in the correct channel.",
-      ephemeral: true
+      content:
+        "No associated campaign found. Ensure you're in the correct channel.",
+      ephemeral: true,
     });
   }
 
   const columnMap = {
-    draft: 'draft',
-    final: 'final',
-    live: 'live_url'
+    draft: "draft",
+    final: "final",
+    live: "live_url",
   };
 
   // Create update object with the link
-  const updateData = { [columnMap[interaction.commandName]]: interaction.options.getString('link') };
+  const updateData = {
+    [columnMap[interaction.commandName]]: interaction.options.getString("link"),
+  };
 
   // Add draft_submitted_at timestamp if this is a draft submission
-  if (interaction.commandName === 'draft') {
+  if (interaction.commandName === "draft") {
     updateData.draft_submitted_at = new Date().toISOString();
   }
 
-  const { error } = await SUPABASE_CLIENT
-    .from('campaign_creators')
+  const { error } = await supabase
+    .from("campaign_creators")
     .update(updateData)
-    .eq('id', creatorEntry.id);
+    .eq("id", creatorEntry.id);
 
   if (error) {
-    console.error('Content submission error:', error);
-    return interaction.reply({ content: "Submission failed. Please try again later.", ephemeral: true });
+    console.error("Content submission error:", error);
+    return interaction.reply({
+      content: "Submission failed. Please try again later.",
+      ephemeral: true,
+    });
   }
 
-  return interaction.reply({ content: "Link submitted successfully!", ephemeral: true });
+  return interaction.reply({
+    content: "Link submitted successfully!",
+    ephemeral: true,
+  });
 };
 
 /* ================ [ MESSAGE & REACTION HANDLERS ] ================ */
@@ -327,17 +547,17 @@ const ON_USER_MESSAGE = async (message) => {
   if (!message.author.bot) return;
 
   try {
-    const { data } = await SUPABASE_CLIENT
-      .from('niches')
+    const { data } = await supabase
+      .from("niches")
       .select()
-      .eq('channel_id', message.channel.id);
+      .eq("channel_id", message.channel.id);
 
     if (data?.length) {
-      await message.react('🚀');
+      await message.react("🚀");
       console.log(`Reacted to message in ${message.channel.id}`);
     }
   } catch (error) {
-    console.error('Message reaction error:', error);
+    console.error("Message reaction error:", error);
   }
 };
 
@@ -345,23 +565,25 @@ const ON_USER_REACTION = async (reaction, user) => {
   if (user.bot) return;
 
   try {
-    const { data } = await SUPABASE_CLIENT
-      .from('niches')
+    const { data } = await supabase
+      .from("niches")
       .select()
-      .eq('channel_id', reaction.message.channel.id);
+      .eq("channel_id", reaction.message.channel.id);
 
     if (data?.length) {
-      const messageContent = reaction.message.content || (await reaction.message.fetch()).content;
+      const messageContent =
+        reaction.message.content || (await reaction.message.fetch()).content;
       const urls = messageContent.match(/(https?:\/\/[^\s)]+)/g);
       const dmChannel = await user.createDM();
-      
-      await dmChannel.send(urls?.length ? 
-        `[Custom link](${urls.pop()}&discordId=${user.id})` : 
-        "Error generating custom link"
+
+      await dmChannel.send(
+        urls?.length
+          ? `[Custom link](${urls.pop()}&discordId=${user.id})`
+          : "Error generating custom link",
       );
     }
   } catch (error) {
-    console.error('Reaction handling error:', error);
+    console.error("Reaction handling error:", error);
   }
 };
 
@@ -370,16 +592,28 @@ const ON_USER_JOIN = async (member) => {
 
   try {
     await member.send(`
-Hey ${member.user.username}, welcome to **${member.guild.name}**, so excited to have you here.
-This is **not** just a regular Discord server. It’s a **sponsorship hub**. 
+Hey ${member.user.username},
 
-Comments or concerns? DM our CEO personally right now: <@655866521117130752>
-Otherwise, please check pings from the server, they are **ONLY** for sponsorship offers!
+Welcome to **${member.guild.name}**, we're so excited to have you here!
+This server is **NOT** a regular Discord server, it's a sponsorship hub.
 
-Hope you have a great time here!`);
+Before getting started, we request that you fill out this 2 minute form, it is **mandatory** to recieve sponsorship offers:
+https://forms.gle/s573MEVZsFmEaEgP9
+
+For any concerns or inquiries, message our CEO: <@655866521117130752>
+Please frequently check the server, we **ONLY** ping for sponsorship offers!
+
+We hope you have a great time here!
+    `);
   } catch (error) {
     console.error(`Could not DM the user: ${error}`);
   }
-}
+};
 
-export { ON_READY, ON_USER_INTERACTION, ON_USER_MESSAGE, ON_USER_REACTION, ON_USER_JOIN };
+export {
+  ON_READY,
+  ON_USER_INTERACTION,
+  ON_USER_MESSAGE,
+  ON_USER_REACTION,
+  ON_USER_JOIN,
+};

@@ -18,7 +18,7 @@ import { CampaignInfoManager } from "../../infoAbstraction/infoManagers";
 
 /* ================ [ SIDEBAR ] ================ */
 
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import { Campaign } from "../../types";
 
 
@@ -51,7 +51,7 @@ export function Sidebar() {
   // Auto-select latest campaign if none selected
   useEffect(() => {
     const fetchAndSetLatestCampaign = async () => {
-      const { data, error } = await SUPABASE_CLIENT.from("campaigns")
+      const { data, error } = await supabase.from("campaigns")
         .select("*")
         .order("updated_at", { ascending: false })
         .limit(1);

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useCampaignStore } from "../../store/campaignStore";
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import { Share } from "lucide-react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
@@ -34,7 +34,7 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
   const fetchCreators = async () => {
     setIsLoading(true);
     try {
-      const { data: creatorsData } = await SUPABASE_CLIENT.from(
+      const { data: creatorsData } = await supabase.from(
         "campaign_creators",
       )
         .select(
@@ -92,7 +92,7 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
       ),
     );
 
-    await SUPABASE_CLIENT.from("campaign_creators")
+    await supabase.from("campaign_creators")
       .update({ selected: !creator.selected })
       .eq("id", creator.id);
   };
@@ -105,7 +105,7 @@ const Creators: React.FC<CreatorSelectionProps> = ({ campaignId }) => {
     if (!confirmed) return;
 
     try {
-      const { error } = await SUPABASE_CLIENT.from("campaigns")
+      const { error } = await supabase.from("campaigns")
         .update({ status: "creators_selected", total_price: totalRate })
         .eq("id", currentCampaign?.id);
 

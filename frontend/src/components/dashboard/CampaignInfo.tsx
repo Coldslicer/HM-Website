@@ -1,37 +1,39 @@
 import React, { useEffect, useState } from "react";
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import { Card } from "../ui/Card";
 
-interface Campaign {
-  company_name: string;
-  website: string;
-  company_description: string;
-  rep_name: string;
-  name: string;
-  date: string;
-  niches: string[];
-  per_influencer_budget: string[]; // array of role IDs
-  brief_url: string;
-}
-
-interface Role {
-  id: string;
-  title: string;
-}
-
 interface CampaignInfoProps {
-  currentCampaign: Campaign;
+  campaignId: string;
 }
 
-export const CampaignInfo: React.FC<CampaignInfoProps> = ({ currentCampaign }) => {
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
+export const CampaignInfo: React.FC<CampaignInfoProps> = ({ campaignId }) => {
+  const [campaign, setCampaign] = useState(null);
+  const [roles, setRoles] = useState([]);
+  const [loadingCampaign, setLoadingCampaign] = useState(true);
+  const [loadingRoles, setLoadingRoles] = useState(true);
 
   useEffect(() => {
+    async function fetchCampaign() {
+      setLoadingCampaign(true);
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("*")
+        .eq("id", campaignId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching campaign:", error);
+        setCampaign(null);
+      } else {
+        setCampaign(data);
+      }
+      setLoadingCampaign(false);
+    }
+
     async function fetchRoles() {
-      setLoading(true);
-      const { data, error } = await SUPABASE_CLIENT
-        .from<Role>("roles")
+      setLoadingRoles(true);
+      const { data, error } = await supabase
+        .from("roles")
         .select("id,title");
 
       if (error) {
@@ -40,13 +42,19 @@ export const CampaignInfo: React.FC<CampaignInfoProps> = ({ currentCampaign }) =
       } else {
         setRoles(data || []);
       }
-      setLoading(false);
+      setLoadingRoles(false);
     }
 
-    fetchRoles();
-  }, []);
+    if (campaignId) {
+      fetchCampaign();
+      fetchRoles();
+    }
+  }, [campaignId]);
 
-  const roleTitles = currentCampaign.per_influencer_budget
+  if (loadingCampaign) return <p>Loading campaign info...</p>;
+  if (!campaign) return <p>Campaign not found.</p>;
+
+  const roleTitles = campaign.per_influencer_budget
     .map((roleId) => roles.find((role) => role.id === roleId)?.title)
     .filter(Boolean) as string[];
 
@@ -64,22 +72,22 @@ export const CampaignInfo: React.FC<CampaignInfoProps> = ({ currentCampaign }) =
           <dl className="space-y-4">
             <div>
               <dt className="text-sm font-medium text-gray-700">Brand Name</dt>
-              <dd className="mt-1 text-gray-600">{currentCampaign.company_name}</dd>
+              <dd className="mt-1 text-gray-600">{campaign.company_name}</dd>
             </div>
 
             <div>
               <dt className="text-sm font-medium text-gray-700">Brand Website</dt>
-              <dd className="mt-1 text-gray-600">{currentCampaign.website}</dd>
+              <dd className="mt-1 text-gray-600">{campaign.website}</dd>
             </div>
 
             <div>
               <dt className="text-sm font-medium text-gray-700">Brand Description</dt>
-              <dd className="mt-1 text-gray-600">{currentCampaign.company_description}</dd>
+              <dd className="mt-1 text-gray-600">{campaign.company_description}</dd>
             </div>
 
             <div>
               <dt className="text-sm font-medium text-gray-700">Representative Name</dt>
-              <dd className="mt-1 text-gray-600">{currentCampaign.rep_name}</dd>
+              <dd className="mt-1 text-gray-600">{campaign.rep_name}</dd>
             </div>
           </dl>
         </Card>
@@ -93,23 +101,23 @@ export const CampaignInfo: React.FC<CampaignInfoProps> = ({ currentCampaign }) =
           <dl className="space-y-4">
             <div>
               <dt className="text-sm font-medium text-gray-700">Campaign Name</dt>
-              <dd className="mt-1 text-gray-600">{currentCampaign.name}</dd>
+              <dd className="mt-1 text-gray-600">{campaign.name}</dd>
             </div>
 
             <div>
               <dt className="text-sm font-medium text-gray-700">Posting Date</dt>
-              <dd className="mt-1 text-gray-600">{currentCampaign.date}</dd>
+              <dd className="mt-1 text-gray-600">{campaign.date}</dd>
             </div>
 
             <div>
               <dt className="text-sm font-medium text-gray-700">Channels</dt>
-              <dd className="mt-1 text-gray-600">{currentCampaign.niches.join(", ")}</dd>
+              <dd className="mt-1 text-gray-600">{campaign.niches.join(", ")}</dd>
             </div>
 
             <div>
               <dt className="text-sm font-medium text-gray-700">Per-Influencer Roles</dt>
               <dd className="mt-1 text-gray-600">
-                {loading ? "Loading roles..." : roleTitles.join(", ")}
+                {loadingRoles ? "Loading roles..." : roleTitles.join(", ")}
               </dd>
             </div>
 
@@ -117,7 +125,7 @@ export const CampaignInfo: React.FC<CampaignInfoProps> = ({ currentCampaign }) =
               <dt className="text-sm font-medium text-gray-700">Brief URL</dt>
               <dd className="mt-1">
                 <a
-                  href={currentCampaign.brief_url}
+                  href={campaign.brief_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-orange-500 hover:text-orange-600 hover:underline transition-colors"

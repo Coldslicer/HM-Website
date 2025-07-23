@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { SUPABASE_CLIENT } from "../../lib/supabase.ts";
+import { supabase } from "../../lib/supabase.ts";
 import { useAuthStore } from "../../store/authStore.ts";
 import { Check, Eye, EyeOff, Lock, LogIn, Mail } from "lucide-react";
 
@@ -33,7 +33,7 @@ function LoginComponent({
   useEffect(() => {
     // Check for user session
     const checkSession = async () => {
-      const { data } = await SUPABASE_CLIENT.auth.getUser();
+      const { data } = await supabase.auth.getUser();
 
       // Redirect to dashboard
       if (data?.user) {
@@ -59,7 +59,7 @@ function LoginComponent({
   // Provider login handler
   const providerLogin = async (provider: "google" | "discord") => {
     // Get auth response
-    const { data, error } = await SUPABASE_CLIENT.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: `${window.location.origin}/login`,
@@ -86,12 +86,12 @@ function LoginComponent({
 
     // Sign up / sign in
     if (isSignUp) {
-      response = await SUPABASE_CLIENT.auth.signUp({
+      response = await supabase.auth.signUp({
         email,
         password,
       });
     } else {
-      response = await SUPABASE_CLIENT.auth.signInWithPassword({
+      response = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -117,7 +117,7 @@ function LoginComponent({
       const ip = await (
         await fetch("https://api.ipify.org?format=json")
       ).json();
-      await SUPABASE_CLIENT.from("tos_agreements").insert([{ ip_address: ip }]);
+      await supabase.from("tos_agreements").insert([{ ip_address: ip }]);
     }
   };
 
@@ -140,7 +140,7 @@ function LoginComponent({
       else await emailLogin();
 
       // Check user session
-      const { data, error } = await SUPABASE_CLIENT.auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
 
       // Handle successful login
       if (data.user) {

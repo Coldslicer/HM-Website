@@ -1,5 +1,5 @@
-import {DISCORD_CLIENT, SUPABASE_CLIENT} from "./setup.js";
-import axios from 'axios';
+import { discord, supabase } from "./clients.js";
+import axios from "axios";
 
 /**
  * Retrieves the timestamp of the last visible client message in a specific channel associated with a campaign creator.
@@ -10,73 +10,78 @@ import axios from 'axios';
  * @return {Promise<Date|null>} A promise that resolves to the timestamp of the last client message as a Date object, or null if no such message exists or an error occurs.
  */
 async function getLastClientMessageTime(campaignId, creator = null) {
-    try {
-        if (creator) {
-            // Check the specific creator's channel
-            const channel = await DISCORD_CLIENT.channels.fetch(creator.channel_id);
-            if (!channel) return null;
+  try {
+    if (creator) {
+      // Check the specific creator's channel
+      const channel = await discord.channels.fetch(creator.channel_id);
+      if (!channel) return null;
 
-            const messages = await channel.messages.fetch({limit: 50});
+      const messages = await channel.messages.fetch({ limit: 50 });
 
-            // The only bot would be WARM, and we're not looking at messages not sent by the client through the bot
-            const clientMessages = messages.filter(msg =>
-                msg.author.bot &&
-                !msg.content.toLowerCase().startsWith("[hidden from clients]")
-            );
+      // The only bot would be WARM, and we're not looking at messages not sent by the client through the bot
+      const clientMessages = messages.filter(
+        (msg) =>
+          msg.author.bot &&
+          !msg.content.toLowerCase().startsWith("[hidden from clients]"),
+      );
 
-            if (clientMessages.size > 0) {
-                const latestTime = Math.max(
-                    ...clientMessages.map(msg => new Date(msg.createdTimestamp).getTime())
-                );
-                return new Date(latestTime);
-            }
-            return null;
-        }
-
-        // If no specific creator, check all channels for this campaign
-        const {data: campaignCreators} = await SUPABASE_CLIENT
-            .from('campaign_creators')
-            .select('channel_id')
-            .eq('campaign_id', campaignId);
-
-        if (!campaignCreators?.length) return null;
-
-        let latestMessageTime = null;
-
-        // Check each creator's channel
-        for (const creator of campaignCreators) {
-            try {
-                const channel = await DISCORD_CLIENT.channels.fetch(creator.channel_id);
-                if (!channel) continue;
-
-                const messages = await channel.messages.fetch({limit: 50});
-                const clientMessages = messages.filter(msg =>
-                    msg.author.bot &&
-                    !msg.content.toLowerCase().startsWith("[hidden from clients]")
-                );
-
-                if (clientMessages.size > 0) {
-                    const channelLatestTime = Math.max(
-                        ...clientMessages.map(msg => new Date(msg.createdTimestamp).getTime())
-                    );
-
-                    if (!latestMessageTime || channelLatestTime > latestMessageTime) {
-                        latestMessageTime = channelLatestTime;
-                    }
-                }
-            } catch (error) {
-                console.error(`Error checking channel ${creator.channel_id}:`, error);
-                continue;
-            }
-        }
-
-        return latestMessageTime ? new Date(latestMessageTime) : null;
-    } catch (error) {
-        console.error('Error getting last client message time:', error);
-        return null;
+      if (clientMessages.size > 0) {
+        const latestTime = Math.max(
+          ...clientMessages.map((msg) =>
+            new Date(msg.createdTimestamp).getTime(),
+          ),
+        );
+        return new Date(latestTime);
+      }
+      return null;
     }
-}
 
+    // If no specific creator, check all channels for this campaign
+    const { data: campaignCreators } = await supabase
+      .from("campaign_creators")
+      .select("channel_id")
+      .eq("campaign_id", campaignId);
+
+    if (!campaignCreators?.length) return null;
+
+    let latestMessageTime = null;
+
+    // Check each creator's channel
+    for (const creator of campaignCreators) {
+      try {
+        const channel = await discord.channels.fetch(creator.channel_id);
+        if (!channel) continue;
+
+        const messages = await channel.messages.fetch({ limit: 50 });
+        const clientMessages = messages.filter(
+          (msg) =>
+            msg.author.bot &&
+            !msg.content.toLowerCase().startsWith("[hidden from clients]"),
+        );
+
+        if (clientMessages.size > 0) {
+          const channelLatestTime = Math.max(
+            ...clientMessages.map((msg) =>
+              new Date(msg.createdTimestamp).getTime(),
+            ),
+          );
+
+          if (!latestMessageTime || channelLatestTime > latestMessageTime) {
+            latestMessageTime = channelLatestTime;
+          }
+        }
+      } catch (error) {
+        console.error(`Error checking channel ${creator.channel_id}:`, error);
+        continue;
+      }
+    }
+
+    return latestMessageTime ? new Date(latestMessageTime) : null;
+  } catch (error) {
+    console.error("Error getting last client message time:", error);
+    return null;
+  }
+}
 
 /**
  * Gets a binary (yes/no) answer from ChatGPT based on the user input and prompt question
@@ -85,38 +90,43 @@ async function getLastClientMessageTime(campaignId, creator = null) {
  * @returns {Promise<boolean|null>} - Returns true for yes, false for no, null if unable to determine
  */
 async function getBinaryGPTAnswer(userInput, promptQuestion) {
-    try {
-        const systemPrompt = `You are a binary decision maker. You must analyze the provided input and answer the question with ONLY "yes" or "no". Do not include any other words or explanation.`;
+  try {
+    const systemPrompt = `You are a binary decision maker. You must analyze the provided input and answer the question with ONLY "yes" or "no". Do not include any other words or explanation.`;
 
-        const response = await axios.post(
-            'https://api.openai.com/v1/chat/completions',
-            {
-                model: 'gpt-3.5-turbo',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: `Based on this input: "${userInput}", ${promptQuestion}` }
-                ],
-                temperature: 0.1,
-                max_tokens: 1
-            },
-            {
-                headers: {
-                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: systemPrompt },
+          {
+            role: "user",
+            content: `Based on this input: "${userInput}", ${promptQuestion}`,
+          },
+        ],
+        temperature: 0.1,
+        max_tokens: 1,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      },
+    );
 
-        const answer = response.data.choices[0]?.message?.content.toLowerCase().trim();
+    const answer = response.data.choices[0]?.message?.content
+      .toLowerCase()
+      .trim();
 
-        if (answer === 'yes') return true;
-        if (answer === 'no') return false;
+    if (answer === "yes") return true;
+    if (answer === "no") return false;
 
-        return null;
-    } catch (error) {
-        console.error('Error getting GPT binary answer:', error);
-        return null;
-    }
+    return null;
+  } catch (error) {
+    console.error("Error getting GPT binary answer:", error);
+    return null;
+  }
 }
 
 /**
@@ -129,16 +139,19 @@ async function getBinaryGPTAnswer(userInput, promptQuestion) {
  * @return {Promise<Boolean>} A promise that resolves to a boolean value indicating whether the conversation needs a response from the creator (`true`) or not (`false`).
  */
 async function analyzeConversationGhost(messages) {
-    // Sort messages by timestamp
-    const sortedMessages = messages.sort((a, b) => a.timestamp - b.timestamp);
+  // Sort messages by timestamp
+  const sortedMessages = messages.sort((a, b) => a.timestamp - b.timestamp);
 
-    // Get the last few messages for context (up to 5)
-    const recentMessages = sortedMessages.slice(-5).map(msg => {
-        const role = msg.bot ? "Client" : "Creator";
-        return `${role}: ${msg.content}`;
-    }).join("\n");
+  // Get the last few messages for context (up to 5)
+  const recentMessages = sortedMessages
+    .slice(-5)
+    .map((msg) => {
+      const role = msg.bot ? "Client" : "Creator";
+      return `${role}: ${msg.content}`;
+    })
+    .join("\n");
 
-    const prompt = `Based on this conversation, does it require a response from the creator? Consider:
+  const prompt = `Based on this conversation, does it require a response from the creator? Consider:
 1. If the last message is from the client and needs a response
 2. If there's an unanswered question
 3. If there's a pending request or task
@@ -148,7 +161,7 @@ async function analyzeConversationGhost(messages) {
 Conversation:
 ${recentMessages}`;
 
-    return await getBinaryGPTAnswer(recentMessages, prompt);
+  return await getBinaryGPTAnswer(recentMessages, prompt);
 }
 
 /**
@@ -162,33 +175,42 @@ ${recentMessages}`;
  *         Returns `null` if the channel is not found or an error occurs during the fetch operation.
  */
 async function getChannelMessages(channel_id, hoursAgo = null) {
-    try {
-        const channel = await DISCORD_CLIENT.channels.fetch(channel_id);
-        if (!channel) return null;
+  try {
+    const channel = await discord.channels.fetch(channel_id);
+    if (!channel) return null;
 
-        const messages = await channel.messages.fetch({ limit: 50 });
-        const now = new Date();
+    const messages = await channel.messages.fetch({ limit: 50 });
+    const now = new Date();
 
-        let filteredMessages = messages
-            .filter(msg => !msg.content.toLowerCase().startsWith("[hidden from clients]"))
-            .map(msg => ({
-                content: msg.content,
-                bot: msg.author.bot,
-                author: msg.author.username,
-                timestamp: msg.createdTimestamp
-            }));
+    let filteredMessages = messages
+      .filter(
+        (msg) => !msg.content.toLowerCase().startsWith("[hidden from clients]"),
+      )
+      .map((msg) => ({
+        content: msg.content,
+        bot: msg.author.bot,
+        author: msg.author.username,
+        timestamp: msg.createdTimestamp,
+      }));
 
-        // If hoursAgo is specified, filter messages within that time frame
-        if (hoursAgo) {
-            const cutoffTime = now.getTime() - (hoursAgo * 60 * 60 * 1000);
-            filteredMessages = filteredMessages.filter(msg => msg.timestamp >= cutoffTime);
-        }
-
-        return filteredMessages;
-    } catch (error) {
-        console.error('Error fetching channel messages:', error);
-        return null;
+    // If hoursAgo is specified, filter messages within that time frame
+    if (hoursAgo) {
+      const cutoffTime = now.getTime() - hoursAgo * 60 * 60 * 1000;
+      filteredMessages = filteredMessages.filter(
+        (msg) => msg.timestamp >= cutoffTime,
+      );
     }
+
+    return filteredMessages;
+  } catch (error) {
+    console.error("Error fetching channel messages:", error);
+    return null;
+  }
 }
 
-export {getLastClientMessageTime, getBinaryGPTAnswer, analyzeConversationGhost, getChannelMessages};
+export {
+  getLastClientMessageTime,
+  getBinaryGPTAnswer,
+  analyzeConversationGhost,
+  getChannelMessages,
+};

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import { useCampaignStore } from "../../store/campaignStore";
 import { FaPaperPlane } from "react-icons/fa";
 
@@ -18,7 +18,7 @@ export function ReviewMessaging({ creatorId }) {
 
   useEffect(() => {
     const fetchCreatorChannel = async () => {
-      const { data, error } = await SUPABASE_CLIENT.from("campaign_creators")
+      const { data, error } = await supabase.from("campaign_creators")
         .select("channel_id, discord_id")
         .eq("id", creatorId)
         .single();

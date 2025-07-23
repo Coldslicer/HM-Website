@@ -1,7 +1,7 @@
 /* ================ [ IMPORTS ] ================ */
 
 import { useEffect, useState } from "react";
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import { useCampaignStore } from "../../store/campaignStore";
 import { AnimatePresence } from "framer-motion";
 import TimelineItem from "../../components/dashboard/TimelineItem";
@@ -21,7 +21,7 @@ const Timeline = () => {
   }, [currentCampaign]);
 
   const fetchSelectedCreators = async () => {
-    const { data: creatorsData } = await SUPABASE_CLIENT.from(
+    const { data: creatorsData } = await supabase.from(
       "campaign_creators",
     )
       .select(
@@ -68,14 +68,14 @@ const Timeline = () => {
   };
 
   const handleApproval = async (creatorId: string) => {
-    const { data: creator } = await SUPABASE_CLIENT.from("campaign_creators")
+    const { data: creator } = await supabase.from("campaign_creators")
       .select("discord_id")
       .eq("id", creatorId)
       .single();
 
     if (!creator) return;
 
-    await SUPABASE_CLIENT.from("campaign_creators")
+    await supabase.from("campaign_creators")
       .update({ final_approved: true })
       .eq("id", creatorId);
 

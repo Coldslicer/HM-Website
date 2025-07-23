@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { SUPABASE_CLIENT } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 import MessagingComponent from "../components/dashboard/MessagingComponent";
 
 const Contact = () => {

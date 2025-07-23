@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { SUPABASE_CLIENT } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 import axios from "axios";
 import { formatNum } from "../lib/utility";
 import CreatorTable from "../components/dashboard/CreatorTable";
@@ -21,7 +21,7 @@ export const CreatorSharingPage: React.FC = () => {
   }, [campaignId]);
 
   const fetchCreators = async (campaignId: string) => {
-    const { data: creatorsData } = await SUPABASE_CLIENT.from(
+    const { data: creatorsData } = await supabase.from(
       "campaign_creators",
     )
       .select(
@@ -76,7 +76,7 @@ export const CreatorSharingPage: React.FC = () => {
       ),
     );
 
-    await SUPABASE_CLIENT.from("campaign_creators")
+    await supabase.from("campaign_creators")
       .update({ selected: !creator.selected })
       .eq("id", creator.id);
   };

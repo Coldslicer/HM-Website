@@ -13,6 +13,7 @@ import { CreatorSharingPage } from "./pages/CreatorSharingPage";
 import { CreatorContract } from "./pages/CreatorContract";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
+import SupabaseTable from "./components/dashboard/DistributionTable";
 
 /* ================ [ APP ] ================ */
 
@@ -52,6 +53,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
 
         <Route path="*" element={<NotFound />} />
+        <Route path="/test" element={<SupabaseTable tableName="campaign_creators"/>} />
       </Routes>
     </div>
   );

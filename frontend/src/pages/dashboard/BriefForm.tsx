@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuthStore } from "../../store/authStore";
 import { useCampaignStore } from "../../store/campaignStore";
-import { SUPABASE_CLIENT } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import { CampaignInfo } from "../../components/dashboard/CampaignInfo";
 import { Card } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
@@ -91,7 +91,7 @@ export function BriefForm() {
     const fetchClientServers = async () => {
       if (!user) return;
 
-      const { data, error } = await SUPABASE_CLIENT.from("clients")
+      const { data, error } = await supabase.from("clients")
         .select("servers")
         .eq("id", user.id)
         .single();
@@ -112,7 +112,7 @@ export function BriefForm() {
     const fetchCampaign = async () => {
       if (!currentCampaign?.id || hasHydrated) return;
 
-      const { data, error } = await SUPABASE_CLIENT.from("campaigns")
+      const { data, error } = await supabase.from("campaigns")
         .select("*")
         .eq("id", currentCampaign.id)
         .single();
@@ -136,7 +136,7 @@ export function BriefForm() {
         per_influencer_budget: data.per_influencer_budget,
         desired_pricing_model: data.desired_pricing_model || [],
         sponsorship_format: data.sponsorship_format || [],
-        niches: data.niches || [],
+        niches: Array.isArray(data.niches) ? data.niches : [],
         brief_url: data.brief_url || "",
       });
       console.log(formData)
@@ -163,7 +163,7 @@ export function BriefForm() {
 
     const timeout = setTimeout(async () => {
       try {
-        const { error } = await SUPABASE_CLIENT.from("campaigns")
+        const { error } = await supabase.from("campaigns")
           .update(pendingUpdates)
           .eq("id", currentCampaign.id);
 
@@ -189,7 +189,7 @@ export function BriefForm() {
 
     setSaveStatus("saving");
 
-    const { error } = await SUPABASE_CLIENT.from("campaigns")
+    const { error } = await supabase.from("campaigns")
       .update(pendingUpdates)
       .eq("id", currentCampaign.id);
 
@@ -206,7 +206,7 @@ export function BriefForm() {
   const fetchNiches = async (serverId: string | null) => {
     if (!serverId) return;
 
-    const { data, error } = await SUPABASE_CLIENT.from("niches")
+    const { data, error } = await supabase.from("niches")
       .select("*") // Select only the name field
       .eq("server_id", serverId)
       .neq("name", null);
@@ -220,7 +220,7 @@ export function BriefForm() {
 
   // Fetch discord roles
   const fetchRoles = async (serverId: string | null) => {
-    const { data, error } = await SUPABASE_CLIENT.from("roles")
+    const { data, error } = await supabase.from("roles")
       .select("*")
       .eq("server_id", serverId);
     if (error) console.error("Error fetching roles:", error);
@@ -263,13 +263,13 @@ export function BriefForm() {
       };
 
       if (Object.keys(pendingUpdates).length > 0) {
-        await SUPABASE_CLIENT.from("campaigns")
+        await supabase.from("campaigns")
           .update(pendingUpdates)
           .eq("id", currentCampaign.id);
         setPendingUpdates({});
       }
 
-      const { error } = await SUPABASE_CLIENT.from("campaigns")
+      const { error } = await supabase.from("campaigns")
         .update({ status: "brief_submitted" })
         .eq("id", currentCampaign.id);
 
@@ -293,6 +293,21 @@ export function BriefForm() {
         if (formData.per_influencer_budget.includes(role.id) && formData.server_id == role.server_id)
           formattedMessage += role.value + " \n";
       }
+
+      const getJoinCode = async (campaignId: string): Promise<string> => {
+        const res = await fetch(`/api/joincodes/encode?campaignId=${encodeURIComponent(campaignId)}`);
+
+        if (!res.ok) throw new Error("Failed to get join code");
+        const data = await res.json();
+        return data.code;
+      };
+
+
+
+
+      // Usage:
+      const joinCode = await getJoinCode(""+currentCampaign.id);
+
       formattedMessage += `
 
 # Sponsorship Offer from **${formData.company_name}**
@@ -327,10 +342,11 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
           : `All sponsored videos will be posted by ${formData.date}`
       }
 
-## **To Declare Your Commitment React Below and Fill out the Form** 
-### Not working? [Fill out this form instead](${baseUrl}/creator-form?campaignName=${encodeURIComponent(
-        formData.name,
-      )})
+## **To Declare Your Commitment React Below and Follow our Bot's Instructions** 
+### Have DMs off? Alternative ways to sign up:
+- Get your personalized invite link using /getlink with join code **${joinCode}**
+- use the [general invite](${baseUrl}/creator-form?joinCode=${encodeURIComponent(joinCode)}) (use /id for your discord ID)
+- use the /join command. The join code is: **${joinCode}**
 `;
 
       // Send to selected niches' webhooks
@@ -415,7 +431,7 @@ ${formData.desired_pricing_model.map((model) => `- ${model}`).join("\n")}
 
   // Completed brief
   if (currentCampaign != null && currentCampaign?.status !== "draft") {
-    return <CampaignInfo currentCampaign={currentCampaign} />;
+    return <CampaignInfo campaignId={""+currentCampaign.id} />;
   }
 
   return (

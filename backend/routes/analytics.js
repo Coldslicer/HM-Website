@@ -1,9 +1,9 @@
 /* ================ [ IMPORTS ] ================ */
 
-import express from 'express';
-import axios from 'axios';
-import SocialBlade from 'socialblade';
-import { SUPABASE_CLIENT } from '../util/setup.js';
+import express from "express";
+import axios from "axios";
+import SocialBlade from "socialblade";
+import { supabase } from "../util/clients.js";
 
 /* ================ [ HELPERS ] ================ */
 
@@ -26,10 +26,10 @@ const fetchVideoViews = async (videoId, date) => {
 // Fetch video details
 const fetchVideoDetails = async (videoId) => {
   // Check supabase cache
-  const { data: existing } = await SUPABASE_CLIENT
-    .from('video_data')
-    .select('*')
-    .eq('video_id', videoId)
+  const { data: existing } = await supabase
+    .from("video_data")
+    .select("*")
+    .eq("video_id", videoId)
     .single();
 
   let title, channel, datePublished;
@@ -55,18 +55,16 @@ const fetchVideoDetails = async (videoId) => {
     datePublished = videoData?.publishedAt;
 
     // Insert metadata into Supabase
-    const {error } = await SUPABASE_CLIENT
-      .from('video_data')
-      .insert({
-        video_id: videoId,
-        title,
-        channel,
-        date_published: datePublished,
-      });
-    
+    const { error } = await supabase.from("video_data").insert({
+      video_id: videoId,
+      title,
+      channel,
+      date_published: datePublished,
+    });
+
     if (error) {
-      console.error('Error inserting video data:', error);
-      return res.status(500).json({ error: 'Failed to insert video data' });
+      console.error("Error inserting video data:", error);
+      return res.status(500).json({ error: "Failed to insert video data" });
     }
   }
 
@@ -90,13 +88,16 @@ const fetchVideoDetails = async (videoId) => {
       dayViews = existing[column];
     } else {
       // Fetch missing day views
-      dayViews = await fetchVideoViews(videoId, target.toISOString().split('T')[0]);
+      dayViews = await fetchVideoViews(
+        videoId,
+        target.toISOString().split("T")[0],
+      );
 
       // Update Supabase
-      await SUPABASE_CLIENT
-        .from('video_data')
+      await supabase
+        .from("video_data")
         .update({ [column]: dayViews })
-        .eq('video_id', videoId);
+        .eq("video_id", videoId);
     }
 
     dailyViews[column] = dayViews;
@@ -108,10 +109,7 @@ const fetchVideoDetails = async (videoId) => {
   const views = parseInt(statsRes.statistics.viewCount, 10);
 
   // Update supabase
-  await SUPABASE_CLIENT
-    .from('video_data')
-    .update({ views })
-    .eq('video_id', videoId);
+  await supabase.from("video_data").update({ views }).eq("video_id", videoId);
 
   return {
     title,
@@ -125,7 +123,7 @@ const fetchVideoDetails = async (videoId) => {
 /* ================ [ ROUTES ] ================ */
 
 // Grab videos
-ROUTER.post('/grab-video', async (req, res) => {
+ROUTER.post("/grab-video", async (req, res) => {
   try {
     const { video_url } = req.body;
 
@@ -133,15 +131,17 @@ ROUTER.post('/grab-video', async (req, res) => {
     const videoId = getVideoID(video_url);
 
     if (!videoId) {
-      return res.status(400).json({ error: 'Invalid YouTube URL' });
+      return res.status(400).json({ error: "Invalid YouTube URL" });
     }
 
     // Grab video details
     const videoDetails = await fetchVideoDetails(videoId);
     res.json(videoDetails);
   } catch (error) {
-    console.error('Analytics error:', error);
-    res.status(500).json({ error: error.message || 'Failed to fetch analytics' });
+    console.error("Analytics error:", error);
+    res
+      .status(500)
+      .json({ error: error.message || "Failed to fetch analytics" });
   }
 });
 
