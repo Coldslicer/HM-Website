@@ -594,16 +594,25 @@ const ON_USER_JOIN = async (member) => {
     await member.send(`
 Hey ${member.user.username},
 
-Welcome to **${member.guild.name}**, we're so excited to have you here!
-This server is **NOT** a regular Discord server, it's a sponsorship hub.
+Welcome to **${member.guild.name}** — we’re thrilled to have you join us!
 
-Before getting started, we request that you fill out this 2 minute form, it is **mandatory** to recieve sponsorship offers:
+This isn’t your typical Discord server — it’s a **sponsorship hub** designed to connect you with exciting opportunities.
+
+🎥 **Start here:**  
+To understand what this server is all about, watch this short intro video:  
+https://youtu.be/LQIhWcSJ-Hk
+
+📝 **Before you go any further:**  
+Please take 2 minutes to complete this **mandatory form** so you can start receiving sponsorship offers:  
 https://forms.gle/s573MEVZsFmEaEgP9
 
-For any concerns or inquiries, message our CEO: <@655866521117130752>
-Please frequently check the server, we **ONLY** ping for sponsorship offers!
+❓ **Need help or have questions?**  
+Feel free to message our CEO directly: <@655866521117130752>
 
-We hope you have a great time here!
+📢 **Important:**  
+Keep an eye on the server — we **only ping when a sponsorship offer is live**, so you won’t want to miss it!
+
+We’re glad to have you on board and hope you have a great time here!
     `);
   } catch (error) {
     console.error(`Could not DM the user: ${error}`);
